@@ -4,7 +4,7 @@ import { Calendar, LocaleConfig } from "react-native-calendars";
 import { ActivitiesContext } from "./ActivitiesContext";
 import { stylesCalendar } from "./stylesCalendar";
 
-// Configuración del calendario en español (sin cambios)
+// Configuración del calendario en español
 LocaleConfig.locales["es"] = {
   monthNames: [
     "Enero",
@@ -49,15 +49,15 @@ LocaleConfig.locales["es"] = {
 LocaleConfig.defaultLocale = "es";
 
 const CALENDAR_THEME = {
-  calendarBackground: "#fff",
-  todayTextColor: "#007BFF",
-  dayTextColor: "#2d4150",
-  textDisabledColor: "#d9e1e8",
-  monthTextColor: "#007BFF",
-  arrowColor: "#007BFF",
-  dotColor: "#007BFF",
-  selectedDayBackgroundColor: "#E8E8E8",
-  selectedDayTextColor: "#2d4150",
+  calendarBackground: "#121212",
+  todayTextColor: "#FFFFFF",
+  dayTextColor: "#FFFFFF",
+  textDisabledColor: "#888888",
+  monthTextColor: "#FFFFFF",
+  arrowColor: "#4A90E2",
+  dotColor: "#4A90E2",
+  selectedDayBackgroundColor: "#252525",
+  selectedDayTextColor: "#FFFFFF",
 };
 
 const ActivityItem = memo(({ activity, onEdit, onDelete }) => (
@@ -85,10 +85,8 @@ const ActivityItem = memo(({ activity, onEdit, onDelete }) => (
 
 const ActivitiesList = memo(({ activities, date, onEdit, onDelete }) => {
   const formatDate = useCallback((dateString) => {
-    // Separar el string YYYY-MM-DD
     const [year, month, day] = dateString.split("-").map(Number);
-    // Crear una fecha local sin influencia de zona horaria
-    const date = new Date(year, month - 1, day); // Meses son 0-indexados
+    const date = new Date(year, month - 1, day);
     return date.toLocaleDateString("es-MX", {
       weekday: "long",
       year: "numeric",
@@ -183,9 +181,9 @@ const Calendario = () => {
       const dateString = `${year}-${month}-${day}`;
       dates[dateString] = {
         marked: true,
-        dotColor: "#007BFF",
+        dotColor: "#4A90E2",
         selected: dateString === selectedDate,
-        selectedColor: "#E8E8E8",
+        selectedColor: "#252525",
       };
     });
     return dates;

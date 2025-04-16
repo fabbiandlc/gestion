@@ -12,11 +12,13 @@ import {
 import Ionicons from "react-native-vector-icons/Ionicons";
 import { SafeAreaView, SafeAreaProvider } from "react-native-safe-area-context";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { supabase } from "./supabaseConfig"; // Added import
 import HomeScreen from "./HomeScreen";
 import Calendario from "./Calendario";
 import AdministracionScreen from "./AdministracionScreen";
 import HorariosScreen from "./HorariosScreen";
 import LoginScreen from "./LoginScreen";
+import BackupScreen from "./BackupScreen";
 import { ActivitiesProvider } from "./ActivitiesContext";
 import { DataProvider } from "./DataContext";
 import "react-native-get-random-values";
@@ -38,7 +40,7 @@ export default function App() {
         if (token) {
           setIsLoggedIn(true);
           setCurrentScreen("Actividades");
-          closeDrawer(); // Cierra el drawer completamente al cargar con token
+          closeDrawer();
         }
       } catch (error) {
         console.error("Error checking token:", error);
@@ -105,22 +107,34 @@ export default function App() {
   const handleLoginSuccess = () => {
     setIsLoggedIn(true);
     setCurrentScreen("Actividades");
-    closeDrawer(); // Cierra el drawer completamente al iniciar sesión
-  };
-
-  const handleLogout = async () => {
-    await AsyncStorage.removeItem("userToken");
-    setIsLoggedIn(false);
-    setCurrentScreen("Login");
     closeDrawer();
   };
 
-  const renderMainContent = () => {
-    const navigation = {
-      goBack: () => setCurrentScreen("Actividades"),
-    };
+  const handleLogout = async () => {
+    try {
+      console.log("Initiating logout...");
+      await supabase.auth.signOut();
+      console.log("Supabase session cleared");
+      await AsyncStorage.removeItem("userToken");
+      console.log("userToken removed");
+      setIsLoggedIn(false);
+      setCurrentScreen("Login");
+      closeDrawer();
+      console.log("Logout complete, navigated to Login");
+    } catch (error) {
+      console.error("Error during logout:", error);
+      // Proceed with UI update even if Supabase/AsyncStorage fails
+      setIsLoggedIn(false);
+      setCurrentScreen("Login");
+      closeDrawer();
+      Alert.alert("Advertencia", "Error al cerrar sesión, pero se ha desconectado localmente");
+    }
+  };
 
+  const renderMainContent = () => {
+    console.log("Rendering screen:", currentScreen);
     if (isLoading) {
+      console.log("Rendering loading state");
       return (
         <View style={styles.loadingContainer}>
           <Text>Cargando...</Text>
@@ -129,9 +143,11 @@ export default function App() {
     }
 
     if (!isLoggedIn) {
+      console.log("Rendering LoginScreen");
       return <LoginScreen onLoginSuccess={handleLoginSuccess} />;
     }
 
+    console.log("Rendering main content with screen:", currentScreen);
     return (
       <SafeAreaView style={styles.safeAreaContent}>
         <View style={styles.header}>
@@ -143,11 +159,9 @@ export default function App() {
         </View>
         {currentScreen === "Actividades" && <HomeScreen />}
         {currentScreen === "Calendario" && <Calendario />}
-        {currentScreen === "Gestión" && (
-          <AdministracionScreen navigation={navigation} />
-        )}
+        {currentScreen === "Gestión" && <AdministracionScreen />}
         {currentScreen === "Horarios" && <HorariosScreen />}
-        
+        {currentScreen === "Copias de Seguridad" && <BackupScreen />}
       </SafeAreaView>
     );
   };
@@ -157,6 +171,7 @@ export default function App() {
     { name: "Calendario", icon: "calendar-outline" },
     { name: "Gestión", icon: "pencil-outline" },
     { name: "Horarios", icon: "time-outline" },
+    { name: "Copias de Seguridad", icon: "cloud-upload-outline" },
     { name: "Cerrar Sesión", icon: "log-out-outline", action: handleLogout },
   ];
 
@@ -220,11 +235,11 @@ export default function App() {
 const styles = StyleSheet.create({
   mainContent: {
     flex: 1,
-    backgroundColor: '#111',
+    backgroundColor: "#111",
   },
   safeAreaContent: {
     flex: 1,
-    backgroundColor: '#111',
+    backgroundColor: "#111",
   },
   header: {
     flexDirection: "row",
@@ -239,7 +254,7 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 18,
     fontWeight: "bold",
-    color: '#fff',
+    color: "#fff",
   },
   menuButton: {
     paddingHorizontal: 5,
@@ -267,11 +282,11 @@ const styles = StyleSheet.create({
     shadowRadius: 3.84,
     elevation: 5,
     borderRightWidth: 1,
-    borderRightColor: '#333',
+    borderRightColor: "#333",
   },
   safeAreaDrawer: {
     flex: 1,
-    backgroundColor: '#000',
+    backgroundColor: "#000",
   },
   drawerHeader: {
     flexDirection: "row",
@@ -284,11 +299,11 @@ const styles = StyleSheet.create({
   drawerTitle: {
     fontSize: 18,
     fontWeight: "bold",
-    color: '#fff',
+    color: "#fff",
   },
   drawerContent: {
     flex: 1,
-    backgroundColor: '#000',
+    backgroundColor: "#000",
   },
   drawerItem: {
     flexDirection: "row",
@@ -300,12 +315,12 @@ const styles = StyleSheet.create({
   drawerItemText: {
     marginLeft: 32,
     fontSize: 16,
-    color: '#fff',
+    color: "#fff",
   },
   loadingContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: '#111',
+    backgroundColor: "#111",
   },
 });

@@ -171,17 +171,31 @@ const DocenteForm = ({
   );
 };
 
+const COLORS = {
+  background: "#121212",
+  surface: "#252525",
+  primary: "#4A90E2",
+  danger: "#E94E77",
+  text: "#FFFFFF",
+  textSecondary: "#AAAAAA",
+  border: "#333333",
+  white: "#FFFFFF",
+  gray: "#888888",
+  inputBg: "#1E1E1E",
+  modalOverlay: "rgba(0, 0, 0, 0.7)",
+};
+
 const styles = StyleSheet.create({
   centeredView: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    backgroundColor: COLORS.modalOverlay,
   },
   modalView: {
     width: "90%",
     maxHeight: "80%",
-    backgroundColor: "white",
+    backgroundColor: COLORS.surface,
     borderRadius: 10,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
@@ -189,6 +203,8 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 5,
     overflow: "hidden",
+    borderWidth: 1,
+    borderColor: COLORS.border,
   },
   modalHeader: {
     flexDirection: "row",
@@ -197,11 +213,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 15,
     borderBottomWidth: 1,
-    borderBottomColor: "#eee",
+    borderBottomColor: COLORS.border,
   },
   modalTitle: {
     fontSize: 18,
     fontWeight: "bold",
+    color: COLORS.text,
   },
   closeButton: {
     padding: 5,
@@ -213,23 +230,24 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "500",
     marginBottom: 8,
-    color: "#333",
+    color: COLORS.text,
   },
   input: {
     borderWidth: 1,
-    borderColor: "#ddd",
+    borderColor: COLORS.border,
     borderRadius: 8,
     padding: 12,
     marginBottom: 16,
     fontSize: 16,
-    backgroundColor: "#f9f9f9",
+    backgroundColor: COLORS.inputBg,
+    color: COLORS.text,
   },
   formFooter: {
     marginTop: 10,
     marginBottom: 20,
   },
   requiredText: {
-    color: "#666",
+    color: COLORS.textSecondary,
     fontSize: 14,
     fontStyle: "italic",
   },
@@ -238,7 +256,7 @@ const styles = StyleSheet.create({
     justifyContent: "flex-end",
     padding: 15,
     borderTopWidth: 1,
-    borderTopColor: "#eee",
+    borderTopColor: COLORS.border,
   },
   button: {
     paddingVertical: 10,
@@ -248,22 +266,22 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   cancelButton: {
-    backgroundColor: "#f1f1f1",
+    backgroundColor: "#333333",
     marginRight: 10,
   },
   cancelButtonText: {
-    color: "#666",
+    color: COLORS.textSecondary,
     fontWeight: "500",
   },
   saveButton: {
-    backgroundColor: "#007BFF",
+    backgroundColor: COLORS.primary,
   },
   saveButtonText: {
-    color: "white",
+    color: COLORS.white,
     fontWeight: "500",
   },
   disabledButton: {
-    backgroundColor: "#aaa",
+    backgroundColor: "#444444",
   },
 });
 

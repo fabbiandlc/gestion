@@ -487,21 +487,33 @@ const AdministracionScreen = ({ navigation }) => {
   );
 };
 
+const COLORS = {
+  background: "#121212",
+  surface: "#252525",
+  primary: "#4A90E2",
+  danger: "#E94E77",
+  text: "#FFFFFF",
+  textSecondary: "#AAAAAA",
+  border: "#333333",
+  white: "#FFFFFF",
+  gray: "#888888",
+};
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#f5f5f5",
+    backgroundColor: COLORS.background,
   },
   tabContainer: {
     flexDirection: "row",
     justifyContent: "space-around",
-    backgroundColor: "#fff",
+    backgroundColor: COLORS.surface,
     paddingVertical: 10,
     borderBottomWidth: 1,
-    borderBottomColor: "#e0e0e0",
+    borderBottomColor: COLORS.border,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
+    shadowOpacity: 0.2,
     shadowRadius: 2,
     elevation: 2,
   },
@@ -513,29 +525,29 @@ const styles = StyleSheet.create({
     borderRadius: 20,
   },
   activeTab: {
-    backgroundColor: "#E3F2FD",
+    backgroundColor: "#1E3A5F",
   },
   tabText: {
     fontSize: 16,
     fontWeight: "500",
-    color: "#666",
+    color: COLORS.textSecondary,
     marginLeft: 6,
   },
   activeTabText: {
-    color: "#007BFF",
+    color: COLORS.primary,
     fontWeight: "600",
   },
   searchContainer: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#fff",
+    backgroundColor: COLORS.surface,
     borderRadius: 8,
     paddingHorizontal: 10,
     margin: 10,
     elevation: 2,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
+    shadowOpacity: 0.2,
     shadowRadius: 1,
   },
   searchIcon: {
@@ -545,6 +557,7 @@ const styles = StyleSheet.create({
     flex: 1,
     height: 40,
     fontSize: 16,
+    color: COLORS.text,
   },
   sortContainer: {
     flexDirection: "row",
@@ -556,6 +569,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "500",
     marginRight: 10,
+    color: COLORS.text,
   },
   sortButtons: {
     justifyContent: "flex-end",
@@ -567,38 +581,40 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     borderRadius: 20,
     marginRight: 8,
-    backgroundColor: "#eee",
+    backgroundColor: "#333333",
   },
   activeSortButton: {
-    backgroundColor: "#e6f2ff",
+    backgroundColor: "#1E3A5F",
   },
   sortButtonText: {
     fontSize: 14,
-    color: "#666",
+    color: COLORS.textSecondary,
   },
   activeSortButtonText: {
-    color: "#007BFF",
+    color: COLORS.primary,
     fontWeight: "500",
   },
   sortDirectionButton: {
     padding: 6,
     borderRadius: 20,
-    backgroundColor: "#eee",
+    backgroundColor: "#333333",
   },
   list: {
     paddingHorizontal: 10,
     paddingBottom: 80,
   },
   card: {
-    backgroundColor: "#fff",
+    backgroundColor: COLORS.surface,
     borderRadius: 10,
     marginBottom: 12,
     padding: 15,
     elevation: 2,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
+    shadowOpacity: 0.2,
     shadowRadius: 1,
+    borderWidth: 1,
+    borderColor: COLORS.border,
   },
   cardHeader: {
     marginBottom: 10,
@@ -607,18 +623,18 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "bold",
     marginBottom: 4,
-    color: "#333",
+    color: COLORS.text,
   },
   cardDate: {
     fontSize: 14,
-    color: "#666",
+    color: COLORS.textSecondary,
   },
   cardStats: {
     flexDirection: "row",
     borderTopWidth: 1,
-    borderTopColor: "#eee",
+    borderTopColor: COLORS.border,
     borderBottomWidth: 1,
-    borderBottomColor: "#eee",
+    borderBottomColor: COLORS.border,
     paddingVertical: 10,
     marginBottom: 10,
   },
@@ -629,7 +645,7 @@ const styles = StyleSheet.create({
   },
   statText: {
     fontSize: 14,
-    color: "#666",
+    color: COLORS.textSecondary,
     marginLeft: 4,
   },
   cardActions: {
@@ -645,15 +661,15 @@ const styles = StyleSheet.create({
     marginLeft: 8,
   },
   actionButtonText: {
-    color: "#fff",
+    color: COLORS.white,
     marginLeft: 4,
     fontWeight: "500",
   },
   editButton: {
-    backgroundColor: "#007BFF",
+    backgroundColor: COLORS.primary,
   },
   deleteButton: {
-    backgroundColor: "#FF3B30",
+    backgroundColor: COLORS.danger,
   },
   fab: {
     position: "absolute",
@@ -662,7 +678,7 @@ const styles = StyleSheet.create({
     width: 56,
     height: 56,
     borderRadius: 28,
-    backgroundColor: "#007BFF",
+    backgroundColor: COLORS.primary,
     justifyContent: "center",
     alignItems: "center",
     elevation: 5,
@@ -679,12 +695,12 @@ const styles = StyleSheet.create({
   emptyText: {
     fontSize: 18,
     fontWeight: "bold",
-    color: "#999",
+    color: COLORS.gray,
     marginTop: 12,
   },
   emptySubText: {
     fontSize: 14,
-    color: "#999",
+    color: COLORS.gray,
     marginTop: 8,
     textAlign: "center",
   },

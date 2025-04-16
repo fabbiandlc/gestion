@@ -7,22 +7,31 @@ import {
   ScrollView,
   KeyboardAvoidingView,
   Platform,
+  Alert,
+  Animated,
 } from "react-native";
 import { Picker } from "@react-native-picker/picker";
-import { styles } from "./styles";
+
+const TEXT_COLOR = "#FFFFFF";
+const PRIMARY_COLOR = "#4A90E2";
+const BACKGROUND_COLOR = "#121212";
+const CARD_COLOR = "#1E1E1E";
+const PICKER_ITEM_COLOR = "#000000";
+const PICKER_BACKGROUND = "#2A2A2A";
 
 const ActivityForm = ({ setModalVisible, editIndex, onSubmit, initialData }) => {
-  // Estados para los campos del formulario
+  const now = new Date();
+  const [fadeAnim] = useState(new Animated.Value(0));
+
   const [activityName, setActivityName] = useState("");
-  const [day, setDay] = useState("1");
-  const [month, setMonth] = useState("0");
-  const [year, setYear] = useState(new Date().getFullYear().toString());
-  const [hour, setHour] = useState("12");
-  const [minute, setMinute] = useState("00");
-  const [amPm, setAmPm] = useState("AM");
+  const [day, setDay] = useState(now.getDate().toString());
+  const [month, setMonth] = useState(now.getMonth().toString());
+  const [year, setYear] = useState(now.getFullYear().toString());
+  const [hour, setHour] = useState((now.getHours() % 12 || 12).toString().padStart(2, "0"));
+  const [minute, setMinute] = useState(now.getMinutes().toString().padStart(2, "0"));
+  const [amPm, setAmPm] = useState(now.getHours() >= 12 ? "PM" : "AM");
   const [notes, setNotes] = useState([{ id: Date.now().toString(), content: "" }]);
 
-  // Generar opciones para los pickers
   const days = Array.from({ length: 31 }, (_, i) => (i + 1).toString());
   const months = [
     { label: "Enero", value: "0" },
@@ -38,61 +47,49 @@ const ActivityForm = ({ setModalVisible, editIndex, onSubmit, initialData }) => 
     { label: "Noviembre", value: "10" },
     { label: "Diciembre", value: "11" },
   ];
-  const years = Array.from({ length: 5 }, (_, i) => (new Date().getFullYear() + i).toString());
+  const years = Array.from({ length: 10 }, (_, i) => (now.getFullYear() + i).toString());
   const hours = Array.from({ length: 12 }, (_, i) => (i + 1).toString().padStart(2, "0"));
   const minutes = Array.from({ length: 60 }, (_, i) => i.toString().padStart(2, "0"));
 
-  // Cargar datos iniciales si estamos editando
+  useEffect(() => {
+    Animated.timing(fadeAnim, {
+      toValue: 1,
+      duration: 400,
+      useNativeDriver: true,
+    }).start();
+  }, []);
+
   useEffect(() => {
     if (initialData) {
       setActivityName(initialData.activityName);
-      
       const date = new Date(initialData.activityDate);
       setDay(date.getDate().toString());
       setMonth(date.getMonth().toString());
       setYear(date.getFullYear().toString());
-      
       const time = new Date(initialData.activityTime);
       const hours12 = time.getHours() % 12 || 12;
       setHour(hours12.toString().padStart(2, "0"));
       setMinute(time.getMinutes().toString().padStart(2, "0"));
       setAmPm(time.getHours() >= 12 ? "PM" : "AM");
-      
       setNotes(initialData.notes?.length ? initialData.notes : [{ id: Date.now().toString(), content: "" }]);
     }
   }, [initialData]);
 
-  // Manejar envío del formulario
   const handleSubmit = () => {
     if (!activityName.trim()) {
       Alert.alert("Error", "Por favor ingrese un nombre para la actividad");
       return;
     }
 
-    // Convertir hora AM/PM a 24 horas
     let hours24 = parseInt(hour, 10);
     if (amPm === "PM" && hours24 < 12) hours24 += 12;
     if (amPm === "AM" && hours24 === 12) hours24 = 0;
 
-    // Crear objetos Date para fecha y hora
-    const activityDate = new Date(
-      parseInt(year, 10),
-      parseInt(month, 10),
-      parseInt(day, 10)
-    ).toISOString();
+    const activityDate = new Date(parseInt(year), parseInt(month), parseInt(day)).toISOString();
+    const activityTime = new Date(parseInt(year), parseInt(month), parseInt(day), hours24, parseInt(minute)).toISOString();
 
-    const activityTime = new Date(
-      parseInt(year, 10),
-      parseInt(month, 10),
-      parseInt(day, 10),
-      hours24,
-      parseInt(minute, 10)
-    ).toISOString();
-
-    // Filtrar notas vacías
     const filteredNotes = notes.filter(note => note.content.trim() !== "");
 
-    // Llamar a la función onSubmit con los datos del formulario
     onSubmit({
       activityName: activityName.trim(),
       activityDate,
@@ -101,16 +98,107 @@ const ActivityForm = ({ setModalVisible, editIndex, onSubmit, initialData }) => 
     });
   };
 
-  // Manejar cambios en las notas
   const handleNoteChange = (id, text) => {
-    setNotes(notes.map(note => 
-      note.id === id ? { ...note, content: text } : note
-    ));
+    setNotes(notes.map(note => note.id === id ? { ...note, content: text } : note));
   };
 
-  // Agregar nueva nota
   const addNewNote = () => {
     setNotes([...notes, { id: Date.now().toString(), content: "" }]);
+  };
+
+  const styles = {
+    modalContainer: {
+      flex: 1,
+      backgroundColor: BACKGROUND_COLOR,
+    },
+    modalContent: {
+      flex: 1,
+      padding: 20,
+    },
+    formScrollView: {
+      flexGrow: 1,
+      paddingBottom: 30,
+    },
+    formLabel: {
+      color: TEXT_COLOR,
+      fontSize: 18,
+      fontWeight: "600",
+      marginBottom: 8,
+      marginTop: 20,
+    },
+    input: {
+      backgroundColor: CARD_COLOR,
+      color: TEXT_COLOR,
+      borderRadius: 14,
+      padding: 16,
+      fontSize: 16,
+      marginBottom: 12,
+    },
+    pickerRow: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      marginBottom: 10,
+    },
+    pickerContainer: {
+      flex: 1,
+      backgroundColor: PICKER_BACKGROUND,
+      borderRadius: 14,
+      marginHorizontal: 5,
+      overflow: "hidden",
+    },
+    picker: {
+      color: TEXT_COLOR,
+      height: 150,
+    },
+    noteContainer: {
+      marginBottom: 15,
+    },
+    noteInput: {
+      backgroundColor: CARD_COLOR,
+      color: TEXT_COLOR,
+      borderRadius: 14,
+      padding: 16,
+      fontSize: 16,
+      minHeight: 90,
+      textAlignVertical: "top",
+    },
+    addNoteButton: {
+      backgroundColor: PRIMARY_COLOR,
+      borderRadius: 14,
+      padding: 14,
+      alignItems: "center",
+      marginTop: 10,
+    },
+    addNoteButtonText: {
+      color: TEXT_COLOR,
+      fontSize: 16,
+      fontWeight: "600",
+    },
+    formButtonContainer: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      paddingTop: 20,
+      borderTopWidth: 1,
+      borderTopColor: "#333",
+    },
+    formButton: {
+      flex: 1,
+      padding: 14,
+      borderRadius: 14,
+      alignItems: "center",
+      marginHorizontal: 6,
+    },
+    cancelButton: {
+      backgroundColor: "#3A3A3A",
+    },
+    saveButton: {
+      backgroundColor: PRIMARY_COLOR,
+    },
+    formButtonText: {
+      color: TEXT_COLOR,
+      fontSize: 16,
+      fontWeight: "600",
+    },
   };
 
   return (
@@ -118,7 +206,7 @@ const ActivityForm = ({ setModalVisible, editIndex, onSubmit, initialData }) => 
       behavior={Platform.OS === "ios" ? "padding" : "height"}
       style={styles.modalContainer}
     >
-      <View style={styles.modalContent}>
+      <Animated.View style={[styles.modalContent, { opacity: fadeAnim }]}>
         <ScrollView contentContainerStyle={styles.formScrollView}>
           <Text style={styles.formLabel}>Nombre de la actividad</Text>
           <TextInput
@@ -126,77 +214,47 @@ const ActivityForm = ({ setModalVisible, editIndex, onSubmit, initialData }) => 
             value={activityName}
             onChangeText={setActivityName}
             placeholder="Ej: Reunión con el equipo"
+            placeholderTextColor="#888"
           />
 
           <Text style={styles.formLabel}>Fecha</Text>
           <View style={styles.pickerRow}>
-            <View style={styles.pickerContainer}>
-              <Picker
-                selectedValue={day}
-                onValueChange={setDay}
-              >
-                {days.map(d => (
-                  <Picker.Item key={`day-${d}`} label={d} value={d} />
-                ))}
-              </Picker>
-            </View>
-            
-            <View style={styles.pickerContainer}>
-              <Picker
-                selectedValue={month}
-                onValueChange={setMonth}
-              >
-                {months.map(m => (
-                  <Picker.Item key={`month-${m.value}`} label={m.label} value={m.value} />
-                ))}
-              </Picker>
-            </View>
-            
-            <View style={styles.pickerContainer}>
-              <Picker
-                selectedValue={year}
-                onValueChange={setYear}
-              >
-                {years.map(y => (
-                  <Picker.Item key={`year-${y}`} label={y} value={y} />
-                ))}
-              </Picker>
-            </View>
+            {[day, month, year].map((val, idx) => (
+              <View key={idx} style={styles.pickerContainer}>
+                <Picker
+                  selectedValue={idx === 0 ? day : idx === 1 ? month : year}
+                  onValueChange={idx === 0 ? setDay : idx === 1 ? setMonth : setYear}
+                  style={styles.picker}
+                  dropdownIconColor={TEXT_COLOR}
+                  itemStyle={{ color: PICKER_ITEM_COLOR }}
+                >
+                  {(idx === 0 ? days : idx === 1 ? months : years).map((item, i) => {
+                    const label = idx === 1 ? item.label : item;
+                    const value = idx === 1 ? item.value : item;
+                    return <Picker.Item key={i} label={label} value={value} />;
+                  })}
+                </Picker>
+              </View>
+            ))}
           </View>
 
           <Text style={styles.formLabel}>Hora</Text>
           <View style={styles.pickerRow}>
-            <View style={styles.pickerContainer}>
-              <Picker
-                selectedValue={hour}
-                onValueChange={setHour}
-              >
-                {hours.map(h => (
-                  <Picker.Item key={`hour-${h}`} label={h} value={h} />
-                ))}
-              </Picker>
-            </View>
-            
-            <View style={styles.pickerContainer}>
-              <Picker
-                selectedValue={minute}
-                onValueChange={setMinute}
-              >
-                {minutes.map(m => (
-                  <Picker.Item key={`minute-${m}`} label={m} value={m} />
-                ))}
-              </Picker>
-            </View>
-            
-            <View style={styles.pickerContainer}>
-              <Picker
-                selectedValue={amPm}
-                onValueChange={setAmPm}
-              >
-                <Picker.Item label="AM" value="AM" />
-                <Picker.Item label="PM" value="PM" />
-              </Picker>
-            </View>
+            {[hour, minute, amPm].map((val, idx) => (
+              <View key={idx} style={styles.pickerContainer}>
+                <Picker
+                  selectedValue={val}
+                  onValueChange={idx === 0 ? setHour : idx === 1 ? setMinute : setAmPm}
+                  style={styles.picker}
+                  dropdownIconColor={TEXT_COLOR}
+                  itemStyle={{ color: PICKER_ITEM_COLOR }}
+                >
+                  {(idx === 0 ? hours : idx === 1 ? minutes : ["AM", "PM"]).map((item, i) => (
+                    <Picker.Item key={i} label={item} value={item} />
+                  ))}
+                </Picker>
+              </View>
+            ))}
           </View>
 
           <Text style={styles.formLabel}>Notas</Text>
@@ -206,37 +264,34 @@ const ActivityForm = ({ setModalVisible, editIndex, onSubmit, initialData }) => 
                 style={styles.noteInput}
                 multiline
                 placeholder={`Nota ${index + 1}`}
+                placeholderTextColor="#888"
                 value={note.content}
                 onChangeText={(text) => handleNoteChange(note.id, text)}
-                onSubmitEditing={addNewNote}
               />
             </View>
           ))}
-          
-          <TouchableOpacity 
-            style={styles.addNoteButton} 
-            onPress={addNewNote}
-          >
+
+          <TouchableOpacity style={styles.addNoteButton} onPress={addNewNote}>
             <Text style={styles.addNoteButtonText}>+ Agregar otra nota</Text>
           </TouchableOpacity>
         </ScrollView>
 
         <View style={styles.formButtonContainer}>
-          <TouchableOpacity 
+          <TouchableOpacity
             style={[styles.formButton, styles.cancelButton]}
             onPress={() => setModalVisible(false)}
           >
-            <Text style={styles.buttonText}>Cancelar</Text>
+            <Text style={styles.formButtonText}>Cancelar</Text>
           </TouchableOpacity>
-          
-          <TouchableOpacity 
+
+          <TouchableOpacity
             style={[styles.formButton, styles.saveButton]}
             onPress={handleSubmit}
           >
-            <Text style={styles.buttonText}>Guardar</Text>
+            <Text style={styles.formButtonText}>Guardar</Text>
           </TouchableOpacity>
         </View>
-      </View>
+      </Animated.View>
     </KeyboardAvoidingView>
   );
 };

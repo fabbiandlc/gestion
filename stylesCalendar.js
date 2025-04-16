@@ -1,22 +1,24 @@
 export const stylesCalendar = {
   container: {
     flex: 1,
-    backgroundColor: "#fff",
+    backgroundColor: "#121212",
     padding: 10,
   },
   activityItem: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    backgroundColor: "#f8f9fa",
+    backgroundColor: "#252525",
     padding: 12,
     borderRadius: 8,
     marginVertical: 6,
     elevation: 3,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+    borderWidth: 1,
+    borderColor: "#333333",
   },
   activityTextContainer: {
     flex: 1,
@@ -24,19 +26,19 @@ export const stylesCalendar = {
   activityName: {
     fontSize: 18,
     fontWeight: "bold",
-    color: "#2d4150",
+    color: "#FFFFFF",
     marginBottom: 4,
   },
   activityTime: {
     fontSize: 14,
-    color: "#555",
+    color: "#FFFFFF",
   },
   activityButtons: {
     flexDirection: "row",
     gap: 10,
   },
   editButton: {
-    backgroundColor: "#007BFF",
+    backgroundColor: "#0070F3",
     paddingVertical: 8,
     paddingHorizontal: 14,
     borderRadius: 6,
@@ -44,7 +46,7 @@ export const stylesCalendar = {
     justifyContent: "center",
   },
   deleteButton: {
-    backgroundColor: "#DC3545",
+    backgroundColor: "#E94E77",
     paddingVertical: 8,
     paddingHorizontal: 14,
     borderRadius: 6,
@@ -52,14 +54,14 @@ export const stylesCalendar = {
     justifyContent: "center",
   },
   buttonText: {
-    color: "#fff",
+    color: "#FFFFFF",
     fontWeight: "bold",
     fontSize: 14,
   },
   activitiesContainer: {
     marginTop: 10,
     padding: 10,
-    backgroundColor: "#fff",
+    backgroundColor: "#121212",
     borderRadius: 8,
     elevation: 2,
     shadowColor: "#000",
@@ -70,10 +72,16 @@ export const stylesCalendar = {
   activitiesTitle: {
     fontSize: 20,
     fontWeight: "bold",
-    color: "#2d4150",
+    color: "#FFFFFF",
     marginBottom: 10,
   },
   activitiesList: {
     maxHeight: 250,
+  },
+  noActivitiesText: {
+    fontSize: 16,
+    color: "#FFFFFF",
+    textAlign: "center",
+    marginTop: 10,
   },
 };

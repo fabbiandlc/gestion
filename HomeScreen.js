@@ -11,15 +11,17 @@ import { ActivitiesContext } from "./ActivitiesContext";
 import { useDataContext } from "./DataContext";
 import ActivityForm from "./ActivityForm";
 import { styles } from "./styles";
-import { v4 as uuidv4 } from "uuid"; // Added for unique IDs
+import { v4 as uuidv4 } from "uuid";
 
 const ActionButton = memo(({ onPress, style, children }) => (
-  <TouchableOpacity style={style} onPress={onPress}>
+  <TouchableOpacity style={[styles.actionButton, style]} onPress={onPress} activeOpacity={0.7}>
     <Text style={styles.buttonText}>{children}</Text>
   </TouchableOpacity>
 ));
 
 const ActivitySummary = ({ activity, onClose }) => {
+  const notes = Array.isArray(activity.notes) ? activity.notes : [];
+
   return (
     <View style={styles.modalContainer}>
       <View style={styles.modalContent}>
@@ -38,10 +40,10 @@ const ActivitySummary = ({ activity, onClose }) => {
           style={styles.summaryScrollView}
           showsVerticalScrollIndicator={false}
         >
-          {activity.notes && activity.notes.length > 0 && (
+          {notes.length > 0 && (
             <View style={styles.summarySection}>
               <Text style={styles.summaryLabel}>Notas</Text>
-              {activity.notes.map((note) => (
+              {notes.map((note) => (
                 <View key={note.id} style={styles.summaryNoteContainer}>
                   <Text style={styles.summaryNoteText}>{note.content}</Text>
                 </View>
@@ -125,12 +127,18 @@ const HomeScreen = () => {
             onPress: async () => {
               try {
                 const activityId = activities[index].id;
+                // Call deleteItem from DataContext
                 await deleteItem("Activities", activityId);
+                // Update ActivitiesContext's activities state
                 setActivities((prev) => {
-                  const newActivities = [...prev];
-                  newActivities.splice(index, 1);
+                  const newActivities = prev.filter((_, idx) => idx !== index);
                   return newActivities;
                 });
+                // Close summary modal and clear selectedActivity if needed
+                if (selectedActivity && selectedActivity.id === activityId) {
+                  setSummaryModalVisible(false);
+                  setSelectedActivity(null);
+                }
               } catch (error) {
                 console.error("Error al eliminar la actividad:", error);
                 Alert.alert("Error", "No se pudo eliminar la actividad");
@@ -140,12 +148,12 @@ const HomeScreen = () => {
         ]
       );
     },
-    [activities, deleteItem, setActivities]
+    [activities, deleteItem, setActivities, selectedActivity]
   );
 
   const handleViewSummary = useCallback(
     (index) => {
-      setSelectedActivity({ ...activities[index] });
+      setSelectedActivity({ ...activities[index], notes: Array.isArray(activities[index].notes) ? activities[index].notes : [] });
       setSummaryModalVisible(true);
     },
     [activities]
@@ -166,6 +174,7 @@ const HomeScreen = () => {
       const newActivity = {
         id: editIndex !== null ? activities[editIndex].id : uuidv4(),
         ...activityData,
+        notes: Array.isArray(activityData.notes) ? activityData.notes : [],
         createdAt:
           editIndex !== null
             ? activities[editIndex].createdAt
@@ -191,7 +200,7 @@ const HomeScreen = () => {
       <ScrollView style={styles.activitiesContainer}>
         {activities.map((activity, index) => (
           <ActivityCard
-            key={`activity-${activity.id}`}
+            key={activity.id}
             activity={activity}
             index={index}
             onEdit={handleEdit}
@@ -200,12 +209,9 @@ const HomeScreen = () => {
           />
         ))}
       </ScrollView>
-  
-      {/* Botón de añadir corregido */}
       <TouchableOpacity style={styles.addButton} onPress={handleAddActivity}>
         <Text style={styles.addButtonText}>+</Text>
       </TouchableOpacity>
-  
       <Modal
         animationType="slide"
         transparent={true}
@@ -217,7 +223,11 @@ const HomeScreen = () => {
           editIndex={editIndex}
           setEditIndex={setEditIndex}
           onSubmit={handleFormSubmit}
-          initialData={editIndex !== null ? activities[editIndex] : undefined}
+          initialData={
+            editIndex !== null
+              ? { ...activities[editIndex], notes: Array.isArray(activities[editIndex].notes) ? activities[editIndex].notes : [] }
+              : undefined
+          }
         />
       </Modal>
       <Modal

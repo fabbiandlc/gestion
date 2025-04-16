@@ -175,12 +175,12 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    backgroundColor: "rgba(0, 0, 0, 0.7)", // Matches COLORS.modalOverlay
   },
   modalView: {
     width: "90%",
     maxHeight: "80%",
-    backgroundColor: "white",
+    backgroundColor: "#252525", // Matches COLORS.surface
     borderRadius: 10,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
@@ -188,6 +188,8 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 5,
     overflow: "hidden",
+    borderWidth: 1, // Added to match DocenteForm
+    borderColor: "#333333", // Matches COLORS.border
   },
   modalHeader: {
     flexDirection: "row",
@@ -196,11 +198,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 15,
     borderBottomWidth: 1,
-    borderBottomColor: "#eee",
+    borderBottomColor: "#333333", // Matches COLORS.border
   },
   modalTitle: {
     fontSize: 18,
     fontWeight: "bold",
+    color: "#FFFFFF", // Matches COLORS.text
   },
   closeButton: {
     padding: 5,
@@ -212,16 +215,17 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "500",
     marginBottom: 8,
-    color: "#333",
+    color: "#FFFFFF", // Matches COLORS.text
   },
   input: {
     borderWidth: 1,
-    borderColor: "#ddd",
+    borderColor: "#333333", // Matches COLORS.border
     borderRadius: 8,
     padding: 12,
     marginBottom: 16,
     fontSize: 16,
-    backgroundColor: "#f9f9f9",
+    backgroundColor: "#1E1E1E", // Matches COLORS.inputBg
+    color: "#FFFFFF", // Matches COLORS.text
   },
   switchContainer: {
     marginBottom: 16,
@@ -235,14 +239,14 @@ const styles = StyleSheet.create({
   switchLabel: {
     fontSize: 14,
     marginHorizontal: 10,
-    color: "#333",
+    color: "#FFFFFF", // Matches COLORS.text
   },
   formFooter: {
     marginTop: 10,
     marginBottom: 20,
   },
   requiredText: {
-    color: "#666",
+    color: "#AAAAAA", // Matches COLORS.textSecondary
     fontSize: 14,
     fontStyle: "italic",
   },
@@ -251,7 +255,7 @@ const styles = StyleSheet.create({
     justifyContent: "flex-end",
     padding: 15,
     borderTopWidth: 1,
-    borderTopColor: "#eee",
+    borderTopColor: "#333333", // Matches COLORS.border
   },
   button: {
     paddingVertical: 10,
@@ -261,18 +265,18 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   cancelButton: {
-    backgroundColor: "#f1f1f1",
+    backgroundColor: "#333333", // Matches COLORS.border (consistent with DocenteForm)
     marginRight: 10,
   },
   cancelButtonText: {
-    color: "#666",
+    color: "#AAAAAA", // Matches COLORS.textSecondary
     fontWeight: "500",
   },
   saveButton: {
-    backgroundColor: "#007BFF",
+    backgroundColor: "#4A90E2", // Matches COLORS.primary
   },
   saveButtonText: {
-    color: "white",
+    color: "#FFFFFF", // Matches COLORS.white
     fontWeight: "500",
   },
 });

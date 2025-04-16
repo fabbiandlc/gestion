@@ -1,15 +1,15 @@
 export const stylesHorarios = {
   container: {
     flex: 1,
-    backgroundColor: "#f8f9fa",
+    backgroundColor: "#121212", // Matches COLORS.background
   },
   tabContainer: {
     flexDirection: "row",
     justifyContent: "space-around",
-    backgroundColor: "#fff",
+    backgroundColor: "#252525", // Matches COLORS.surface
     paddingVertical: 10,
     borderBottomWidth: 1,
-    borderBottomColor: "#e0e0e0",
+    borderBottomColor: "#333333", // Matches COLORS.border
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
@@ -24,22 +24,22 @@ export const stylesHorarios = {
     borderRadius: 20,
   },
   activeTab: {
-    backgroundColor: "#E3F2FD", // Color azul claro para la pestaña activa
+    backgroundColor: "#1E1E1E", // Matches COLORS.inputBg for a subtle highlight
   },
   tabText: {
     fontSize: 16,
     fontWeight: "500",
-    color: "#666",
+    color: "#AAAAAA", // Matches COLORS.textSecondary
     marginLeft: 6,
   },
   activeTabText: {
-    color: "#007BFF",
+    color: "#4A90E2", // Matches COLORS.primary
     fontWeight: "600",
   },
   searchContainer: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#fff",
+    backgroundColor: "#252525", // Matches COLORS.surface
     borderRadius: 8,
     margin: 10,
     paddingHorizontal: 10,
@@ -56,12 +56,13 @@ export const stylesHorarios = {
     flex: 1,
     height: 46,
     fontSize: 16,
+    color: "#FFFFFF", // Matches COLORS.text
   },
   list: {
     padding: 10,
   },
   card: {
-    backgroundColor: "#fff",
+    backgroundColor: "#252525", // Matches COLORS.surface
     borderRadius: 12,
     padding: 15,
     marginBottom: 12,
@@ -70,6 +71,8 @@ export const stylesHorarios = {
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
+    borderWidth: 1, // Added to match DocenteForm
+    borderColor: "#333333", // Matches COLORS.border
   },
   cardHeader: {
     marginBottom: 12,
@@ -77,11 +80,11 @@ export const stylesHorarios = {
   cardTitle: {
     fontSize: 18,
     fontWeight: "600",
-    color: "#333",
+    color: "#FFFFFF", // Matches COLORS.text
   },
   cardSubtitle: {
     fontSize: 14,
-    color: "#666",
+    color: "#AAAAAA", // Matches COLORS.textSecondary
     marginTop: 4,
   },
   cardActions: {
@@ -89,7 +92,7 @@ export const stylesHorarios = {
     justifyContent: "flex-end",
   },
   viewButton: {
-    backgroundColor: "#007BFF",
+    backgroundColor: "#4A90E2", // Matches COLORS.primary
     paddingVertical: 8,
     paddingHorizontal: 16,
     borderRadius: 6,
@@ -97,7 +100,7 @@ export const stylesHorarios = {
     alignItems: "center",
   },
   buttonText: {
-    color: "#fff",
+    color: "#FFFFFF", // Matches COLORS.white
     marginLeft: 4,
     fontWeight: "500",
   },
@@ -109,12 +112,12 @@ export const stylesHorarios = {
   emptyText: {
     fontSize: 18,
     fontWeight: "600",
-    color: "#555",
+    color: "#AAAAAA", // Matches COLORS.textSecondary
     marginTop: 12,
   },
   emptySubText: {
     fontSize: 14,
-    color: "#888",
+    color: "#888888", // Matches COLORS.gray
     marginTop: 8,
     textAlign: "center",
   },
@@ -125,7 +128,7 @@ export const stylesHorarios = {
     width: 56,
     height: 56,
     borderRadius: 28,
-    backgroundColor: "#007BFF",
+    backgroundColor: "#4A90E2", // Matches COLORS.primary
     justifyContent: "center",
     alignItems: "center",
     shadowColor: "#000",
@@ -137,10 +140,10 @@ export const stylesHorarios = {
   modalContainer: {
     flex: 1,
     justifyContent: "center",
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    backgroundColor: "rgba(0, 0, 0, 0.7)", // Matches COLORS.modalOverlay
   },
   modalContent: {
-    backgroundColor: "#fff",
+    backgroundColor: "#252525", // Matches COLORS.surface
     marginHorizontal: 20,
     borderRadius: 12,
     padding: 20,
@@ -149,31 +152,35 @@ export const stylesHorarios = {
     shadowOpacity: 0.25,
     shadowRadius: 3.84,
     elevation: 5,
+    borderWidth: 1, // Added to match DocenteForm
+    borderColor: "#333333", // Matches COLORS.border
   },
   modalTitle: {
     fontSize: 20,
     fontWeight: "600",
     marginBottom: 16,
-    color: "#333",
+    color: "#FFFFFF", // Matches COLORS.text
     textAlign: "center",
   },
   inputLabel: {
     fontSize: 14,
     fontWeight: "500",
-    color: "#555",
+    color: "#AAAAAA", // Matches COLORS.textSecondary
     marginBottom: 4,
   },
   textInput: {
     borderWidth: 1,
-    borderColor: "#ddd",
+    borderColor: "#333333", // Matches COLORS.border
     borderRadius: 6,
     padding: 10,
     fontSize: 16,
     marginBottom: 12,
+    backgroundColor: "#1E1E1E", // Matches COLORS.inputBg
+    color: "#FFFFFF", // Matches COLORS.text
   },
   pickerContainer: {
     borderWidth: 1,
-    borderColor: "#ddd",
+    borderColor: "#333333", // Matches COLORS.border
     borderRadius: 6,
     marginBottom: 12,
     overflow: "hidden",
@@ -181,6 +188,7 @@ export const stylesHorarios = {
   picker: {
     height: 50,
     width: "100%",
+    color: "#FFFFFF", // Matches COLORS.text
   },
   timeContainer: {
     flexDirection: "row",
@@ -204,18 +212,18 @@ export const stylesHorarios = {
     marginHorizontal: 5,
   },
   saveButton: {
-    backgroundColor: "#007BFF",
+    backgroundColor: "#4A90E2", // Matches COLORS.primary
   },
   saveButtonText: {
-    color: "#fff",
+    color: "#FFFFFF", // Matches COLORS.white
     fontWeight: "600",
     fontSize: 16,
   },
   cancelButton: {
-    backgroundColor: "#f2f2f2",
+    backgroundColor: "#333333", // Matches COLORS.border (consistent with DocenteForm)
   },
   cancelButtonText: {
-    color: "#666",
+    color: "#AAAAAA", // Matches COLORS.textSecondary
     fontWeight: "600",
     fontSize: 16,
   },
@@ -227,7 +235,7 @@ export const stylesHorarios = {
     alignItems: "center",
     justifyContent: "space-between",
     padding: 10,
-    backgroundColor: "#fff",
+    backgroundColor: "#252525", // Matches COLORS.surface
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
@@ -242,6 +250,7 @@ export const stylesHorarios = {
     fontWeight: "600",
     flex: 1,
     marginLeft: 10,
+    color: "#FFFFFF", // Matches COLORS.text
   },
   addButton: {
     padding: 5,
@@ -261,13 +270,13 @@ export const stylesHorarios = {
     padding: 5,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#f8f9fa",
+    backgroundColor: "#1E1E1E", // Matches COLORS.inputBg
     borderWidth: 0.5,
-    borderColor: "#ddd",
+    borderColor: "#333333", // Matches COLORS.border
   },
   timeCellText: {
     fontSize: 12,
-    color: "#666",
+    color: "#AAAAAA", // Matches COLORS.textSecondary
     textAlign: "center",
   },
   dayHeaderCell: {
@@ -275,36 +284,36 @@ export const stylesHorarios = {
     height: 40,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#007BFF",
+    backgroundColor: "#4A90E2", // Matches COLORS.primary
     borderWidth: 0.5,
-    borderColor: "#ddd",
+    borderColor: "#333333", // Matches COLORS.border
   },
   dayHeaderText: {
     fontSize: 14,
     fontWeight: "600",
-    color: "#fff",
+    color: "#FFFFFF", // Matches COLORS.white
   },
   tableCell: {
     width: 120,
     height: 60,
     padding: 2,
     borderWidth: 0.5,
-    borderColor: "#ddd",
+    borderColor: "#333333", // Matches COLORS.border
     overflow: "hidden",
   },
   emptyCell: {
     flex: 1,
-    backgroundColor: "#fff",
+    backgroundColor: "#252525", // Matches COLORS.surface
   },
   recesoCell: {
     flex: 1,
-    backgroundColor: "#f0f0f0",
+    backgroundColor: "#333333", // Matches COLORS.border for a subtle contrast
     justifyContent: "center",
     alignItems: "center",
   },
   recesoText: {
     fontSize: 12,
-    color: "#888",
+    color: "#AAAAAA", // Matches COLORS.textSecondary
     fontWeight: "500",
   },
   classCell: {
@@ -312,36 +321,37 @@ export const stylesHorarios = {
     borderRadius: 4,
     padding: 4,
     justifyContent: "center",
-    borderColor: "#ddd",
+    borderColor: "#333333", // Matches COLORS.border
+    backgroundColor: "#1E1E1E", // Matches COLORS.inputBg for consistency
   },
   classCellTitle: {
     fontSize: 12,
     fontWeight: "600",
-    color: "#1565C0",
+    color: "#4A90E2", // Matches COLORS.primary
   },
   classCellSubtitle: {
     fontSize: 10,
-    color: "#5C6BC0",
+    color: "#AAAAAA", // Matches COLORS.textSecondary
   },
   classCellTime: {
     fontSize: 9,
-    color: "#5C6BC0",
+    color: "#AAAAAA", // Matches COLORS.textSecondary
     marginTop: 2,
   },
   legendScrollContainer: {
     maxHeight: 200,
-    backgroundColor: "#fff",
+    backgroundColor: "#252525", // Matches COLORS.surface
   },
   legendContainer: {
     padding: 10,
     borderTopWidth: 1,
-    borderTopColor: "#eee",
+    borderTopColor: "#333333", // Matches COLORS.border
   },
   legendTitle: {
     fontSize: 16,
     fontWeight: "600",
     marginBottom: 8,
-    color: "#333",
+    color: "#FFFFFF", // Matches COLORS.text
   },
   legendItem: {
     flexDirection: "row",
@@ -349,7 +359,7 @@ export const stylesHorarios = {
     marginBottom: 8,
     paddingBottom: 8,
     borderBottomWidth: 0.5,
-    borderBottomColor: "#eee",
+    borderBottomColor: "#333333", // Matches COLORS.border
   },
   legendColor: {
     width: 12,
@@ -362,11 +372,11 @@ export const stylesHorarios = {
   },
   legendText: {
     fontSize: 14,
-    color: "#333",
+    color: "#FFFFFF", // Matches COLORS.text
   },
   legendSubtext: {
     fontSize: 12,
-    color: "#666",
+    color: "#AAAAAA", // Matches COLORS.textSecondary
   },
   legendActions: {
     flexDirection: "row",
