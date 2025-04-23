@@ -6,12 +6,14 @@ import {
   TouchableOpacity,
   View,
   Alert,
+  SafeAreaView,
 } from "react-native";
 import { ActivitiesContext } from "./ActivitiesContext";
 import { useDataContext } from "./DataContext";
 import ActivityForm from "./ActivityForm";
 import { styles } from "./styles";
 import { v4 as uuidv4 } from "uuid";
+import Ionicons from "react-native-vector-icons/Ionicons";
 
 const ActionButton = memo(({ onPress, style, children }) => (
   <TouchableOpacity style={[styles.actionButton, style]} onPress={onPress} activeOpacity={0.7}>
@@ -196,8 +198,8 @@ const HomeScreen = () => {
   );
 
   return (
-    <View style={styles.container}>
-      <ScrollView style={styles.activitiesContainer}>
+    <SafeAreaView style={styles.container}>
+      <ScrollView style={styles.activitiesContainer} showsVerticalScrollIndicator={false}>
         {activities.map((activity, index) => (
           <ActivityCard
             key={activity.id}
@@ -209,8 +211,8 @@ const HomeScreen = () => {
           />
         ))}
       </ScrollView>
-      <TouchableOpacity style={styles.addButton} onPress={handleAddActivity}>
-        <Text style={styles.addButtonText}>+</Text>
+      <TouchableOpacity style={styles.addButton} onPress={handleAddActivity} activeOpacity={0.7}>
+        <Ionicons name="add" size={32} color="#FFFFFF" />
       </TouchableOpacity>
       <Modal
         animationType="slide"
@@ -243,7 +245,7 @@ const HomeScreen = () => {
           />
         )}
       </Modal>
-    </View>
+    </SafeAreaView>
   );
 };
 

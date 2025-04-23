@@ -120,13 +120,14 @@ const GrupoForm = ({
           </TouchableOpacity>
         </View>
 
-        <ScrollView style={styles.formContainer}>
+        <ScrollView style={styles.formContainer} showsVerticalScrollIndicator={false}>
           <Text style={styles.label}>Identificador del grupo *</Text>
           <TextInput
             style={styles.input}
             value={formData.nombre}
             onChangeText={(text) => setFormData({ ...formData, nombre: text })}
             placeholder="Ej. 201, 202, 401"
+            placeholderTextColor="#AAAAAA"
             keyboardType="numeric"
             maxLength={3}
           />

@@ -105,7 +105,8 @@ const ActivityForm = ({ setModalVisible, editIndex, onSubmit, initialData }) => 
       style={styles.modalContainer}
     >
       <Animated.View style={[styles.modalContent, { opacity: fadeAnim }]}>
-        <ScrollView contentContainerStyle={styles.formScrollView}>
+        <ScrollView contentContainerStyle={styles.formScrollView} showsVerticalScrollIndicator={false}>
+
           <View style={styles.formSection}>
             <View style={styles.formLabelContainer}>
               <Text style={styles.formLabel}>Nombre de la actividad</Text>

@@ -31,6 +31,18 @@ export const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: COLORS.background,
   },
+  header: {
+    padding: SPACING.md,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.border,
+    backgroundColor: COLORS.background,
+  },
+  headerTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: COLORS.text,
+    textAlign: 'center',
+  },
   activitiesContainer: {
     padding: SPACING.md,
   },
@@ -95,7 +107,7 @@ export const styles = StyleSheet.create({
     fontWeight: "600",
   },
   addButton: {
-    backgroundColor: COLORS.white,
+    backgroundColor: COLORS.primary,
     width: 60,
     height: 60,
     borderRadius: 30,
@@ -109,13 +121,7 @@ export const styles = StyleSheet.create({
     shadowOpacity: 0.25,
     shadowRadius: 3.84,
     elevation: 5,
-    borderWidth: 1,
-    borderColor: "#E0E0E0",
-  },
-  addButtonText: {
-    color: "#000000",
-    fontSize: 24,
-    fontWeight: "bold",
+    borderWidth: 0,
   },
   modalContainer: {
     flex: 1,

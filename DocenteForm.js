@@ -119,7 +119,7 @@ const DocenteForm = ({
           </TouchableOpacity>
         </View>
 
-        <ScrollView style={styles.formContainer}>
+        <ScrollView style={styles.formContainer} showsVerticalScrollIndicator={false}>
           <Text style={styles.label}>Nombre *</Text>
           <TextInput
             style={styles.input}
