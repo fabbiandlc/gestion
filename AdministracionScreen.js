@@ -128,13 +128,31 @@ const AdministracionScreen = ({ navigation }) => {
           { text: "Cancelar", style: "cancel" },
           {
             text: "Eliminar",
-            onPress: () => {
+            onPress: async () => {
               const itemToDelete = filteredItems[index];
               const currentData = getActiveData();
               const updatedData = currentData.filter(
                 (item) => item.id !== itemToDelete.id
               );
+
+              // Borrado en cascada de horarios relacionados
+              let updatedHorarios = [...horarios];
+              if (activeSection === "docentes") {
+                updatedHorarios = updatedHorarios.filter(h => h.docenteId !== itemToDelete.id);
+              } else if (activeSection === "materias") {
+                updatedHorarios = updatedHorarios.filter(h => h.materiaId !== itemToDelete.id);
+              } else if (activeSection === "grupos") {
+                updatedHorarios = updatedHorarios.filter(h => h.salonId !== itemToDelete.id);
+              }
+
+              // Actualizar entidades y horarios
               getActiveSetter()(updatedData);
+              if (updatedHorarios.length !== horarios.length) {
+                // Solo actualiza si hubo cambios
+                if (typeof useDataContext().setHorarios === "function") {
+                  await useDataContext().setHorarios(updatedHorarios);
+                }
+              }
             },
           },
         ]

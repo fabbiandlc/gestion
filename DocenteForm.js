@@ -125,7 +125,8 @@ const DocenteForm = ({
             style={styles.input}
             value={formData.nombre}
             onChangeText={(text) => setFormData({ ...formData, nombre: text })}
-            placeholder="Ingresa el nombre"
+            placeholder="Ingresa el nombre del docente"
+            placeholderTextColor="#AAAAAA"
           />
 
           <Text style={styles.label}>Apellido</Text>
@@ -133,7 +134,8 @@ const DocenteForm = ({
             style={styles.input}
             value={formData.apellido}
             onChangeText={(text) => setFormData({ ...formData, apellido: text })}
-            placeholder="Ingresa el apellido"
+            placeholder="Ingresa el apellido del docente"
+            placeholderTextColor="#AAAAAA"
           />
 
           <Text style={styles.label}>Email</Text>
@@ -141,7 +143,8 @@ const DocenteForm = ({
             style={styles.input}
             value={formData.email}
             onChangeText={(text) => setFormData({ ...formData, email: text })}
-            placeholder="ejemplo@institucion.edu"
+            placeholder="Correo institucional del docente"
+            placeholderTextColor="#AAAAAA"
             keyboardType="email-address"
             autoCapitalize="none"
           />
@@ -151,7 +154,8 @@ const DocenteForm = ({
             style={styles.input}
             value={formData.numeroEmpleado}
             onChangeText={(text) => setFormData({ ...formData, numeroEmpleado: text })}
-            placeholder="Ej: 03297"
+            placeholder="Número de empleado del docente"
+            placeholderTextColor="#AAAAAA"
             keyboardType="numeric"
           />
 

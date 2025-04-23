@@ -86,12 +86,22 @@ const MateriaForm = ({
         </View>
 
         <ScrollView style={styles.formContainer}>
-          <Text style={styles.label}>Nombre *</Text>
+          <Text style={styles.label}>Nombre de la materia *</Text>
           <TextInput
             style={styles.input}
             value={formData.nombre}
             onChangeText={(text) => setFormData({ ...formData, nombre: text })}
-            placeholder="Ingresa el nombre de la materia"
+            placeholder="Nombre de la materia"
+            placeholderTextColor="#AAAAAA"
+          />
+
+          <Text style={styles.label}>Semestre</Text>
+          <TextInput
+            style={styles.input}
+            value={formData.semestre}
+            onChangeText={(text) => setFormData({ ...formData, semestre: text })}
+            placeholder="Semestre"
+            placeholderTextColor="#AAAAAA"
           />
 
           <View style={styles.formFooter}>

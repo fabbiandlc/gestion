@@ -43,57 +43,21 @@ export default function EstadisticasScreen() {
       const activities = await fetchAll("Activities");
       const horarios = await fetchAll("Horarios");
 
-      // Ajustando la lógica para contar correctamente los horarios según lo que muestra la UI
-      // Basado en cómo se categorizan en la pantalla de HorariosScreen
-      
-      // En HorariosScreen se muestran los horarios docentes cuando:
-      // 1. Se selecciona un docente y se ve su horario
-      // 2. Estos horarios no deben ser contados como grupales al mismo tiempo
-      const horariosDocentes = horarios.filter(h => {
-        // Un horario es considerado 'docente' cuando se crea desde la vista de docente
-        // En este caso parece que el campo 'currentTab' al momento de crear el horario fue 'docentes'
-        // Revisando la estructura, parece que los horarios tienen un campo que indica esto
-        return h.tipo === 'docente'; // Asumiendo que hay un campo 'tipo' que guarda esta info
-      });
-      
-      // Y los horarios grupales cuando:
-      // 1. Se selecciona un grupo/salón y se ve su horario
-      const horariosGrupales = horarios.filter(h => {
-        // Un horario es considerado 'grupal' cuando se crea desde la vista de grupos
-        return h.tipo === 'grupo'; // Asumiendo que hay un campo 'tipo' que guarda esta info
-      });
-      
-      // En caso de que no exista un campo 'tipo', podemos caer en una lógica alternativa
-      if (horariosDocentes.length === 0 && horariosGrupales.length === 0) {
-        // Lógica alternativa basada en la estructura de datos
-        // Esto son suposiciones, ya que no podemos ver la estructura exacta de los datos
-        const horariosDocentesAlt = horarios.filter(h => h.docenteId && !h.salonId);
-        const horariosGrupalesAlt = horarios.filter(h => h.salonId);
-        
-        // Si la lógica alternativa encuentra resultados, usamos esos
-        if (horariosDocentesAlt.length > 0 || horariosGrupalesAlt.length > 0) {
-          // Establecemos manualmente 1 y 1 como mencionó el usuario
-          // Esto es temporal hasta que podamos entender mejor la estructura de datos
-          setStats({
-            docentes: docentes.length,
-            materias: materias.length,
-            grupos: grupos.length,
-            activities: activities.length,
-            horariosDocentes: 1, // Valor fijo temporal
-            horariosGrupales: 1  // Valor fijo temporal
-          });
-          return; // Salimos de la función para no llegar al setStats del final
-        }
-      }
+      // Estadística: contar docentes y grupos con al menos un horario asignado (como las cards en HorariosScreen)
+      const docentesConHorario = docentes.filter(docente =>
+        horarios.some(h => h.docenteId === docente.id)
+      );
+      const gruposConHorario = grupos.filter(grupo =>
+        horarios.some(h => h.salonId === grupo.id)
+      );
 
-      // Set basic statistics
       setStats({
         docentes: docentes.length,
         materias: materias.length,
         grupos: grupos.length,
         activities: activities.length,
-        horariosDocentes: horariosDocentes.length,
-        horariosGrupales: horariosGrupales.length
+        horariosDocentes: docentesConHorario.length,
+        horariosGrupales: gruposConHorario.length
       });
 
     } catch (err) {
@@ -200,6 +164,13 @@ export default function EstadisticasScreen() {
       flexDirection: "row",
       gap: 10,
     },
+    buttonContainerCentered: {
+      flexDirection: "row",
+      justifyContent: "center",
+      alignItems: "center",
+      marginTop: 20,
+      gap: 10,
+    },
     button: {
       paddingHorizontal: 15,
       paddingVertical: 8,
@@ -261,26 +232,6 @@ export default function EstadisticasScreen() {
     <ScrollView style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.title}>Estadísticas</Text>
-        <View style={styles.buttonContainer}>
-          <TouchableOpacity 
-            style={[styles.button, styles.exportButton]} 
-            onPress={handleExportPDF}
-            disabled={isExporting}
-          >
-            <Text style={styles.buttonText}>
-              {isExporting ? "Exportando..." : "Exportar PDF"}
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity 
-            style={[styles.button, styles.refreshButton]} 
-            onPress={loadData}
-            disabled={isLoading}
-          >
-            <Text style={styles.buttonText}>
-              {isLoading ? "Cargando..." : "Actualizar"}
-            </Text>
-          </TouchableOpacity>
-        </View>
       </View>
 
       {error ? (
@@ -314,6 +265,26 @@ export default function EstadisticasScreen() {
               <Text style={styles.statLabel}>Horarios Grupales</Text>
               <Text style={styles.statValue}>{stats.horariosGrupales}</Text>
             </View>
+          </View>
+          <View style={styles.buttonContainerCentered}>
+            <TouchableOpacity 
+              style={[styles.button, styles.exportButton]} 
+              onPress={handleExportPDF}
+              disabled={isExporting}
+            >
+              <Text style={styles.buttonText}>
+                {isExporting ? "Exportando..." : "Exportar PDF"}
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity 
+              style={[styles.button, styles.refreshButton]} 
+              onPress={loadData}
+              disabled={isLoading}
+            >
+              <Text style={styles.buttonText}>
+                {isLoading ? "Cargando..." : "Actualizar"}
+              </Text>
+            </TouchableOpacity>
           </View>
         </View>
       )}

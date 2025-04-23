@@ -34,17 +34,11 @@ const HorariosScreen = ({ navigation }) => {
   const [filteredDocentes, setFilteredDocentes] = useState([]);
   const [filteredGrupos, setFilteredGrupos] = useState([]);
   const [modalVisible, setModalVisible] = useState(false);
-  const [docenteModalVisible, setDocenteModalVisible] = useState(false);
   const [selectedEntity, setSelectedEntity] = useState(null); // Puede ser docente o grupo
   const [searchQuery, setSearchQuery] = useState("");
   const [currentView, setCurrentView] = useState("list"); // "list" o "schedule"
   const [currentTab, setCurrentTab] = useState("docentes"); // "docentes" o "grupos"
   const [editingHorario, setEditingHorario] = useState(null);
-
-  const [newDocente, setNewDocente] = useState({
-    nombre: "",
-    apellido: "",
-  });
 
   const [newHorario, setNewHorario] = useState({
     docenteId: "",
@@ -860,7 +854,7 @@ const HorariosScreen = ({ navigation }) => {
               setNewHorario({ ...newHorario, docenteId: itemValue })
             }
           >
-            <Picker.Item label="Seleccionar docente" value="" />
+            <Picker.Item label="Selecciona un docente..." value="" />
             {docentes.map((docente) => (
               <Picker.Item
                 key={docente.id}
@@ -873,23 +867,29 @@ const HorariosScreen = ({ navigation }) => {
         <Text style={styles.inputLabel}>Materia</Text>
         <View style={styles.pickerContainer}>
           <Picker
-            selectedValue={newHorario.materiaId}
+            selectedValue={String(newHorario.materiaId)}
             style={styles.picker}
             onValueChange={(itemValue) => {
-              const materia = materias.find((m) => m.id === itemValue);
+              const materia = materias.find((m) => String(m.id) === String(itemValue));
               setNewHorario({
                 ...newHorario,
-                materiaId: itemValue,
+                materiaId: String(itemValue),
                 color: materia?.color || newHorario.color,
               });
             }}
           >
-            <Picker.Item label="Seleccionar materia" value="" />
+            <Picker.Item label="Selecciona una materia..." value="" />
             {materias.map((materia) => (
               <Picker.Item
-                key={materia.id}
-                label={`${materia.nombre} (${materia.codigo})`}
-                value={materia.id}
+                key={String(materia.id)}
+                label={
+  materia.nombre
+    ? materia.codigo
+      ? `${materia.nombre} (${materia.codigo})`
+      : materia.nombre
+    : "Materia sin nombre"
+}
+                value={String(materia.id)}
               />
             ))}
           </Picker>
@@ -903,7 +903,7 @@ const HorariosScreen = ({ navigation }) => {
               setNewHorario({ ...newHorario, salonId: itemValue })
             }
           >
-            <Picker.Item label="Seleccionar salón" value="" />
+            <Picker.Item label="Selecciona un grupo..." value="" />
             {grupos.map((grupo) => (
               <Picker.Item
                 key={grupo.id}
@@ -1127,22 +1127,13 @@ const HorariosScreen = ({ navigation }) => {
               {searchQuery
                 ? "Intenta con otra búsqueda"
                 : currentTab === "docentes"
-                ? "Agrega docentes usando el botón + de abajo"
+                ? "No hay docentes disponibles"
                 : "No hay grupos disponibles"}
             </Text>
           </View>
         }
       />
-      {currentTab === "docentes" && (
-        <TouchableOpacity
-          style={styles.fab}
-          onPress={() => {
-            setDocenteModalVisible(true);
-          }}
-        >
-          <Ionicons name="add" size={24} color="#fff" />
-        </TouchableOpacity>
-      )}
+
     </>
   );
 
@@ -1289,16 +1280,7 @@ const HorariosScreen = ({ navigation }) => {
   return (
     <SafeAreaView style={styles.container}>
       {currentView === "list" ? renderListView() : renderScheduleView()}
-      <Modal
-        animationType="slide"
-        transparent={true}
-        visible={docenteModalVisible}
-        onRequestClose={() => {
-          setDocenteModalVisible(false);
-        }}
-      >
-        {renderDocenteForm()}
-      </Modal>
+
       <Modal
         animationType="slide"
         transparent={true}

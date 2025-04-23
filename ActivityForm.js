@@ -114,7 +114,8 @@ const ActivityForm = ({ setModalVisible, editIndex, onSubmit, initialData }) => 
               style={styles.input}
               value={activityName}
               onChangeText={setActivityName}
-              placeholder="Ej: Reunión con el equipo"
+              placeholder="Ingresa el nombre de la actividad"
+              placeholderTextColor="#AAAAAA"
               placeholderTextColor="#888"
               textAlignVertical="center"
             />
