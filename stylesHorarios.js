@@ -1,15 +1,15 @@
 export const stylesHorarios = {
   container: {
     flex: 1,
-    backgroundColor: "#121212", // Matches COLORS.background
+    backgroundColor: "#121212", // Tema oscuro - fondo principal
   },
   tabContainer: {
     flexDirection: "row",
     justifyContent: "space-around",
-    backgroundColor: "#252525", // Matches COLORS.surface
+    backgroundColor: "#252525",
     paddingVertical: 10,
     borderBottomWidth: 1,
-    borderBottomColor: "#333333", // Matches COLORS.border
+    borderBottomColor: "#333333",
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
@@ -24,22 +24,22 @@ export const stylesHorarios = {
     borderRadius: 20,
   },
   activeTab: {
-    backgroundColor: "#1E1E1E", // Matches COLORS.inputBg for a subtle highlight
+    backgroundColor: "#1E1E1E",
   },
   tabText: {
     fontSize: 16,
     fontWeight: "500",
-    color: "#AAAAAA", // Matches COLORS.textSecondary
+    color: "#AAAAAA",
     marginLeft: 6,
   },
   activeTabText: {
-    color: "#4A90E2", // Matches COLORS.primary
+    color: "#4A90E2",
     fontWeight: "600",
   },
   searchContainer: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#252525", // Matches COLORS.surface
+    backgroundColor: "#252525",
     borderRadius: 8,
     margin: 10,
     paddingHorizontal: 10,
@@ -51,18 +51,20 @@ export const stylesHorarios = {
   },
   searchIcon: {
     marginRight: 8,
+    color: "#AAAAAA", // Color consistente para el icono de búsqueda
   },
   searchInput: {
     flex: 1,
     height: 46,
     fontSize: 16,
-    color: "#FFFFFF", // Matches COLORS.text
+    color: "#AAAAAA", // Color del texto de entrada
+    placeholderTextColor: "#AAAAAA", // Color del placeholder
   },
   list: {
     padding: 10,
   },
   card: {
-    backgroundColor: "#252525", // Matches COLORS.surface
+    backgroundColor: "#252525",
     borderRadius: 12,
     padding: 15,
     marginBottom: 12,
@@ -71,8 +73,8 @@ export const stylesHorarios = {
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
-    borderWidth: 1, // Added to match DocenteForm
-    borderColor: "#333333", // Matches COLORS.border
+    borderWidth: 1,
+    borderColor: "#333333",
   },
   cardHeader: {
     marginBottom: 12,
@@ -80,11 +82,11 @@ export const stylesHorarios = {
   cardTitle: {
     fontSize: 18,
     fontWeight: "600",
-    color: "#FFFFFF", // Matches COLORS.text
+    color: "#FFFFFF",
   },
   cardSubtitle: {
     fontSize: 14,
-    color: "#AAAAAA", // Matches COLORS.textSecondary
+    color: "#AAAAAA",
     marginTop: 4,
   },
   cardActions: {
@@ -92,7 +94,7 @@ export const stylesHorarios = {
     justifyContent: "flex-end",
   },
   viewButton: {
-    backgroundColor: "#4A90E2", // Matches COLORS.primary
+    backgroundColor: "#4A90E2",
     paddingVertical: 8,
     paddingHorizontal: 16,
     borderRadius: 6,
@@ -100,7 +102,7 @@ export const stylesHorarios = {
     alignItems: "center",
   },
   buttonText: {
-    color: "#FFFFFF", // Matches COLORS.white
+    color: "#FFFFFF",
     marginLeft: 4,
     fontWeight: "500",
   },
@@ -112,12 +114,12 @@ export const stylesHorarios = {
   emptyText: {
     fontSize: 18,
     fontWeight: "600",
-    color: "#AAAAAA", // Matches COLORS.textSecondary
+    color: "#AAAAAA",
     marginTop: 12,
   },
   emptySubText: {
     fontSize: 14,
-    color: "#888888", // Matches COLORS.gray
+    color: "#888888",
     marginTop: 8,
     textAlign: "center",
   },
@@ -128,7 +130,7 @@ export const stylesHorarios = {
     width: 56,
     height: 56,
     borderRadius: 28,
-    backgroundColor: "#4A90E2", // Matches COLORS.primary
+    backgroundColor: "#4A90E2",
     justifyContent: "center",
     alignItems: "center",
     shadowColor: "#000",
@@ -140,10 +142,10 @@ export const stylesHorarios = {
   modalContainer: {
     flex: 1,
     justifyContent: "center",
-    backgroundColor: "rgba(0, 0, 0, 0.7)", // Matches COLORS.modalOverlay
+    backgroundColor: "rgba(0, 0, 0, 0.7)",
   },
   modalContent: {
-    backgroundColor: "#252525", // Matches COLORS.surface
+    backgroundColor: "#252525",
     marginHorizontal: 20,
     borderRadius: 12,
     padding: 20,
@@ -152,43 +154,57 @@ export const stylesHorarios = {
     shadowOpacity: 0.25,
     shadowRadius: 3.84,
     elevation: 5,
-    borderWidth: 1, // Added to match DocenteForm
-    borderColor: "#333333", // Matches COLORS.border
+    borderWidth: 1,
+    borderColor: "#333333",
   },
   modalTitle: {
     fontSize: 20,
     fontWeight: "600",
     marginBottom: 16,
-    color: "#FFFFFF", // Matches COLORS.text
+    color: "#FFFFFF",
     textAlign: "center",
   },
   inputLabel: {
     fontSize: 14,
     fontWeight: "500",
-    color: "#AAAAAA", // Matches COLORS.textSecondary
+    color: "#AAAAAA",
     marginBottom: 4,
+  },
+  formInput: {
+    flex: 1,
+    height: 46,
+    fontSize: 16,
+    color: "#AAAAAA", // Igual que searchInput
+    borderWidth: 1,
+    borderColor: "#333333",
+    borderRadius: 6,
+    padding: 10,
+    marginBottom: 12,
+    backgroundColor: "#1E1E1E",
   },
   textInput: {
     borderWidth: 1,
-    borderColor: "#333333", // Matches COLORS.border
+    borderColor: "#333333",
     borderRadius: 6,
     padding: 10,
     fontSize: 16,
     marginBottom: 12,
-    backgroundColor: "#1E1E1E", // Matches COLORS.inputBg
-    color: "#FFFFFF", // Matches COLORS.text
+    backgroundColor: "#1E1E1E",
+    color: "#FFFFFF",
   },
   pickerContainer: {
     borderWidth: 1,
-    borderColor: "#333333", // Matches COLORS.border
+    borderColor: "#333333",
     borderRadius: 6,
     marginBottom: 12,
     overflow: "hidden",
+    backgroundColor: "#1E1E1E", // Fondo consistente para los pickers
   },
   picker: {
     height: 50,
     width: "100%",
-    color: "#FFFFFF", // Matches COLORS.text
+    color: "#FFFFFF",
+    backgroundColor: "#1E1E1E", // Fondo consistente para los pickers
   },
   timeContainer: {
     flexDirection: "row",
@@ -212,30 +228,31 @@ export const stylesHorarios = {
     marginHorizontal: 5,
   },
   saveButton: {
-    backgroundColor: "#4A90E2", // Matches COLORS.primary
+    backgroundColor: "#4A90E2",
   },
   saveButtonText: {
-    color: "#FFFFFF", // Matches COLORS.white
+    color: "#FFFFFF",
     fontWeight: "600",
     fontSize: 16,
   },
   cancelButton: {
-    backgroundColor: "#333333", // Matches COLORS.border (consistent with DocenteForm)
+    backgroundColor: "#333333",
   },
   cancelButtonText: {
-    color: "#AAAAAA", // Matches COLORS.textSecondary
+    color: "#AAAAAA",
     fontWeight: "600",
     fontSize: 16,
   },
   scheduleContainer: {
     flex: 1,
+    backgroundColor: "#121212", // Fondo consistente
   },
   scheduleHeader: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     padding: 10,
-    backgroundColor: "#252525", // Matches COLORS.surface
+    backgroundColor: "#252525",
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
@@ -250,13 +267,14 @@ export const stylesHorarios = {
     fontWeight: "600",
     flex: 1,
     marginLeft: 10,
-    color: "#FFFFFF", // Matches COLORS.text
+    color: "#FFFFFF",
   },
   addButton: {
     padding: 5,
   },
   scheduleScrollContainer: {
     flex: 1,
+    backgroundColor: "#1A1A1A", // Un poco más claro que el fondo principal para contraste
   },
   scheduleTable: {
     margin: 10,
@@ -270,13 +288,13 @@ export const stylesHorarios = {
     padding: 5,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#1E1E1E", // Matches COLORS.inputBg
+    backgroundColor: "#1E1E1E",
     borderWidth: 0.5,
-    borderColor: "#333333", // Matches COLORS.border
+    borderColor: "#333333",
   },
   timeCellText: {
     fontSize: 12,
-    color: "#AAAAAA", // Matches COLORS.textSecondary
+    color: "#AAAAAA",
     textAlign: "center",
   },
   dayHeaderCell: {
@@ -284,36 +302,37 @@ export const stylesHorarios = {
     height: 40,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#4A90E2", // Matches COLORS.primary
+    backgroundColor: "#2A2A2A", // Más oscuro para el encabezado
     borderWidth: 0.5,
-    borderColor: "#333333", // Matches COLORS.border
+    borderColor: "#333333",
   },
   dayHeaderText: {
     fontSize: 14,
     fontWeight: "600",
-    color: "#FFFFFF", // Matches COLORS.white
+    color: "#4A90E2", // Azul de acento para el texto del encabezado
   },
   tableCell: {
     width: 120,
     height: 60,
     padding: 2,
     borderWidth: 0.5,
-    borderColor: "#333333", // Matches COLORS.border
+    borderColor: "#333333",
     overflow: "hidden",
+    backgroundColor: "#1A1A1A", // Fondo consistente para las celdas
   },
   emptyCell: {
     flex: 1,
-    backgroundColor: "#252525", // Matches COLORS.surface
+    backgroundColor: "#1A1A1A", // Fondo consistente para las celdas vacías
   },
   recesoCell: {
     flex: 1,
-    backgroundColor: "#333333", // Matches COLORS.border for a subtle contrast
+    backgroundColor: "#2C2C2C", // Ligeramente más claro para distinguir el receso
     justifyContent: "center",
     alignItems: "center",
   },
   recesoText: {
     fontSize: 12,
-    color: "#AAAAAA", // Matches COLORS.textSecondary
+    color: "#AAAAAA",
     fontWeight: "500",
   },
   classCell: {
@@ -321,37 +340,36 @@ export const stylesHorarios = {
     borderRadius: 4,
     padding: 4,
     justifyContent: "center",
-    borderColor: "#333333", // Matches COLORS.border
-    backgroundColor: "#1E1E1E", // Matches COLORS.inputBg for consistency
+    borderColor: "#444444", // Borde más visible para las clases
   },
   classCellTitle: {
     fontSize: 12,
     fontWeight: "600",
-    color: "#4A90E2", // Matches COLORS.primary
+    color: "#000000", // Negro para contrastar con los fondos de color de la celda
   },
   classCellSubtitle: {
     fontSize: 10,
-    color: "#AAAAAA", // Matches COLORS.textSecondary
+    color: "#333333", // Oscuro para contrastar con los fondos de color de la celda
   },
   classCellTime: {
     fontSize: 9,
-    color: "#AAAAAA", // Matches COLORS.textSecondary
+    color: "#333333", // Oscuro para contrastar con los fondos de color de la celda
     marginTop: 2,
   },
   legendScrollContainer: {
     maxHeight: 200,
-    backgroundColor: "#252525", // Matches COLORS.surface
+    backgroundColor: "#252525",
   },
   legendContainer: {
     padding: 10,
     borderTopWidth: 1,
-    borderTopColor: "#333333", // Matches COLORS.border
+    borderTopColor: "#333333",
   },
   legendTitle: {
     fontSize: 16,
     fontWeight: "600",
     marginBottom: 8,
-    color: "#FFFFFF", // Matches COLORS.text
+    color: "#FFFFFF",
   },
   legendItem: {
     flexDirection: "row",
@@ -359,7 +377,7 @@ export const stylesHorarios = {
     marginBottom: 8,
     paddingBottom: 8,
     borderBottomWidth: 0.5,
-    borderBottomColor: "#333333", // Matches COLORS.border
+    borderBottomColor: "#333333",
   },
   legendColor: {
     width: 12,
@@ -372,11 +390,11 @@ export const stylesHorarios = {
   },
   legendText: {
     fontSize: 14,
-    color: "#FFFFFF", // Matches COLORS.text
+    color: "#FFFFFF",
   },
   legendSubtext: {
     fontSize: 12,
-    color: "#AAAAAA", // Matches COLORS.textSecondary
+    color: "#AAAAAA",
   },
   legendActions: {
     flexDirection: "row",

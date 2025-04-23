@@ -166,7 +166,9 @@ const AdministracionScreen = ({ navigation }) => {
         <Text style={styles.cardTitle}>
           {item.nombre} {item.apellido}
         </Text>
-        <Text style={styles.cardDate}>{item.email || "Sin email registrado"}</Text>
+        <Text style={styles.cardDate}>
+          {item.email || "Sin email registrado"}
+        </Text>
       </View>
       <View style={styles.cardStats}>
         <View style={styles.statItem}>
@@ -402,6 +404,7 @@ const AdministracionScreen = ({ navigation }) => {
           value={searchQuery}
           onChangeText={setSearchQuery}
           clearButtonMode="while-editing"
+          placeholderTextColor="#666" // Color similar al de las pestañas inactivas
         />
       </View>
       <View style={styles.sortContainer}>

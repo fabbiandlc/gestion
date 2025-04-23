@@ -8,6 +8,7 @@ import {
   Dimensions,
   ScrollView,
   BackHandler,
+  StatusBar
 } from "react-native";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import { SafeAreaView, SafeAreaProvider } from "react-native-safe-area-context";
@@ -127,7 +128,10 @@ export default function App() {
       setIsLoggedIn(false);
       setCurrentScreen("Login");
       closeDrawer();
-      Alert.alert("Advertencia", "Error al cerrar sesión, pero se ha desconectado localmente");
+      Alert.alert(
+        "Advertencia",
+        "Error al cerrar sesión, pero se ha desconectado localmente"
+      );
     }
   };
 
@@ -178,6 +182,7 @@ export default function App() {
   return (
     <DataProvider>
       <SafeAreaProvider>
+        <StatusBar barStyle="light-content" backgroundColor="#000000" />
         <ActivitiesProvider>
           {isDrawerOpen && isLoggedIn && (
             <TouchableOpacity

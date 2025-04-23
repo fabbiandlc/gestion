@@ -13,6 +13,7 @@ import {
   restoreFromSupabase,
   getSyncInfo,
 } from './Database';
+import RNRestart from 'react-native-restart'; // Import for app restarting
 
 const BackupScreen = () => {
   const [syncInfo, setSyncInfo] = useState({ lastSync: null, pendingChanges: false });
@@ -56,16 +57,28 @@ const BackupScreen = () => {
     try {
       const result = await restoreFromSupabase();
       if (result.success) {
-        const updatedInfo = await getSyncInfo();
-        setSyncInfo(updatedInfo);
-        Alert.alert('Éxito', result.message);
+        // Show alert and restart app when user confirms
+        Alert.alert(
+          'Éxito',
+          `${result.message}\n\nLa aplicación se reiniciará para aplicar los cambios.`,
+          [
+            {
+              text: 'Aceptar',
+              onPress: () => {
+                // Restart the app
+                RNRestart.Restart();
+              },
+            },
+          ],
+          { cancelable: false }
+        );
       } else {
         Alert.alert('Error', result.message);
+        setRestoring(false);
       }
     } catch (error) {
       console.error('Restore error:', error);
       Alert.alert('Error', 'Error al restaurar la copia de seguridad');
-    } finally {
       setRestoring(false);
     }
   };

@@ -55,12 +55,12 @@ const HorariosScreen = ({ navigation }) => {
   });
 
   const coloresDisponibles = [
-    { nombre: "Azul Claro", valor: "#E3F2FD" },
-    { nombre: "Verde Claro", valor: "#C8E6C9" },
-    { nombre: "Amarillo Claro", valor: "#FFF9C4" },
-    { nombre: "Rosa Claro", valor: "#F8BBD0" },
-    { nombre: "Púrpura Claro", valor: "#D1C4E9" },
-    { nombre: "Naranja Claro", valor: "#FFCCBC" },
+    { nombre: "Azul", valor: "#3E6B9E" }, // Azul más oscuro
+    { nombre: "Verde", valor: "#3A7D44" }, // Verde más oscuro
+    { nombre: "Morado", valor: "#5D4A8C" }, // Morado más oscuro
+    { nombre: "Rosa", valor: "#A45A76" }, // Rosa más oscuro
+    { nombre: "Naranja", valor: "#B56B3C" }, // Naranja más oscuro
+    { nombre: "Amarillo", valor: "#A59132" }, // Amarillo más oscuro
   ];
 
   const convertirHoraAMinutos = (hora) => {
@@ -239,7 +239,10 @@ const HorariosScreen = ({ navigation }) => {
         (m) => m.id === newHorario.materiaId
       );
       if (materiaSeleccionada && !materiaSeleccionada.color) {
-        const updatedMateria = { ...materiaSeleccionada, color: newHorario.color };
+        const updatedMateria = {
+          ...materiaSeleccionada,
+          color: newHorario.color,
+        };
         await update("Materias", updatedMateria, updatedMateria.id);
         const freshMaterias = await fetchAll("Materias");
         setMaterias(freshMaterias);
@@ -437,21 +440,24 @@ const HorariosScreen = ({ navigation }) => {
         <Text style={styles.modalTitle}>Nuevo Docente</Text>
         <Text style={styles.inputLabel}>Nombre</Text>
         <TextInput
-          style={styles.textInput}
+          style={styles.formInput}
+          placeholder="Ingresar nombre"
+          placeholderTextColor="#666"
           value={newDocente.nombre}
           onChangeText={(text) =>
             setNewDocente({ ...newDocente, nombre: text })
           }
-          placeholder="Ingrese nombre"
+          clearButtonMode="while-editing"
         />
-        <Text style={styles.inputLabel}>Apellido</Text>
         <TextInput
-          style={styles.textInput}
+          style={styles.formInput}
+          placeholder="Ingresar apellido"
+          placeholderTextColor="#666"
           value={newDocente.apellido}
           onChangeText={(text) =>
             setNewDocente({ ...newDocente, apellido: text })
           }
-          placeholder="Ingrese apellido"
+          clearButtonMode="while-editing"
         />
         <View style={styles.modalButtons}>
           <TouchableOpacity
@@ -669,10 +675,7 @@ const HorariosScreen = ({ navigation }) => {
     <>
       <View style={styles.tabContainer}>
         <TouchableOpacity
-          style={[
-            styles.tab,
-            currentTab === "docentes" && styles.activeTab,
-          ]}
+          style={[styles.tab, currentTab === "docentes" && styles.activeTab]}
           onPress={() => {
             setCurrentTab("docentes");
             setSearchQuery("");
@@ -695,10 +698,7 @@ const HorariosScreen = ({ navigation }) => {
           </Text>
         </TouchableOpacity>
         <TouchableOpacity
-          style={[
-            styles.tab,
-            currentTab === "grupos" && styles.activeTab,
-          ]}
+          style={[styles.tab, currentTab === "grupos" && styles.activeTab]}
           onPress={() => {
             setCurrentTab("grupos");
             setSearchQuery("");
@@ -730,7 +730,9 @@ const HorariosScreen = ({ navigation }) => {
         />
         <TextInput
           style={styles.searchInput}
-          placeholder={`Buscar ${currentTab === "docentes" ? "docente" : "grupo"}...`}
+          placeholder={`Buscar ${
+            currentTab === "docentes" ? "docente" : "grupo"
+          }...`}
           value={searchQuery}
           onChangeText={setSearchQuery}
           clearButtonMode="while-editing"
@@ -738,13 +740,17 @@ const HorariosScreen = ({ navigation }) => {
       </View>
       <FlatList
         data={currentTab === "docentes" ? filteredDocentes : filteredGrupos}
-        renderItem={currentTab === "docentes" ? renderDocenteItem : renderGrupoItem}
+        renderItem={
+          currentTab === "docentes" ? renderDocenteItem : renderGrupoItem
+        }
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.list}
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
             <Ionicons
-              name={currentTab === "docentes" ? "person-outline" : "people-outline"}
+              name={
+                currentTab === "docentes" ? "person-outline" : "people-outline"
+              }
               size={64}
               color="#ccc"
             />
@@ -790,14 +796,18 @@ const HorariosScreen = ({ navigation }) => {
             <Ionicons name="arrow-back" size={24} color="#007BFF" />
           </TouchableOpacity>
           <Text style={styles.scheduleTitle}>
-            Horario: {currentTab === "docentes" ? `${selectedEntity.nombre} ${selectedEntity.apellido}` : selectedEntity.nombre}
+            Horario:{" "}
+            {currentTab === "docentes"
+              ? `${selectedEntity.nombre} ${selectedEntity.apellido}`
+              : selectedEntity.nombre}
           </Text>
           <TouchableOpacity
             style={styles.addButton}
             onPress={() => {
               setNewHorario({
                 ...newHorario,
-                [currentTab === "docentes" ? "docenteId" : "salonId"]: selectedEntity.id,
+                [currentTab === "docentes" ? "docenteId" : "salonId"]:
+                  selectedEntity.id,
               });
               setEditingHorario(null);
               setModalVisible(true);

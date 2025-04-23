@@ -60,35 +60,53 @@ const LoginScreen = ({ onLoginSuccess }) => {
     setResetModalVisible(true);
   };
 
+  const isValidEmail = (email) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  };
+
   const handleResetPassword = async () => {
     if (!resetEmail) {
       Alert.alert('Error', 'Por favor, ingresa tu correo electrónico');
+      return;
+    }
+    if (!isValidEmail(resetEmail)) {
+      Alert.alert('Error', 'Por favor, ingresa un correo electrónico válido');
       return;
     }
 
     setLoading(true);
 
     try {
-      // Especificamos explícitamente la URL de redirección
-      const resetUrl = 'https://aplicacionadministrativa.vercel.app/reset-password';
-      
-      const { error } = await supabase.auth.resetPasswordForEmail(resetEmail, {
-        redirectTo: resetUrl
-      });
+      // Crear el enlace mailto con el correo prellenado
+      const subject = encodeURIComponent('Solicitud de restablecimiento de contraseña');
+      const body = encodeURIComponent(
+        `He olvidado mi contraseña. Mi correo para iniciar sesión en la aplicación es: ${resetEmail}\n\n.`
+      );
+      const mailtoLink = `mailto:atencioncb18@gmail.com?subject=${subject}&body=${body}`;
 
-      if (error) {
-        throw new Error(error.message || 'Error al enviar el enlace de restablecimiento');
+      // Verificar si el dispositivo puede abrir el enlace
+      const supported = await Linking.canOpenURL(mailtoLink);
+      if (!supported) {
+        throw new Error(
+          'No se puede abrir una aplicación de correo. Por favor, envía un correo a fahuervodelacruz@hotmail.com con tu solicitud.'
+        );
       }
 
+      // Abrir el cliente de correo predeterminado
+      await Linking.openURL(mailtoLink);
+
       Alert.alert(
-        'Éxito', 
-        'Se ha enviado un enlace de restablecimiento a tu correo. Revisa tu bandeja de entrada o spam.\n\n' +
-        'Haz clic en el enlace desde tu dispositivo para restablecer tu contraseña.'
+        'Solicitud enviada',
+        'Se ha abierto tu aplicación de correo (como Gmail, Outlook o la app de correos). Por favor, envía el correo al administrador para completar la solicitud.'
       );
       setResetModalVisible(false);
       setResetEmail('');
     } catch (error) {
-      Alert.alert('Error', error.message || 'Error al conectar con el servidor');
+      Alert.alert(
+        'Error',
+        error.message || 'No se pudo abrir una aplicación de correo. Por favor, envía un correo a fahuervodelacruz@hotmail.com con tu solicitud.'
+      );
       console.error(error);
     } finally {
       setLoading(false);
@@ -163,11 +181,11 @@ const LoginScreen = ({ onLoginSuccess }) => {
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>Restablecer Contraseña</Text>
             <Text style={styles.modalSubtitle}>
-              Ingresa tu correo para recibir un enlace de restablecimiento
+              Ingresa tu correo para contactar al administrador. Se abrirá tu app de correo para enviar la solicitud.
             </Text>
 
             <View style={styles.inputContainer}>
-              <Text style={styles.label}>Correo</Text>
+ Otter:              <Text style={styles.label}>Ingresa tu correo a restablecer</Text>
               <TextInput
                 style={styles.input}
                 placeholder="Correo electrónico"
