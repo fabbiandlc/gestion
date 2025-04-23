@@ -11,9 +11,9 @@ import {
   Platform,
   Modal,
   Linking,
+  Image,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import Ionicons from 'react-native-vector-icons/Ionicons';
 import { supabase } from './supabaseConfig';
 
 const LoginScreen = ({ onLoginSuccess }) => {
@@ -123,7 +123,7 @@ const LoginScreen = ({ onLoginSuccess }) => {
     >
       <View style={styles.formContainer}>
         <View style={styles.formWrapper}>
-          <Ionicons name="school-outline" size={60} color="#4A90E2" style={styles.logo} />
+          <Image source={require('./assets/icon.png')} style={styles.logo} />
           <Text style={styles.title}>Iniciar Sesión</Text>
 
           <View style={styles.inputContainer}>
@@ -186,7 +186,7 @@ const LoginScreen = ({ onLoginSuccess }) => {
             </Text>
 
             <View style={styles.inputContainer}>
- Otter:              <Text style={styles.label}>Ingresa tu correo a restablecer</Text>
+              <Text style={styles.label}>Ingresa tu correo a restablecer</Text>
               <TextInput
                 style={styles.input}
                 placeholder="Correo electrónico"
@@ -243,6 +243,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   logo: {
+    width: 100,
+    height: 100,
+    resizeMode: 'contain',
     alignSelf: 'center',
     marginBottom: 20,
   },

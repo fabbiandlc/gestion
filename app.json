@@ -1,18 +1,18 @@
 {
   "expo": {
-    "scheme": "com.fabiansking.subdireccion",
-    "name": "subdireccion",
-    "slug": "subdireccion",
+    "scheme": "com.fabiansking.gestion",
+    "name": "Aplicación de gestión administrativa",
+    "slug": "gestion",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
-    "displayName": "Subdirección", 
+    "displayName": "Gestión", 
     "splash": {
-      "image": "./assets/splash-icon.png",
+      "image": "./assets/icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#181919"
     },
     "ios": {
       "supportsTablet": true
@@ -22,7 +22,7 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "com.fabiansking.subdireccion"
+      "package": "com.fabiansking.gestion"
     },
     "web": {
       "favicon": "./assets/favicon.png"
