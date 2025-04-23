@@ -576,6 +576,11 @@ const HorariosScreen = ({ navigation }) => {
           </style>
         </head>
         <body>
+          <div style="text-align: center; margin-bottom: 20px;">
+            <p style="font-size: 14px; margin: 0; font-weight: bold;">COLEGIO DE BACHILLERES DEL ESTADO DE VERACRUZ</p>
+            <p style="font-size: 12px; margin: 3px 0; font-weight: normal;">ORGANISMO PUBLICO DESCENTRALIZADO</p>
+            <p style="font-size: 13px; margin: 3px 0; font-weight: normal;">PLANTEL 18 - COATZACOALCOS</p>
+          </div>
           <div class="header">
             <h1>${titulo}</h1>
             ${subtitulo ? `<p>${subtitulo}</p>` : ''}
@@ -607,7 +612,7 @@ const HorariosScreen = ({ navigation }) => {
                   if (currentTab === 'docentes') {
                     texto = grupos.find(g => g.id === horario.salonId)?.nombre || '';
                   } else {
-                    const materia = materias.find(m => m.id === horario.materiaId);
+                    const materia = materias.find(m => String(m.id) === String(horario.materiaId));
                     texto = materia ? materia.nombre : '';
                   }
 
@@ -627,7 +632,7 @@ const HorariosScreen = ({ navigation }) => {
             <div class="legend-title">Detalles de Clases:</div>
             <div class="legend-items">
               ${horariosEntidad.map(horario => {
-                const materia = materias.find(m => m.id === horario.materiaId);
+                const materia = materias.find(m => String(m.id) === String(horario.materiaId));
                 const docente = docentes.find(d => d.id === horario.docenteId);
                 const salon = grupos.find(g => g.id === horario.salonId);
                 const color = horario.color || getMateriaColor(horario.materiaId);
@@ -787,7 +792,9 @@ const HorariosScreen = ({ navigation }) => {
         onPress={() => handleEditarHorario(horarioEnCelda)}
       >
         <Text style={styles.classCellTitle} numberOfLines={1}>
-          {currentTab === "docentes" ? salon?.nombre : materias.find(m => m.id === horarioEnCelda.materiaId)?.nombre}
+          {currentTab === "docentes" 
+            ? salon?.nombre 
+            : materias.find(m => String(m.id) === String(horarioEnCelda.materiaId))?.nombre}
         </Text>
       </TouchableOpacity>
     );
@@ -1211,7 +1218,7 @@ const HorariosScreen = ({ navigation }) => {
             <View style={styles.legendContainer}>
               <Text style={styles.legendTitle}>Detalles de Clases:</Text>
               {horariosEntidad.map((horario) => {
-                const materia = materias.find(m => m.id === horario.materiaId);
+                const materia = materias.find(m => String(m.id) === String(horario.materiaId));
                 const docente = docentes.find(d => d.id === horario.docenteId);
                 const salon = grupos.find(s => s.id === horario.salonId);
 
@@ -1234,6 +1241,7 @@ const HorariosScreen = ({ navigation }) => {
                         {currentTab === "docentes" ? (
                           <>
                             {salon ? `Grupo ${salon.nombre}` : ""}
+                            {materia ? ` | Materia: ${materia.nombre}` : ""}
                           </>
                         ) : (
                           <>
