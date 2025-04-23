@@ -31,6 +31,7 @@ export default function App() {
   const [currentScreen, setCurrentScreen] = useState("Login");
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [userEmail, setUserEmail] = useState("");
   const translateX = useRef(new Animated.Value(-width * 0.8)).current;
   const fadeAnim = useRef(new Animated.Value(0)).current;
 
@@ -38,9 +39,13 @@ export default function App() {
     const checkLoginStatus = async () => {
       try {
         const token = await AsyncStorage.getItem("userToken");
+        const email = await AsyncStorage.getItem("userEmail");
         if (token) {
           setIsLoggedIn(true);
           setCurrentScreen("Actividades");
+          if (email) {
+            setUserEmail(email);
+          }
           closeDrawer();
         }
       } catch (error) {
@@ -105,9 +110,13 @@ export default function App() {
     closeDrawer();
   };
 
-  const handleLoginSuccess = () => {
+  const handleLoginSuccess = (email) => {
     setIsLoggedIn(true);
     setCurrentScreen("Actividades");
+    if (email) {
+      setUserEmail(email);
+      AsyncStorage.setItem("userEmail", email);
+    }
     closeDrawer();
   };
 
@@ -117,8 +126,10 @@ export default function App() {
       await supabase.auth.signOut();
       console.log("Supabase session cleared");
       await AsyncStorage.removeItem("userToken");
-      console.log("userToken removed");
+      await AsyncStorage.removeItem("userEmail");
+      console.log("userToken and userEmail removed");
       setIsLoggedIn(false);
+      setUserEmail("");
       setCurrentScreen("Login");
       closeDrawer();
       console.log("Logout complete, navigated to Login");
@@ -126,6 +137,7 @@ export default function App() {
       console.error("Error during logout:", error);
       // Proceed with UI update even if Supabase/AsyncStorage fails
       setIsLoggedIn(false);
+      setUserEmail("");
       setCurrentScreen("Login");
       closeDrawer();
       Alert.alert(
@@ -205,9 +217,15 @@ export default function App() {
             >
               <SafeAreaView style={styles.safeAreaDrawer}>
                 <View style={styles.drawerHeader}>
-                  <Text style={styles.drawerTitle}>Mi Aplicación</Text>
+                  <View style={styles.userInfoContainer}>
+                    <Ionicons name="person-circle-outline" size={40} color="#007BFF" />
+                    <View style={styles.userTextContainer}>
+                      <Text style={styles.drawerTitle}>Usuario</Text>
+                      <Text style={styles.userEmail}>{userEmail || "Sin correo"}</Text>
+                    </View>
+                  </View>
                   <TouchableOpacity onPress={closeDrawer}>
-                    <Ionicons name="close" size={24} color="#000" />
+                    <Ionicons name="close" size={24} color="#fff" />
                   </TouchableOpacity>
                 </View>
                 <ScrollView style={styles.drawerContent}>
@@ -300,11 +318,24 @@ const styles = StyleSheet.create({
     padding: 16,
     borderBottomWidth: 1,
     borderBottomColor: "#333",
+    backgroundColor: "#1A1A1A",
+  },
+  userInfoContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  userTextContainer: {
+    marginLeft: 12,
   },
   drawerTitle: {
     fontSize: 18,
     fontWeight: "bold",
     color: "#fff",
+  },
+  userEmail: {
+    fontSize: 14,
+    color: "#AAAAAA",
+    marginTop: 2,
   },
   drawerContent: {
     flex: 1,

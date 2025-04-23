@@ -11,6 +11,8 @@ import {
   TextInput,
   SafeAreaView,
 } from "react-native";
+import * as Print from 'expo-print';
+import * as Sharing from 'expo-sharing';
 import Ionicons from "react-native-vector-icons/Ionicons";
 import { Picker } from "@react-native-picker/picker";
 import { useDataContext } from "./DataContext";
@@ -87,9 +89,6 @@ const HorariosScreen = ({ navigation }) => {
       { horaInicio: "17:20", horaFin: "18:10", esReceso: false },
       { horaInicio: "18:10", horaFin: "19:00", esReceso: false },
       { horaInicio: "19:00", horaFin: "19:50", esReceso: false },
-      { horaInicio: "19:50", horaFin: "20:40", esReceso: false },
-      { horaInicio: "20:40", horaFin: "21:30", esReceso: false },
-      { horaInicio: "21:30", horaFin: "22:00", esReceso: false },
     ],
     []
   );
@@ -206,74 +205,167 @@ const HorariosScreen = ({ navigation }) => {
     if (
       !newHorario.docenteId ||
       !newHorario.materiaId ||
-      !newHorario.salonId ||
-      !newHorario.dia ||
-      !newHorario.horaInicio ||
-      !newHorario.horaFin ||
-      !newHorario.color
+      !newHorario.salonId
     ) {
-      Alert.alert("Error", "Todos los campos son obligatorios");
+      Alert.alert("Error", "Por favor, completa todos los campos");
       return;
     }
 
+    // Verificar que la hora de inicio sea menor que la hora de fin
     const inicioMinutos = convertirHoraAMinutos(newHorario.horaInicio);
     const finMinutos = convertirHoraAMinutos(newHorario.horaFin);
+
     if (inicioMinutos >= finMinutos) {
       Alert.alert(
         "Error",
-        "La hora de entrada debe ser anterior a la hora de salida"
+        "La hora de inicio debe ser anterior a la hora de fin"
       );
       return;
     }
 
-    if (verificarConflictos(newHorario, editingHorario?.id)) {
+    // Verificar si hay conflictos con otros horarios
+    const horariosConflicto = horarios.filter((h) => {
+      if (editingHorario && h.id === editingHorario.id) return false;
+
+      const hInicioMinutos = convertirHoraAMinutos(h.horaInicio);
+      const hFinMinutos = convertirHoraAMinutos(h.horaFin);
+
+      const mismoDocente = h.docenteId === newHorario.docenteId;
+      const mismoSalon = h.salonId === newHorario.salonId;
+      const mismoDia = h.dia === newHorario.dia;
+
+      const hayConflictoHorario =
+        (inicioMinutos >= hInicioMinutos && inicioMinutos < hFinMinutos) ||
+        (finMinutos > hInicioMinutos && finMinutos <= hFinMinutos) ||
+        (inicioMinutos <= hInicioMinutos && finMinutos >= hFinMinutos);
+
+      return (
+        mismoDia &&
+        hayConflictoHorario &&
+        (mismoDocente || mismoSalon)
+      );
+    });
+
+    if (horariosConflicto.length > 0) {
+      const tipoConflicto = horariosConflicto.some(
+        (h) => h.docenteId === newHorario.docenteId
+      )
+        ? "docente"
+        : "grupo";
+
       Alert.alert(
-        "Conflicto de Horario",
-        "Ya existe una clase programada para este docente o salón en el mismo horario"
+        "Conflicto de horario",
+        `Ya existe una clase asignada para este ${tipoConflicto} en el mismo horario`
       );
       return;
     }
 
     try {
-      const materiaSeleccionada = materias.find(
-        (m) => m.id === newHorario.materiaId
-      );
-      if (materiaSeleccionada && !materiaSeleccionada.color) {
-        const updatedMateria = {
-          ...materiaSeleccionada,
-          color: newHorario.color,
-        };
-        await update("Materias", updatedMateria, updatedMateria.id);
-        const freshMaterias = await fetchAll("Materias");
-        setMaterias(freshMaterias);
+      // Actualizar las relaciones entre docentes, materias y grupos
+      let updatedDocentes = [...docentes];
+      let updatedHorarios = [...horarios];
+
+      // Crear el horario a guardar
+      const horarioToSave = {
+        ...newHorario,
+        id: editingHorario ? editingHorario.id : uuidv4(),
+      };
+
+      // Encontrar el docente y actualizar sus materias y grupos
+      const docenteIndex = updatedDocentes.findIndex(d => d.id === newHorario.docenteId);
+      if (docenteIndex !== -1) {
+        const docente = {...updatedDocentes[docenteIndex]};
+        
+        // Inicializar los arrays si no existen
+        docente.materias = Array.isArray(docente.materias) ? [...docente.materias] : [];
+        docente.grupos = Array.isArray(docente.grupos) ? [...docente.grupos] : [];
+        
+        // Agregar la materia si no existe en el array
+        if (!docente.materias.includes(newHorario.materiaId)) {
+          docente.materias.push(newHorario.materiaId);
+        }
+        
+        // Agregar el grupo (salon) si no existe en el array
+        if (!docente.grupos.includes(newHorario.salonId)) {
+          docente.grupos.push(newHorario.salonId);
+        }
+        
+        updatedDocentes[docenteIndex] = docente;
       }
 
       if (editingHorario) {
-        setHorarios(
-          horarios.map((h) =>
-            h.id === editingHorario.id ? { ...newHorario, id: h.id } : h
-          )
-        );
+        // Si estamos editando, verificar si cambió el docente, materia o grupo
+        const oldHorario = horarios.find(h => h.id === editingHorario.id);
+        if (oldHorario) {
+          // Si cambió el docente, actualizar las relaciones del docente anterior
+          if (oldHorario.docenteId !== newHorario.docenteId) {
+            const oldDocenteIndex = updatedDocentes.findIndex(d => d.id === oldHorario.docenteId);
+            if (oldDocenteIndex !== -1) {
+              const oldDocente = {...updatedDocentes[oldDocenteIndex]};
+              
+              // Inicializar los arrays si no existen
+              oldDocente.materias = Array.isArray(oldDocente.materias) ? [...oldDocente.materias] : [];
+              oldDocente.grupos = Array.isArray(oldDocente.grupos) ? [...oldDocente.grupos] : [];
+              
+              // Verificar si el docente anterior ya no tiene esta materia en otros horarios
+              const tieneMateriaEnOtrosHorarios = horarios.some(h => 
+                h.id !== oldHorario.id && 
+                h.docenteId === oldHorario.docenteId && 
+                h.materiaId === oldHorario.materiaId
+              );
+
+              if (!tieneMateriaEnOtrosHorarios) {
+                oldDocente.materias = oldDocente.materias.filter(m => m !== oldHorario.materiaId);
+              }
+
+              // Verificar si el docente anterior ya no tiene este grupo en otros horarios
+              const tieneGrupoEnOtrosHorarios = horarios.some(h => 
+                h.id !== oldHorario.id && 
+                h.docenteId === oldHorario.docenteId && 
+                h.salonId === oldHorario.salonId
+              );
+
+              if (!tieneGrupoEnOtrosHorarios) {
+                oldDocente.grupos = oldDocente.grupos.filter(g => g !== oldHorario.salonId);
+              }
+
+              updatedDocentes[oldDocenteIndex] = oldDocente;
+            }
+          }
+        }
+
+        // Actualizar horario existente
+        const index = horarios.findIndex((h) => h.id === editingHorario.id);
+        if (index !== -1) {
+          updatedHorarios[index] = horarioToSave;
+        }
       } else {
-        const id = uuidv4();
-        setHorarios([...horarios, { ...newHorario, id }]);
+        // Agregar nuevo horario
+        updatedHorarios.push(horarioToSave);
       }
 
-      setNewHorario({
-        docenteId: "",
-        dia: "Lunes",
-        horaInicio: "07:00",
-        horaFin: "07:50",
-        materiaId: "",
-        salonId: "",
-        color: "#E3F2FD",
-      });
-      setEditingHorario(null);
+      // Guardar los cambios
+      await setDocentes(updatedDocentes);
+      await setHorarios(updatedHorarios);
       setModalVisible(false);
+      setEditingHorario(null);
+      resetHorarioForm();
     } catch (error) {
-      console.error("Error saving horario:", error);
-      Alert.alert("Error", "No se pudo guardar el horario. Intenta de nuevo.");
+      console.error("Error al guardar horario:", error);
+      Alert.alert("Error", "No se pudo guardar el horario");
     }
+  };
+
+  const resetHorarioForm = () => {
+    setNewHorario({
+      docenteId: "",
+      dia: "Lunes",
+      horaInicio: "07:00",
+      horaFin: "07:50",
+      materiaId: "",
+      salonId: "",
+      color: "#3E6B9E",
+    });
   };
 
   const handleEditarHorario = (horario) => {
@@ -285,7 +377,7 @@ const HorariosScreen = ({ navigation }) => {
       horaFin: horario.horaFin,
       materiaId: horario.materiaId,
       salonId: horario.salonId,
-      color: horario.color || getMateriaColor(horario.materiaId),
+      color: horario.color,
     });
     setModalVisible(true);
   };
@@ -293,21 +385,302 @@ const HorariosScreen = ({ navigation }) => {
   const handleEliminarHorario = (id) => {
     Alert.alert(
       "Eliminar Horario",
-      "¿Estás seguro que deseas eliminar este horario?",
+      "¿Estás seguro de que deseas eliminar este horario?",
       [
         { text: "Cancelar", style: "cancel" },
         {
           text: "Eliminar",
-          onPress: () => {
-            const updatedHorarios = horarios.filter(
-              (h) => String(h.id) !== String(id)
-            );
-            setHorarios(updatedHorarios);
+          onPress: async () => {
+            try {
+              // Obtener el horario a eliminar
+              const horarioAEliminar = horarios.find(h => h.id === id);
+              if (!horarioAEliminar) return;
+
+              // Actualizar las relaciones del docente
+              let updatedDocentes = [...docentes];
+              const docenteIndex = updatedDocentes.findIndex(d => d.id === horarioAEliminar.docenteId);
+              
+              if (docenteIndex !== -1) {
+                const docente = {...updatedDocentes[docenteIndex]};
+                
+                // Inicializar los arrays si no existen
+                docente.materias = Array.isArray(docente.materias) ? [...docente.materias] : [];
+                docente.grupos = Array.isArray(docente.grupos) ? [...docente.grupos] : [];
+                
+                // Verificar si el docente tiene esta materia en otros horarios
+                const tieneMateriaEnOtrosHorarios = horarios.some(h => 
+                  h.id !== id && 
+                  h.docenteId === horarioAEliminar.docenteId && 
+                  h.materiaId === horarioAEliminar.materiaId
+                );
+                
+                // Si no tiene esta materia en otros horarios, eliminarla de su lista
+                if (!tieneMateriaEnOtrosHorarios) {
+                  docente.materias = docente.materias.filter(m => m !== horarioAEliminar.materiaId);
+                }
+                
+                // Verificar si el docente tiene este grupo en otros horarios
+                const tieneGrupoEnOtrosHorarios = horarios.some(h => 
+                  h.id !== id && 
+                  h.docenteId === horarioAEliminar.docenteId && 
+                  h.salonId === horarioAEliminar.salonId
+                );
+                
+                // Si no tiene este grupo en otros horarios, eliminarlo de su lista
+                if (!tieneGrupoEnOtrosHorarios) {
+                  docente.grupos = docente.grupos.filter(g => g !== horarioAEliminar.salonId);
+                }
+                
+                updatedDocentes[docenteIndex] = docente;
+              }
+              
+              // Eliminar el horario
+              const updatedHorarios = horarios.filter(h => h.id !== id);
+              
+              // Guardar los cambios
+              await setDocentes(updatedDocentes);
+              await setHorarios(updatedHorarios);
+            } catch (error) {
+              console.error("Error al eliminar horario:", error);
+              Alert.alert("Error", "No se pudo eliminar el horario");
+            }
           },
           style: "destructive",
         },
       ]
     );
+  };
+
+  const convertirAPdf = async (entidad) => {
+    try {
+      let titulo = '';
+      let subtitulo = '';
+
+      if (currentTab === 'docentes') {
+        const docente = docentes.find(d => d.id === entidad.id);
+        titulo = `Horario del Docente: ${docente.nombre} ${docente.apellido}`;
+      } else {
+        const grupo = grupos.find(g => g.id === entidad.id);
+        titulo = `Horario del Grupo: ${grupo.nombre}`;
+      }
+
+      // Filtrar horarios y ordenarlos por día y hora
+      const horariosEntidad = horarios
+        .filter(h => currentTab === 'docentes' ? h.docenteId === entidad.id : h.salonId === entidad.id)
+        .sort((a, b) => {
+          const diasOrden = { 'Lunes': 0, 'Martes': 1, 'Miércoles': 2, 'Jueves': 3, 'Viernes': 4 };
+          if (a.dia !== b.dia) {
+            return diasOrden[a.dia] - diasOrden[b.dia];
+          }
+          return convertirHoraAMinutos(a.horaInicio) - convertirHoraAMinutos(b.horaInicio);
+        });
+
+      // Generar HTML para el PDF
+      const html = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <style>
+            @page {
+              size: letter;
+              margin: 10mm;
+            }
+            body {
+              font-family: Arial, sans-serif;
+              padding: 10px;
+              max-width: 100%;
+              margin: 0;
+            }
+            table {
+              width: 100%;
+              border-collapse: collapse;
+              margin-bottom: 15px;
+              table-layout: fixed;
+            }
+            th, td {
+              border: 1px solid #ddd;
+              padding: 4px;
+              text-align: center;
+              font-size: 10px;
+              height: 24px;
+              overflow: hidden;
+            }
+            th {
+              background-color: #f4f4f4;
+              font-size: 10px;
+            }
+            th:first-child, td:first-child {
+              width: 10%;
+            }
+            .header { 
+              text-align: center; 
+              margin-bottom: 10px; 
+            }
+            h1 { 
+              font-size: 16px; 
+              color: #333;
+              margin: 0 0 5px 0;
+            }
+            .legend-container {
+              margin-top: 10px;
+              border-top: 1px solid #ddd;
+              padding-top: 10px;
+            }
+            .legend-title {
+              font-size: 14px;
+              color: #333;
+              margin-bottom: 8px;
+            }
+            .legend-items {
+              display: grid;
+              grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+              gap: 8px;
+            }
+            .legend-item {
+              font-size: 9px;
+              padding: 5px;
+              border: 1px solid #ddd;
+              border-radius: 3px;
+              display: flex;
+              align-items: flex-start;
+            }
+            .legend-color {
+              width: 10px;
+              height: 10px;
+              margin-right: 5px;
+              border-radius: 2px;
+              margin-top: 2px;
+            }
+            .legend-info {
+              flex: 1;
+            }
+            .legend-info-title {
+              font-weight: bold;
+              margin-bottom: 2px;
+            }
+            .legend-info-subtitle {
+              color: #666;
+              margin-bottom: 1px;
+            }
+            .class-cell {
+              background-color: #E3F2FD;
+              padding: 2px;
+              border-radius: 2px;
+              font-weight: bold;
+              font-size: 10px;
+              white-space: nowrap;
+              overflow: hidden;
+              text-overflow: ellipsis;
+            }
+            .receso-cell {
+              background-color: #f4f4f4;
+              font-style: italic;
+              font-size: 9px;
+            }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <h1>${titulo}</h1>
+            ${subtitulo ? `<p>${subtitulo}</p>` : ''}
+          </div>
+          <table>
+            <tr>
+              <th>Hora</th>
+              ${diasSemana.map(dia => `<th>${dia}</th>`).join('')}
+            </tr>
+            ${bloquesHorarios.map(bloque => `
+              <tr>
+                <td>${bloque.horaInicio} - ${bloque.horaFin}</td>
+                ${diasSemana.map(dia => {
+                  if (bloque.esReceso) {
+                    return '<td class="receso-cell">Receso</td>';
+                  }
+
+                  const horario = horariosEntidad.find(h =>
+                    h.dia === dia &&
+                    convertirHoraAMinutos(h.horaInicio) <= convertirHoraAMinutos(bloque.horaInicio) &&
+                    convertirHoraAMinutos(h.horaFin) >= convertirHoraAMinutos(bloque.horaFin)
+                  );
+
+                  if (!horario) return '<td></td>';
+
+                  const color = horario.color || getMateriaColor(horario.materiaId);
+                  let texto = '';
+                  
+                  if (currentTab === 'docentes') {
+                    texto = grupos.find(g => g.id === horario.salonId)?.nombre || '';
+                  } else {
+                    const materia = materias.find(m => m.id === horario.materiaId);
+                    texto = materia ? materia.nombre : '';
+                  }
+
+                  return `
+                    <td>
+                      <div class="class-cell" style="background-color: ${color}">
+                        ${texto}
+                      </div>
+                    </td>
+                  `;
+                }).join('')}
+              </tr>
+            `).join('')}
+          </table>
+
+          <div class="legend-container">
+            <div class="legend-title">Detalles de Clases:</div>
+            <div class="legend-items">
+              ${horariosEntidad.map(horario => {
+                const materia = materias.find(m => m.id === horario.materiaId);
+                const docente = docentes.find(d => d.id === horario.docenteId);
+                const salon = grupos.find(g => g.id === horario.salonId);
+                const color = horario.color || getMateriaColor(horario.materiaId);
+
+                return `
+                  <div class="legend-item">
+                    <div class="legend-color" style="background-color: ${color}"></div>
+                    <div class="legend-info">
+                      <div class="legend-info-title">${materia ? materia.nombre : ''}</div>
+                      <div class="legend-info-subtitle">
+                        ${currentTab === 'docentes' ?
+                          `Grupo ${salon ? salon.nombre : ''}` :
+                          `${docente ? `${docente.nombre} ${docente.apellido}` : ''}`
+                        }
+                      </div>
+                      <div class="legend-info-subtitle">
+                        ${horario.dia}, ${horario.horaInicio} - ${horario.horaFin}
+                      </div>
+                    </div>
+                  </div>
+                `;
+              }).join('')}
+            </div>
+          </div>
+        </body>
+        </html>
+      `;
+
+      // Generar el PDF
+      const { uri } = await Print.printToFileAsync({
+        html,
+        base64: false,
+        width: 612, // Ancho de página carta en puntos (8.5 x 72)
+        height: 792 // Alto de página carta en puntos (11 x 72)
+      });
+
+      // Compartir el PDF
+      await Sharing.shareAsync(uri, {
+        mimeType: 'application/pdf',
+        dialogTitle: 'Compartir horario',
+        UTI: 'com.adobe.pdf'
+      });
+
+    } catch (error) {
+      console.error('Error al generar PDF:', error);
+      Alert.alert('Error', 'No se pudo generar el PDF. Intenta de nuevo.');
+    }
   };
 
   const handleSeleccionarEntidad = (entity) => {
@@ -344,6 +717,12 @@ const HorariosScreen = ({ navigation }) => {
           <Ionicons name="calendar-outline" size={18} color="#fff" />
           <Text style={styles.buttonText}>Ver Horario</Text>
         </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.viewButton, { marginLeft: 10 }]}
+          onPress={() => convertirAPdf(item)}
+        >
+          <Text style={styles.buttonText}>Convertir a PDF</Text>
+        </TouchableOpacity>
       </View>
     </TouchableOpacity>
   );
@@ -368,25 +747,17 @@ const HorariosScreen = ({ navigation }) => {
           <Ionicons name="calendar-outline" size={18} color="#fff" />
           <Text style={styles.buttonText}>Ver Horario</Text>
         </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.viewButton, { marginLeft: 10 }]}
+          onPress={() => convertirAPdf(item)}
+        >
+          <Text style={styles.buttonText}>Convertir a PDF</Text>
+        </TouchableOpacity>
       </View>
     </TouchableOpacity>
   );
 
   const renderHorarioCell = (dia, bloque) => {
-    const bloqueInicioMin = convertirHoraAMinutos(bloque.horaInicio);
-    const bloqueFinMin = convertirHoraAMinutos(bloque.horaFin);
-
-    const clases = horariosEntidad.filter((horario) => {
-      const horarioInicioMin = convertirHoraAMinutos(horario.horaInicio);
-      const horarioFinMin = convertirHoraAMinutos(horario.horaFin);
-
-      return (
-        horario.dia === dia &&
-        horarioInicioMin < bloqueFinMin &&
-        horarioFinMin > bloqueInicioMin
-      );
-    });
-
     if (bloque.esReceso) {
       return (
         <View style={styles.recesoCell}>
@@ -395,41 +766,35 @@ const HorariosScreen = ({ navigation }) => {
       );
     }
 
-    if (clases.length === 0) {
+    const horarioEnCelda = horariosEntidad.find(
+      (horario) =>
+        horario.dia === dia &&
+        convertirHoraAMinutos(horario.horaInicio) <=
+          convertirHoraAMinutos(bloque.horaInicio) &&
+        convertirHoraAMinutos(horario.horaFin) >=
+          convertirHoraAMinutos(bloque.horaFin)
+    );
+
+    if (!horarioEnCelda) {
       return <View style={styles.emptyCell} />;
     }
 
-    const clase = clases[0];
-    const esInicio =
-      convertirHoraAMinutos(clase.horaInicio) === bloqueInicioMin;
+    const salon = grupos.find((s) => s.id === horarioEnCelda.salonId);
+    const backgroundColor = horarioEnCelda.color || getMateriaColor(horarioEnCelda.materiaId);
 
     return (
       <TouchableOpacity
         style={[
           styles.classCell,
           {
-            height: esInicio ? "auto" : 0,
-            borderWidth: esInicio ? 0.5 : 0,
-            backgroundColor: clase.color || getMateriaColor(clase.materiaId),
+            backgroundColor,
           },
         ]}
-        onPress={() => handleEditarHorario(clase)}
+        onPress={() => handleEditarHorario(horarioEnCelda)}
       >
-        {esInicio && (
-          <>
-            <Text style={styles.classCellTitle} numberOfLines={1}>
-              {getMateriaNombre(clase.materiaId)}
-            </Text>
-            <Text style={styles.classCellSubtitle} numberOfLines={1}>
-              {currentTab === "docentes"
-                ? getSalonNombre(clase.salonId)
-                : getDocenteNombre(clase.docenteId)}
-            </Text>
-            <Text style={styles.classCellTime}>
-              {clase.horaInicio} - {clase.horaFin}
-            </Text>
-          </>
-        )}
+        <Text style={styles.classCellTitle} numberOfLines={1}>
+          {currentTab === "docentes" ? salon?.nombre : materias.find(m => m.id === horarioEnCelda.materiaId)?.nombre}
+        </Text>
       </TouchableOpacity>
     );
   };
@@ -733,6 +1098,7 @@ const HorariosScreen = ({ navigation }) => {
           placeholder={`Buscar ${
             currentTab === "docentes" ? "docente" : "grupo"
           }...`}
+          placeholderTextColor="#888888"
           value={searchQuery}
           onChangeText={setSearchQuery}
           clearButtonMode="while-editing"
@@ -852,53 +1218,67 @@ const HorariosScreen = ({ navigation }) => {
         {horariosEntidad.length > 0 && (
           <ScrollView style={styles.legendScrollContainer}>
             <View style={styles.legendContainer}>
-              <Text style={styles.legendTitle}>Clases Programadas:</Text>
-              {horariosEntidad.map((horario) => (
-                <View key={horario.id} style={styles.legendItem}>
-                  <View
-                    style={[
-                      styles.legendColor,
-                      {
-                        backgroundColor:
-                          horario.color || getMateriaColor(horario.materiaId),
-                      },
-                    ]}
-                  />
-                  <View style={styles.legendInfo}>
-                    <Text style={styles.legendText}>
-                      {getMateriaNombre(horario.materiaId)} -{" "}
-                      {currentTab === "docentes"
-                        ? getSalonNombre(horario.salonId)
-                        : getDocenteNombre(horario.docenteId)}
-                    </Text>
-                    <Text style={styles.legendSubtext}>
-                      {horario.dia}, {horario.horaInicio} - {horario.horaFin}
-                    </Text>
+              <Text style={styles.legendTitle}>Detalles de Clases:</Text>
+              {horariosEntidad.map((horario) => {
+                const materia = materias.find(m => m.id === horario.materiaId);
+                const docente = docentes.find(d => d.id === horario.docenteId);
+                const salon = grupos.find(s => s.id === horario.salonId);
+
+                return (
+                  <View key={horario.id} style={styles.legendItem}>
+                    <View
+                      style={[
+                        styles.legendColor,
+                        {
+                          backgroundColor:
+                            horario.color || getMateriaColor(horario.materiaId),
+                        },
+                      ]}
+                    />
+                    <View style={styles.legendInfo}>
+                      <Text style={styles.legendText}>
+                        {materia ? materia.nombre : ""}
+                      </Text>
+                      <Text style={styles.legendSubtext}>
+                        {currentTab === "docentes" ? (
+                          <>
+                            {salon ? `Grupo ${salon.nombre}` : ""}
+                          </>
+                        ) : (
+                          <>
+                            {docente ? `${docente.nombre} ${docente.apellido}` : ""}
+                          </>
+                        )}
+                      </Text>
+                      <Text style={styles.legendSubtext}>
+                        {horario.dia}, {horario.horaInicio} - {horario.horaFin}
+                      </Text>
+                    </View>
+                    <View style={styles.legendActions}>
+                      <TouchableOpacity
+                        style={styles.legendButton}
+                        onPress={() => handleEditarHorario(horario)}
+                      >
+                        <Ionicons
+                          name="create-outline"
+                          size={20}
+                          color="#007BFF"
+                        />
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        style={styles.legendButton}
+                        onPress={() => handleEliminarHorario(horario.id)}
+                      >
+                        <Ionicons
+                          name="trash-outline"
+                          size={20}
+                          color="#FF3B30"
+                        />
+                      </TouchableOpacity>
+                    </View>
                   </View>
-                  <View style={styles.legendActions}>
-                    <TouchableOpacity
-                      style={styles.legendButton}
-                      onPress={() => handleEditarHorario(horario)}
-                    >
-                      <Ionicons
-                        name="create-outline"
-                        size={20}
-                        color="#007BFF"
-                      />
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                      style={styles.legendButton}
-                      onPress={() => handleEliminarHorario(horario.id)}
-                    >
-                      <Ionicons
-                        name="trash-outline"
-                        size={20}
-                        color="#FF3B30"
-                      />
-                    </TouchableOpacity>
-                  </View>
-                </View>
-              ))}
+                );
+              })}
             </View>
           </ScrollView>
         )}

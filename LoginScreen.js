@@ -44,7 +44,8 @@ const LoginScreen = ({ onLoginSuccess }) => {
       const { session } = data;
       if (session) {
         await AsyncStorage.setItem('userToken', session.access_token);
-        onLoginSuccess();
+        await AsyncStorage.setItem('userEmail', email);
+        onLoginSuccess(email);
       } else {
         throw new Error('No se recibió un token de sesión');
       }

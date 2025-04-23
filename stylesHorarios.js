@@ -313,7 +313,7 @@ export const stylesHorarios = {
   },
   tableCell: {
     width: 120,
-    height: 60,
+    height: 50, // Altura fija más compacta
     padding: 2,
     borderWidth: 0.5,
     borderColor: "#333333",
@@ -340,12 +340,14 @@ export const stylesHorarios = {
     borderRadius: 4,
     padding: 4,
     justifyContent: "center",
+    alignItems: "center",
     borderColor: "#444444", // Borde más visible para las clases
   },
   classCellTitle: {
-    fontSize: 12,
+    fontSize: 14,
     fontWeight: "600",
     color: "#000000", // Negro para contrastar con los fondos de color de la celda
+    textAlign: "center",
   },
   classCellSubtitle: {
     fontSize: 10,
@@ -364,6 +366,7 @@ export const stylesHorarios = {
     padding: 10,
     borderTopWidth: 1,
     borderTopColor: "#333333",
+    backgroundColor: "#252525",
   },
   legendTitle: {
     fontSize: 16,
@@ -387,6 +390,7 @@ export const stylesHorarios = {
   },
   legendInfo: {
     flex: 1,
+    paddingVertical: 4,
   },
   legendText: {
     fontSize: 14,

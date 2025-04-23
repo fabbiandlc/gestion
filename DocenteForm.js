@@ -25,6 +25,7 @@ const DocenteForm = ({
     nombre: "",
     apellido: "",
     email: "",
+    numeroEmpleado: "",
     materias: [],
     grupos: [],
     createdAt: new Date().toISOString(),
@@ -141,6 +142,15 @@ const DocenteForm = ({
             placeholder="ejemplo@institucion.edu"
             keyboardType="email-address"
             autoCapitalize="none"
+          />
+
+          <Text style={styles.label}>Número de Empleado</Text>
+          <TextInput
+            style={styles.input}
+            value={formData.numeroEmpleado}
+            onChangeText={(text) => setFormData({ ...formData, numeroEmpleado: text })}
+            placeholder="Ej: 03297"
+            keyboardType="numeric"
           />
 
           <View style={styles.formFooter}>
