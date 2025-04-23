@@ -18,7 +18,7 @@ import GrupoForm from "./GrupoForm";
 
 const AdministracionScreen = ({ navigation }) => {
   const [activeSection, setActiveSection] = useState("docentes");
-  const { docentes, setDocentes, materias, setMaterias, grupos, setGrupos } =
+  const { docentes, setDocentes, materias, setMaterias, grupos, setGrupos, horarios } =
     useDataContext();
 
   const [modalVisible, setModalVisible] = useState(false);
@@ -160,97 +160,176 @@ const AdministracionScreen = ({ navigation }) => {
     }
   };
 
-  const renderDocenteItem = ({ item, index }) => (
-    <View style={styles.card}>
-      <View style={styles.cardHeader}>
-        <Text style={styles.cardTitle}>
-          {item.nombre} {item.apellido}
-        </Text>
-        <Text style={styles.cardDate}>
-          {item.email || "Sin email registrado"}
-        </Text>
-      </View>
-      <View style={styles.cardStats}>
-        <View style={styles.statItem}>
-          <Ionicons name="book-outline" size={16} color="#007BFF" />
-          <Text style={styles.statText}>
-            Materias: {item.materias?.length || 0}
+  const renderDocenteItem = ({ item, index }) => {
+    const horariosDocente = horarios ? horarios.filter(h => h.docenteId === item.id) : [];
+    
+    // Calcular horas de clase
+    const horasClase = horariosDocente.reduce((total, h) => {
+      const inicio = h.horaInicio.split(':').map(Number);
+      const fin = h.horaFin.split(':').map(Number);
+      const duracion = (fin[0] * 60 + fin[1]) - (inicio[0] * 60 + inicio[1]);
+      return total + duracion;
+    }, 0);
+    
+    return (
+      <View style={styles.card}>
+        <View style={styles.cardHeader}>
+          <Text style={styles.cardTitle}>
+            {item.nombre} {item.apellido}
+          </Text>
+          <Text style={styles.cardDate}>
+            {item.email || "Sin email registrado"}
+          </Text>
+          <Text style={styles.cardDate}>
+            Número de Empleado: {item.numeroEmpleado || "No asignado"}
           </Text>
         </View>
-        <View style={styles.statItem}>
-          <Ionicons name="people-outline" size={16} color="#007BFF" />
-          <Text style={styles.statText}>
-            Grupos: {item.grupos?.length || 0}
-          </Text>
+        <View style={styles.cardStats}>
+          <View style={styles.statItem}>
+            <Ionicons name="calendar-outline" size={16} color="#007BFF" />
+            <Text style={styles.statText}>
+              {horariosDocente.length} clases
+            </Text>
+          </View>
+          <View style={styles.statItem}>
+            <Ionicons name="time-outline" size={16} color="#007BFF" />
+            <Text style={styles.statText}>
+              {Math.round(horasClase/60)} horas semanales
+            </Text>
+          </View>
+        </View>
+        <View style={styles.cardActions}>
+          <TouchableOpacity
+            style={[styles.actionButton, styles.editButton]}
+            onPress={() => handleEdit(index)}
+          >
+            <Ionicons name="create-outline" size={18} color="#fff" />
+            <Text style={styles.actionButtonText}>Editar</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.actionButton, styles.deleteButton]}
+            onPress={() => handleDelete(index)}
+          >
+            <Ionicons name="trash-outline" size={18} color="#fff" />
+            <Text style={styles.actionButtonText}>Eliminar</Text>
+          </TouchableOpacity>
         </View>
       </View>
-      <View style={styles.cardActions}>
-        <TouchableOpacity
-          style={[styles.actionButton, styles.editButton]}
-          onPress={() => handleEdit(index)}
-        >
-          <Ionicons name="create-outline" size={18} color="#fff" />
-          <Text style={styles.actionButtonText}>Editar</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.actionButton, styles.deleteButton]}
-          onPress={() => handleDelete(index)}
-        >
-          <Ionicons name="trash-outline" size={18} color="#fff" />
-          <Text style={styles.actionButtonText}>Eliminar</Text>
-        </TouchableOpacity>
-      </View>
-    </View>
-  );
+    );
+  };
 
-  const renderMateriaItem = ({ item, index }) => (
-    <View style={styles.card}>
-      <View style={styles.cardHeader}>
-        <Text style={styles.cardTitle}>{item.nombre}</Text>
+  const renderMateriaItem = ({ item, index }) => {
+    const horariosMateria = horarios ? horarios.filter(h => h.materiaId === item.id) : [];
+    
+    // Calcular docentes únicos que imparten esta materia
+    const docentesUnicos = horariosMateria.length > 0 ? 
+      [...new Set(horariosMateria.map(h => h.docenteId))].length : 0;
+    
+    // Calcular horas de clase
+    const horasClase = horariosMateria.reduce((total, h) => {
+      const inicio = h.horaInicio.split(':').map(Number);
+      const fin = h.horaFin.split(':').map(Number);
+      const duracion = (fin[0] * 60 + fin[1]) - (inicio[0] * 60 + inicio[1]);
+      return total + duracion;
+    }, 0);
+    
+    return (
+      <View style={styles.card}>
+        <View style={styles.cardHeader}>
+          <Text style={styles.cardTitle}>{item.nombre}</Text>
+        </View>
+        {horariosMateria.length > 0 && (
+          <View style={styles.cardStats}>
+            <View style={styles.statItem}>
+              <Ionicons name="people-outline" size={16} color="#007BFF" />
+              <Text style={styles.statText}>
+                {docentesUnicos} docente{docentesUnicos !== 1 ? 's' : ''}
+              </Text>
+            </View>
+            <View style={styles.statItem}>
+              <Ionicons name="time-outline" size={16} color="#007BFF" />
+              <Text style={styles.statText}>
+                {Math.round(horasClase/60)} horas semanales
+              </Text>
+            </View>
+          </View>
+        )}
+        <View style={styles.cardActions}>
+          <TouchableOpacity
+            style={[styles.actionButton, styles.editButton]}
+            onPress={() => handleEdit(index)}
+          >
+            <Ionicons name="create-outline" size={18} color="#fff" />
+            <Text style={styles.actionButtonText}>Editar</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.actionButton, styles.deleteButton]}
+            onPress={() => handleDelete(index)}
+          >
+            <Ionicons name="trash-outline" size={18} color="#fff" />
+            <Text style={styles.actionButtonText}>Eliminar</Text>
+          </TouchableOpacity>
+        </View>
       </View>
-      <View style={styles.cardActions}>
-        <TouchableOpacity
-          style={[styles.actionButton, styles.editButton]}
-          onPress={() => handleEdit(index)}
-        >
-          <Ionicons name="create-outline" size={18} color="#fff" />
-          <Text style={styles.actionButtonText}>Editar</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.actionButton, styles.deleteButton]}
-          onPress={() => handleDelete(index)}
-        >
-          <Ionicons name="trash-outline" size={18} color="#fff" />
-          <Text style={styles.actionButtonText}>Eliminar</Text>
-        </TouchableOpacity>
-      </View>
-    </View>
-  );
+    );
+  };
 
-  const renderGrupoItem = ({ item, index }) => (
-    <View style={styles.card}>
-      <View style={styles.cardHeader}>
-        <Text style={styles.cardTitle}>{item.nombre}</Text>
-        <Text style={styles.cardDate}>Turno: {item.turno}</Text>
+  const renderGrupoItem = ({ item, index }) => {
+    const horariosGrupo = horarios ? horarios.filter(h => h.salonId === item.id) : [];
+    
+    // Calcular docentes únicos que imparten en este grupo
+    const docentesUnicos = horariosGrupo.length > 0 ? 
+      [...new Set(horariosGrupo.map(h => h.docenteId))].length : 0;
+    
+    // Calcular horas de clase
+    const horasClase = horariosGrupo.reduce((total, h) => {
+      const inicio = h.horaInicio.split(':').map(Number);
+      const fin = h.horaFin.split(':').map(Number);
+      const duracion = (fin[0] * 60 + fin[1]) - (inicio[0] * 60 + inicio[1]);
+      return total + duracion;
+    }, 0);
+    
+    return (
+      <View style={styles.card}>
+        <View style={styles.cardHeader}>
+          <Text style={styles.cardTitle}>{item.nombre}</Text>
+          <Text style={styles.cardDate}>Turno: {item.turno}</Text>
+        </View>
+        {horariosGrupo.length > 0 && (
+          <View style={styles.cardStats}>
+            <View style={styles.statItem}>
+              <Ionicons name="people-outline" size={16} color="#007BFF" />
+              <Text style={styles.statText}>
+                {docentesUnicos} docente{docentesUnicos !== 1 ? 's' : ''}
+              </Text>
+            </View>
+            <View style={styles.statItem}>
+              <Ionicons name="time-outline" size={16} color="#007BFF" />
+              <Text style={styles.statText}>
+                {Math.round(horasClase/60)} horas semanales
+              </Text>
+            </View>
+          </View>
+        )}
+        <View style={styles.cardActions}>
+          <TouchableOpacity
+            style={[styles.actionButton, styles.editButton]}
+            onPress={() => handleEdit(index)}
+          >
+            <Ionicons name="create-outline" size={18} color="#fff" />
+            <Text style={styles.actionButtonText}>Editar</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.actionButton, styles.deleteButton]}
+            onPress={() => handleDelete(index)}
+          >
+            <Ionicons name="trash-outline" size={18} color="#fff" />
+            <Text style={styles.actionButtonText}>Eliminar</Text>
+          </TouchableOpacity>
+        </View>
       </View>
-      <View style={styles.cardActions}>
-        <TouchableOpacity
-          style={[styles.actionButton, styles.editButton]}
-          onPress={() => handleEdit(index)}
-        >
-          <Ionicons name="create-outline" size={18} color="#fff" />
-          <Text style={styles.actionButtonText}>Editar</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.actionButton, styles.deleteButton]}
-          onPress={() => handleDelete(index)}
-        >
-          <Ionicons name="trash-outline" size={18} color="#fff" />
-          <Text style={styles.actionButtonText}>Eliminar</Text>
-        </TouchableOpacity>
-      </View>
-    </View>
-  );
+    );
+  };
 
   const getFormComponent = () => {
     switch (activeSection) {

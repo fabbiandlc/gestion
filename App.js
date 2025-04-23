@@ -20,6 +20,7 @@ import AdministracionScreen from "./AdministracionScreen";
 import HorariosScreen from "./HorariosScreen";
 import LoginScreen from "./LoginScreen";
 import BackupScreen from "./BackupScreen";
+import EstadisticasScreen from "./EstadisticasScreen";
 import { ActivitiesProvider } from "./ActivitiesContext";
 import { DataProvider } from "./DataContext";
 import "react-native-get-random-values";
@@ -177,6 +178,7 @@ export default function App() {
         {currentScreen === "Calendario" && <Calendario />}
         {currentScreen === "Gestión" && <AdministracionScreen />}
         {currentScreen === "Horarios" && <HorariosScreen />}
+        {currentScreen === "Estadísticas" && <EstadisticasScreen />}
         {currentScreen === "Copias de Seguridad" && <BackupScreen />}
       </SafeAreaView>
     );
@@ -187,6 +189,7 @@ export default function App() {
     { name: "Calendario", icon: "calendar-outline" },
     { name: "Gestión", icon: "pencil-outline" },
     { name: "Horarios", icon: "time-outline" },
+    { name: "Estadísticas", icon: "stats-chart-outline" },
     { name: "Copias de Seguridad", icon: "cloud-upload-outline" },
     { name: "Cerrar Sesión", icon: "log-out-outline", action: handleLogout },
   ];

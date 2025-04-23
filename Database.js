@@ -7,6 +7,21 @@ const db = SQLite.openDatabaseSync("AppDatabase.db");
 export const initDatabase = async () => {
   try {
     await db.execAsync(`PRAGMA journal_mode = WAL;`);
+    
+    // Verificar y migrar la tabla Docentes para añadir la columna numeroEmpleado si es necesario
+    try {
+      const columns = await db.getAllAsync("PRAGMA table_info(Docentes);");
+      const hasNumeroEmpleado = columns.some(col => col.name === 'numeroEmpleado');
+      
+      if (!hasNumeroEmpleado) {
+        console.log("Migrando tabla Docentes para agregar la columna numeroEmpleado...");
+        await db.execAsync(`ALTER TABLE Docentes ADD COLUMN numeroEmpleado TEXT;`);
+        console.log("Migración completada con éxito.");
+      }
+    } catch (migrateError) {
+      console.error("Error durante la migración:", migrateError);
+      // Continuar con la inicialización normal
+    }
 
     await db.execAsync(`
       CREATE TABLE IF NOT EXISTS Docentes (
@@ -15,6 +30,7 @@ export const initDatabase = async () => {
         apellido TEXT NOT NULL,
         email TEXT,
         telefono TEXT,
+        numeroEmpleado TEXT,
         materias TEXT,
         grupos TEXT,
         especialidad TEXT
@@ -93,6 +109,7 @@ const validFields = {
     "apellido",
     "email",
     "telefono",
+    "numeroEmpleado",
     "materias",
     "grupos",
     "especialidad",
