@@ -17,7 +17,7 @@ import Ionicons from "react-native-vector-icons/Ionicons";
 
 const ActionButton = memo(({ onPress, style, children }) => (
   <TouchableOpacity style={[styles.actionButton, style]} onPress={onPress} activeOpacity={0.7}>
-    <Text style={styles.buttonText}>{children}</Text>
+    <Text style={style === styles.deleteButton ? styles.buttonText : styles.saveButtonText}>{children}</Text>
   </TouchableOpacity>
 ));
 
@@ -54,7 +54,7 @@ const ActivitySummary = ({ activity, onClose }) => {
           )}
         </ScrollView>
         <TouchableOpacity style={styles.summaryCloseButton} onPress={onClose}>
-          <Text style={styles.buttonText}>Cerrar</Text>
+          <Text style={styles.saveButtonText}>Cerrar</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -212,7 +212,7 @@ const HomeScreen = () => {
         ))}
       </ScrollView>
       <TouchableOpacity style={styles.addButton} onPress={handleAddActivity} activeOpacity={0.7}>
-        <Ionicons name="add" size={32} color="#FFFFFF" />
+        <Ionicons name="add" size={32} color="#000000" />
       </TouchableOpacity>
       <Modal
         animationType="slide"

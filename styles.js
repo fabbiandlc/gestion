@@ -78,7 +78,7 @@ export const styles = StyleSheet.create({
     gap: SPACING.sm,
   },
   viewButton: {
-    backgroundColor: COLORS.primary,
+    backgroundColor: COLORS.white,
     paddingVertical: SPACING.sm,
     paddingHorizontal: SPACING.md,
     borderRadius: BORDER_RADIUS.sm,
@@ -86,7 +86,7 @@ export const styles = StyleSheet.create({
     justifyContent: "center",
   },
   editButton: {
-    backgroundColor: "#0070F3",
+    backgroundColor: COLORS.white,
     paddingVertical: SPACING.sm,
     paddingHorizontal: SPACING.md,
     borderRadius: BORDER_RADIUS.sm,
@@ -94,7 +94,7 @@ export const styles = StyleSheet.create({
     justifyContent: "center",
   },
   deleteButton: {
-    backgroundColor: COLORS.danger,
+    backgroundColor: "#666666",
     paddingVertical: SPACING.sm,
     paddingHorizontal: SPACING.md,
     borderRadius: BORDER_RADIUS.sm,
@@ -106,8 +106,13 @@ export const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "600",
   },
+  saveButtonText: {
+    color: "#000000",
+    fontSize: 14,
+    fontWeight: "600",
+  },
   addButton: {
-    backgroundColor: COLORS.primary,
+    backgroundColor: COLORS.white,
     width: 60,
     height: 60,
     borderRadius: 30,
@@ -172,7 +177,7 @@ export const styles = StyleSheet.create({
     color: COLORS.text,
   },
   summaryCloseButton: {
-    backgroundColor: COLORS.primary,
+    backgroundColor: COLORS.white,
     paddingVertical: SPACING.sm,
     paddingHorizontal: SPACING.md,
     borderRadius: BORDER_RADIUS.sm,
@@ -381,7 +386,7 @@ export const styles = StyleSheet.create({
     marginBottom: SPACING.md,
   },
   addNoteButtonText: {
-    color: COLORS.primary,
+    color: COLORS.white, // Cambia a blanco
     fontSize: 16,
     fontWeight: "500",
   },
@@ -399,10 +404,10 @@ export const styles = StyleSheet.create({
     marginHorizontal: 4,
   },
   cancelButton: {
-    backgroundColor: "#444444",
+    backgroundColor: "#666666",
   },
   saveButton: {
-    backgroundColor: COLORS.primary,
+    backgroundColor: COLORS.white,
   },
   centerContent: {
     flex: 1, 

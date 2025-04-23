@@ -86,7 +86,7 @@ const BackupScreen = () => {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Ionicons name="cloud-upload-outline" size={40} color="#4A90E2" />
+        <Ionicons name="cloud-upload-outline" size={40} color="#FFFFFF" />
         <Text style={styles.title}>Copias de Seguridad</Text>
       </View>
 
@@ -157,22 +157,22 @@ const styles = StyleSheet.create({
     marginBottom: 5,
   },
   button: {
-    backgroundColor: '#4A90E2',
+    backgroundColor: '#FFFFFF', // Botón principal blanco
     padding: 15,
     borderRadius: 8,
     alignItems: 'center',
     marginBottom: 15,
-    shadowColor: '#000',
+    shadowColor: '#444444', // Sombra gris suave
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.3,
     shadowRadius: 4,
     elevation: 5,
   },
   buttonDisabled: {
-    backgroundColor: '#444444',
+    backgroundColor: '#333333', // Botón deshabilitado gris oscuro
   },
   buttonText: {
-    color: '#FFFFFF',
+    color: '#000000', // Texto negro
     fontSize: 16,
     fontWeight: 'bold',
   },

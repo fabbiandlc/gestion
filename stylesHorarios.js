@@ -10,9 +10,9 @@ export const stylesHorarios = {
     paddingVertical: 10,
     borderBottomWidth: 1,
     borderBottomColor: "#333333",
-    shadowColor: "#000",
+    shadowColor: "#444", // Igual que AdministracionScreen
     shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
+    shadowOpacity: 0.2,
     shadowRadius: 2,
     elevation: 2,
   },
@@ -24,7 +24,7 @@ export const stylesHorarios = {
     borderRadius: 20,
   },
   activeTab: {
-    backgroundColor: "#1E1E1E",
+    backgroundColor: "#1E3A5F", // Igual que AdministracionScreen
   },
   tabText: {
     fontSize: 16,
@@ -33,7 +33,7 @@ export const stylesHorarios = {
     marginLeft: 6,
   },
   activeTabText: {
-    color: "#4A90E2",
+    color: "#FFFFFF", // Igual que AdministracionScreen
     fontWeight: "600",
   },
   searchContainer: {
@@ -94,7 +94,7 @@ export const stylesHorarios = {
     justifyContent: "flex-end",
   },
   viewButton: {
-    backgroundColor: "#4A90E2",
+    backgroundColor: "#888888", // Gris igual que deleteButton de AdministracionScreen
     paddingVertical: 8,
     paddingHorizontal: 16,
     borderRadius: 6,
@@ -102,7 +102,7 @@ export const stylesHorarios = {
     alignItems: "center",
   },
   buttonText: {
-    color: "#FFFFFF",
+    color: "#FFFFFF", // Texto blanco
     marginLeft: 4,
     fontWeight: "500",
   },
@@ -130,7 +130,7 @@ export const stylesHorarios = {
     width: 56,
     height: 56,
     borderRadius: 28,
-    backgroundColor: "#4A90E2",
+    backgroundColor: "#FFFFFF",
     justifyContent: "center",
     alignItems: "center",
     shadowColor: "#000",
@@ -228,18 +228,18 @@ export const stylesHorarios = {
     marginHorizontal: 5,
   },
   saveButton: {
-    backgroundColor: "#4A90E2",
+    backgroundColor: "#888888", // Gris igual que deleteButton de AdministracionScreen
   },
   saveButtonText: {
-    color: "#FFFFFF",
+    color: "#FFFFFF", // Texto blanco
     fontWeight: "600",
     fontSize: 16,
   },
   cancelButton: {
-    backgroundColor: "#333333",
+    backgroundColor: "#888888", // Gris igual que deleteButton de AdministracionScreen
   },
   cancelButtonText: {
-    color: "#AAAAAA",
+    color: "#FFFFFF", // Texto blanco
     fontWeight: "600",
     fontSize: 16,
   },
@@ -406,5 +406,7 @@ export const stylesHorarios = {
   legendButton: {
     padding: 5,
     marginLeft: 5,
+    backgroundColor: "#888888", // Fondo gris igual que deleteButton
+    borderRadius: 6,
   },
 };

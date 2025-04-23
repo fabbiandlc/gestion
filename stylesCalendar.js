@@ -46,12 +46,13 @@ export const stylesCalendar = {
     justifyContent: "center",
   },
   deleteButton: {
-    backgroundColor: "#E94E77",
+    backgroundColor: "#888888",
     paddingVertical: 8,
     paddingHorizontal: 14,
     borderRadius: 6,
     alignItems: "center",
     justifyContent: "center",
+    flexDirection: "row",
   },
   buttonText: {
     color: "#FFFFFF",

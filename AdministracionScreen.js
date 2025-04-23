@@ -204,13 +204,13 @@ const AdministracionScreen = ({ navigation }) => {
         </View>
         <View style={styles.cardStats}>
           <View style={styles.statItem}>
-            <Ionicons name="calendar-outline" size={16} color="#007BFF" />
+            <Ionicons name="calendar-outline" size={16} color="#fff" />
             <Text style={styles.statText}>
               {horariosDocente.length} clases
             </Text>
           </View>
           <View style={styles.statItem}>
-            <Ionicons name="time-outline" size={16} color="#007BFF" />
+            <Ionicons name="time-outline" size={16} color="#fff" />
             <Text style={styles.statText}>
               {Math.round(horasClase/60)} horas semanales
             </Text>
@@ -221,8 +221,8 @@ const AdministracionScreen = ({ navigation }) => {
             style={[styles.actionButton, styles.editButton]}
             onPress={() => handleEdit(index)}
           >
-            <Ionicons name="create-outline" size={18} color="#fff" />
-            <Text style={styles.actionButtonText}>Editar</Text>
+            <Ionicons name="create-outline" size={18} color="#000" />
+            <Text style={[styles.actionButtonText, styles.editButtonText]}>Editar</Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={[styles.actionButton, styles.deleteButton]}
@@ -259,13 +259,13 @@ const AdministracionScreen = ({ navigation }) => {
         {horariosMateria.length > 0 && (
           <View style={styles.cardStats}>
             <View style={styles.statItem}>
-              <Ionicons name="people-outline" size={16} color="#007BFF" />
+              <Ionicons name="people-outline" size={16} color="#fff" />
               <Text style={styles.statText}>
                 {docentesUnicos} docente{docentesUnicos !== 1 ? 's' : ''}
               </Text>
             </View>
             <View style={styles.statItem}>
-              <Ionicons name="time-outline" size={16} color="#007BFF" />
+              <Ionicons name="time-outline" size={16} color="#fff" />
               <Text style={styles.statText}>
                 {Math.round(horasClase/60)} horas semanales
               </Text>
@@ -277,8 +277,8 @@ const AdministracionScreen = ({ navigation }) => {
             style={[styles.actionButton, styles.editButton]}
             onPress={() => handleEdit(index)}
           >
-            <Ionicons name="create-outline" size={18} color="#fff" />
-            <Text style={styles.actionButtonText}>Editar</Text>
+            <Ionicons name="create-outline" size={18} color="#000" />
+            <Text style={[styles.actionButtonText, styles.editButtonText]}>Editar</Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={[styles.actionButton, styles.deleteButton]}
@@ -316,13 +316,13 @@ const AdministracionScreen = ({ navigation }) => {
         {horariosGrupo.length > 0 && (
           <View style={styles.cardStats}>
             <View style={styles.statItem}>
-              <Ionicons name="people-outline" size={16} color="#007BFF" />
+              <Ionicons name="people-outline" size={16} color="#fff" />
               <Text style={styles.statText}>
                 {docentesUnicos} docente{docentesUnicos !== 1 ? 's' : ''}
               </Text>
             </View>
             <View style={styles.statItem}>
-              <Ionicons name="time-outline" size={16} color="#007BFF" />
+              <Ionicons name="time-outline" size={16} color="#fff" />
               <Text style={styles.statText}>
                 {Math.round(horasClase/60)} horas semanales
               </Text>
@@ -334,8 +334,8 @@ const AdministracionScreen = ({ navigation }) => {
             style={[styles.actionButton, styles.editButton]}
             onPress={() => handleEdit(index)}
           >
-            <Ionicons name="create-outline" size={18} color="#fff" />
-            <Text style={styles.actionButtonText}>Editar</Text>
+            <Ionicons name="create-outline" size={18} color="#000" />
+            <Text style={[styles.actionButtonText, styles.editButtonText]}>Editar</Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={[styles.actionButton, styles.deleteButton]}
@@ -432,7 +432,7 @@ const AdministracionScreen = ({ navigation }) => {
           <Ionicons
             name="person-outline"
             size={20}
-            color={activeSection === "docentes" ? "#007BFF" : "#666"}
+            color={activeSection === "docentes" ? "#fff" : "#666"}
           />
           <Text
             style={[
@@ -454,7 +454,7 @@ const AdministracionScreen = ({ navigation }) => {
           <Ionicons
             name="book-outline"
             size={20}
-            color={activeSection === "materias" ? "#007BFF" : "#666"}
+            color={activeSection === "materias" ? "#fff" : "#666"}
           />
           <Text
             style={[
@@ -476,7 +476,7 @@ const AdministracionScreen = ({ navigation }) => {
           <Ionicons
             name="people-outline"
             size={20}
-            color={activeSection === "grupos" ? "#007BFF" : "#666"}
+            color={activeSection === "grupos" ? "#fff" : "#666"}
           />
           <Text
             style={[
@@ -535,7 +535,7 @@ const AdministracionScreen = ({ navigation }) => {
                 sortOrder === "asc" ? "arrow-up-outline" : "arrow-down-outline"
               }
               size={18}
-              color="#007BFF"
+              color="#fff"
             />
           </TouchableOpacity>
         </View>
@@ -570,7 +570,7 @@ const AdministracionScreen = ({ navigation }) => {
           setModalVisible(true);
         }}
       >
-        <Ionicons name="add" size={24} color="#fff" />
+        <Ionicons name="add" size={24} color="#000" />
       </TouchableOpacity>
       <Modal
         animationType="slide"
@@ -590,8 +590,8 @@ const AdministracionScreen = ({ navigation }) => {
 const COLORS = {
   background: "#121212",
   surface: "#252525",
-  primary: "#4A90E2",
-  danger: "#E94E77",
+  primary: "#fff",
+  danger: "#888888",
   text: "#FFFFFF",
   textSecondary: "#AAAAAA",
   border: "#333333",
@@ -611,7 +611,7 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     borderBottomWidth: 1,
     borderBottomColor: COLORS.border,
-    shadowColor: "#000",
+    shadowColor: "#444",
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.2,
     shadowRadius: 2,
@@ -634,7 +634,7 @@ const styles = StyleSheet.create({
     marginLeft: 6,
   },
   activeTabText: {
-    color: COLORS.primary,
+    color: COLORS.white,
     fontWeight: "600",
   },
   searchContainer: {
@@ -691,7 +691,7 @@ const styles = StyleSheet.create({
     color: COLORS.textSecondary,
   },
   activeSortButtonText: {
-    color: COLORS.primary,
+    color: COLORS.white,
     fontWeight: "500",
   },
   sortDirectionButton: {
@@ -765,11 +765,14 @@ const styles = StyleSheet.create({
     marginLeft: 4,
     fontWeight: "500",
   },
+  editButtonText: {
+    color: "#000",
+  },
   editButton: {
-    backgroundColor: COLORS.primary,
+    backgroundColor: COLORS.white,
   },
   deleteButton: {
-    backgroundColor: COLORS.danger,
+    backgroundColor: COLORS.gray,
   },
   fab: {
     position: "absolute",

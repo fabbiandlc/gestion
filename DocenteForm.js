@@ -115,7 +115,7 @@ const DocenteForm = ({
             {editIndex !== null ? "Editar Docente" : "Nuevo Docente"}
           </Text>
           <TouchableOpacity style={styles.closeButton} onPress={handleClose}>
-            <Ionicons name="close" size={24} color="#666" />
+            <Ionicons name="close" size={24} color="#FFFFFF" />
           </TouchableOpacity>
         </View>
 
@@ -190,8 +190,8 @@ const DocenteForm = ({
 const COLORS = {
   background: "#121212",
   surface: "#252525",
-  primary: "#4A90E2",
-  danger: "#E94E77",
+  primary: "#fff",
+  danger: "#888888",
   text: "#FFFFFF",
   textSecondary: "#AAAAAA",
   border: "#333333",
@@ -213,7 +213,7 @@ const styles = StyleSheet.create({
     maxHeight: "80%",
     backgroundColor: COLORS.surface,
     borderRadius: 10,
-    shadowColor: "#000",
+    shadowColor: "#444",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.25,
     shadowRadius: 4,
@@ -290,10 +290,10 @@ const styles = StyleSheet.create({
     fontWeight: "500",
   },
   saveButton: {
-    backgroundColor: COLORS.primary,
+    backgroundColor: COLORS.white,
   },
   saveButtonText: {
-    color: COLORS.white,
+    color: "#000",
     fontWeight: "500",
   },
   disabledButton: {

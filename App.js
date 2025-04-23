@@ -169,7 +169,7 @@ export default function App() {
       <SafeAreaView style={styles.safeAreaContent}>
         <View style={styles.header}>
           <TouchableOpacity style={styles.menuButton} onPress={openDrawer}>
-            <Ionicons name="menu" size={24} color="#007BFF" />
+            <Ionicons name="menu" size={24} color="#fff" />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>{currentScreen}</Text>
           <View style={{ width: 24 }} />
@@ -221,7 +221,7 @@ export default function App() {
               <SafeAreaView style={styles.safeAreaDrawer}>
                 <View style={styles.drawerHeader}>
                   <View style={styles.userInfoContainer}>
-                    <Ionicons name="person-circle-outline" size={40} color="#007BFF" />
+                    <Ionicons name="person-circle-outline" size={40} color="#fff" />
                     <View style={styles.userTextContainer}>
                       <Text style={styles.drawerTitle}>Usuario</Text>
                       <Text style={styles.userEmail}>{userEmail || "Sin correo"}</Text>
@@ -242,7 +242,7 @@ export default function App() {
                           : navigateToScreen(item.name)
                       }
                     >
-                      <Ionicons name={item.icon} size={24} color="#007BFF" />
+                      <Ionicons name={item.icon} size={24} color="#fff" />
                       <Text style={styles.drawerItemText}>{item.name}</Text>
                     </TouchableOpacity>
                   ))}

@@ -214,7 +214,7 @@ const ActivityForm = ({ setModalVisible, editIndex, onSubmit, initialData }) => 
             style={[styles.formButton, styles.saveButton]}
             onPress={handleSubmit}
           >
-            <Text style={styles.buttonText}>Guardar</Text>
+            <Text style={styles.saveButtonText}>Guardar</Text>
           </TouchableOpacity>
         </View>
       </Animated.View>

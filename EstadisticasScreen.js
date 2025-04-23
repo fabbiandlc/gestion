@@ -177,15 +177,16 @@ export default function EstadisticasScreen() {
       borderRadius: 8,
       minWidth: 100,
       alignItems: "center",
+      flexDirection: "row",
     },
     exportButton: {
-      backgroundColor: "#007bff",
+      backgroundColor: "#888888", // Gris igual que deleteButton de AdministracionScreen
     },
     refreshButton: {
-      backgroundColor: "#28a745",
+      backgroundColor: "#888888", // Gris igual que deleteButton de AdministracionScreen
     },
     buttonText: {
-      color: "#fff",
+      color: "#FFFFFF", // Texto blanco
       fontSize: 14,
       fontWeight: "500",
     },
@@ -272,6 +273,7 @@ export default function EstadisticasScreen() {
               onPress={handleExportPDF}
               disabled={isExporting}
             >
+              <Ionicons name="download-outline" size={18} color="#FFFFFF" style={{marginRight: 8}} />
               <Text style={styles.buttonText}>
                 {isExporting ? "Exportando..." : "Exportar PDF"}
               </Text>
@@ -281,6 +283,7 @@ export default function EstadisticasScreen() {
               onPress={loadData}
               disabled={isLoading}
             >
+              <Ionicons name="refresh-outline" size={18} color="#FFFFFF" style={{marginRight: 8}} />
               <Text style={styles.buttonText}>
                 {isLoading ? "Cargando..." : "Actualizar"}
               </Text>

@@ -116,7 +116,7 @@ const GrupoForm = ({
             {editIndex !== null ? "Editar Grupo" : "Nuevo Grupo"}
           </Text>
           <TouchableOpacity style={styles.closeButton} onPress={handleClose}>
-            <Ionicons name="close" size={24} color="#666" />
+            <Ionicons name="close" size={24} color="#fff" />
           </TouchableOpacity>
         </View>
 
@@ -181,16 +181,16 @@ const styles = StyleSheet.create({
   modalView: {
     width: "90%",
     maxHeight: "80%",
-    backgroundColor: "#252525", // Matches COLORS.surface
+    backgroundColor: "#252525",
     borderRadius: 10,
-    shadowColor: "#000",
+    shadowColor: "#444",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.25,
     shadowRadius: 4,
     elevation: 5,
     overflow: "hidden",
-    borderWidth: 1, // Added to match DocenteForm
-    borderColor: "#333333", // Matches COLORS.border
+    borderWidth: 1,
+    borderColor: "#333333",
   },
   modalHeader: {
     flexDirection: "row",
@@ -274,10 +274,10 @@ const styles = StyleSheet.create({
     fontWeight: "500",
   },
   saveButton: {
-    backgroundColor: "#4A90E2", // Matches COLORS.primary
+    backgroundColor: "#fff",
   },
   saveButtonText: {
-    color: "#FFFFFF", // Matches COLORS.white
+    color: "#000",
     fontWeight: "500",
   },
 });

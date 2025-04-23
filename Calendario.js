@@ -3,6 +3,7 @@ import { View, Text, ScrollView, TouchableOpacity, Alert } from "react-native";
 import { Calendar, LocaleConfig } from "react-native-calendars";
 import { ActivitiesContext } from "./ActivitiesContext";
 import { stylesCalendar } from "./stylesCalendar";
+import { Ionicons } from "react-native-vector-icons";
 
 // Configuración del calendario en español
 LocaleConfig.locales["es"] = {
@@ -54,7 +55,7 @@ const CALENDAR_THEME = {
   dayTextColor: "#FFFFFF",
   textDisabledColor: "#888888",
   monthTextColor: "#FFFFFF",
-  arrowColor: "#4A90E2",
+  arrowColor: "#FFFFFF",
   dotColor: "#4A90E2",
   selectedDayBackgroundColor: "#252525",
   selectedDayTextColor: "#FFFFFF",
@@ -77,6 +78,7 @@ const ActivityItem = memo(({ activity, onEdit, onDelete }) => (
         style={stylesCalendar.deleteButton}
         activeOpacity={0.7}
       >
+        <Ionicons name="trash-outline" size={18} color="#FFFFFF" style={{marginRight: 6}} />
         <Text style={stylesCalendar.buttonText}>Eliminar</Text>
       </TouchableOpacity>
     </View>

@@ -164,7 +164,7 @@ const LoginScreen = ({ onLoginSuccess }) => {
             accessibilityLabel="Iniciar sesión"
           >
             {loading ? (
-              <ActivityIndicator size="small" color="#FFFFFF" />
+              <ActivityIndicator size="small" color="#000000" />
             ) : (
               <Text style={styles.buttonText}>Iniciar Sesión</Text>
             )}
@@ -213,7 +213,7 @@ const LoginScreen = ({ onLoginSuccess }) => {
                 disabled={loading}
               >
                 {loading ? (
-                  <ActivityIndicator size="small" color="#FFFFFF" />
+                  <ActivityIndicator size="small" color="#000000" />
                 ) : (
                   <Text style={styles.modalButtonText}>Enviar</Text>
                 )}
@@ -282,14 +282,14 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   forgotPassword: {
-    color: '#4A90E2',
+    color: '#FFFFFF',
     fontSize: 14,
     textAlign: 'right',
     marginBottom: 20,
     width: '100%',
   },
   button: {
-    backgroundColor: '#4A90E2',
+    backgroundColor: '#FFFFFF',
     padding: 15,
     borderRadius: 8,
     alignItems: 'center',
@@ -302,10 +302,10 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   buttonDisabled: {
-    backgroundColor: '#444444',
+    backgroundColor: '#CCCCCC',
   },
   buttonText: {
-    color: '#FFFFFF',
+    color: '#000000',
     fontSize: 16,
     fontWeight: 'bold',
   },
@@ -341,7 +341,7 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   modalButton: {
-    backgroundColor: '#4A90E2',
+    backgroundColor: '#FFFFFF',
     padding: 12,
     borderRadius: 8,
     alignItems: 'center',
@@ -352,7 +352,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#666666',
   },
   modalButtonText: {
-    color: '#FFFFFF',
+    color: '#000000',
     fontSize: 16,
     fontWeight: '600',
   },
