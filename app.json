@@ -1,18 +1,18 @@
 {
   "expo": {
     "scheme": "com.fabiansking.gestion",
-    "name": "Aplicación de gestión administrativa",
+    "name": "Gestión",
     "slug": "gestion",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
-    "displayName": "Gestión", 
+    "displayName": "Gestión",
     "splash": {
       "image": "./assets/icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#181919"
+      "backgroundColor": "#191919"
     },
     "ios": {
       "supportsTablet": true
@@ -29,10 +29,12 @@
     },
     "extra": {
       "eas": {
-        "projectId": "03cd55a6-92bf-4f9d-aa6b-81832648132e"
+        "projectId": "d404c0a2-da66-4bba-99b3-b032e6df5e68"
       }
     },
     "owner": "fabiansking",
-    "plugins": ["expo-sqlite"]
+    "plugins": [
+      "expo-sqlite"
+    ]
   }
 }

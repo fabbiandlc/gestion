@@ -229,7 +229,7 @@ const LoginScreen = ({ onLoginSuccess }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#121212',
+    backgroundColor: '#191919',
   },
   formContainer: {
     flex: 1,
