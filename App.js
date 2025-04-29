@@ -24,6 +24,8 @@ import EstadisticasScreen from "./EstadisticasScreen";
 import { ActivitiesProvider } from "./ActivitiesContext";
 import { DataProvider } from "./DataContext";
 import "react-native-get-random-values";
+import { AppState } from "react-native";
+import { backupToSupabase } from "./Database";
 
 const { width } = Dimensions.get("window");
 
@@ -72,6 +74,22 @@ export default function App() {
 
     return () => backHandler.remove();
   }, [isDrawerOpen]);
+
+  useEffect(() => {
+    const handleAppStateChange = (nextAppState) => {
+      if (nextAppState === "background" || nextAppState === "inactive") {
+        backupToSupabase()
+          .then(() => console.log("Copia de seguridad realizada al cerrar/app background"))
+          .catch((err) => console.warn("Error al hacer backup automático:", err));
+      }
+    };
+
+    const subscription = AppState.addEventListener("change", handleAppStateChange);
+
+    return () => {
+      subscription.remove();
+    };
+  }, []);
 
   const openDrawer = () => {
     setIsDrawerOpen(true);
@@ -223,7 +241,7 @@ export default function App() {
                   <View style={styles.userInfoContainer}>
                     <Ionicons name="person-circle-outline" size={40} color="#fff" />
                     <View style={styles.userTextContainer}>
-                      <Text style={styles.drawerTitle}>Usuario</Text>
+                      <Text style={styles.drawerTitle}>Administrador</Text>
                       <Text style={styles.userEmail}>{userEmail || "Sin correo"}</Text>
                     </View>
                   </View>

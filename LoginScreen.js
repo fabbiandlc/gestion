@@ -123,7 +123,7 @@ const LoginScreen = ({ onLoginSuccess }) => {
     >
       <View style={styles.formContainer}>
         <View style={styles.formWrapper}>
-          <Image source={require('./assets/icon.png')} style={styles.logo} />
+          <Image source={require('./assets/iconLogin.png')} style={styles.logo} />
           <Text style={styles.title}>Iniciar Sesión</Text>
 
           <View style={styles.inputContainer}>
@@ -250,7 +250,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   title: {
-    fontSize: 28,
+    fontSize: 25,
     fontWeight: 'bold',
     textAlign: 'center',
     marginBottom: 30,
