@@ -683,45 +683,29 @@ const convertirAPdf = async (entidad) => {
           `).join('')}
         </table>
 
-        <div class="legend-container">
-          <div class="legend-title">Detalles de Clases:</div>
-          <div class="legend-items">
-            ${Object.keys(horariosPorMateria).map(materiaId => {
-              const horarios = horariosPorMateria[materiaId];
-              const materia = materias.find(m => String(m.id) === String(materiaId));
-              
-              // Ordenar los horarios por día y hora
-              const horariosSorted = [...horarios].sort((a, b) => {
-                const diasOrden = { 'Lunes': 0, 'Martes': 1, 'Miércoles': 2, 'Jueves': 3, 'Viernes': 4 };
-                if (a.dia !== b.dia) {
-                  return diasOrden[a.dia] - diasOrden[b.dia];
-                }
-                return convertirHoraAMinutos(a.horaInicio) - convertirHoraAMinutos(b.horaInicio);
-              });
-              
-              // Información sobre el docente o salón según el contexto
-              const infoEntidad = currentTab === 'docentes' 
-                ? `Grupo ${grupos.find(g => g.id === horarios[0].salonId)?.nombre || ''}` 
-                : `${docentes.find(d => d.id === horarios[0].docenteId)?.nombre || ''} ${docentes.find(d => d.id === horarios[0].docenteId)?.apellido || ''}`;
-              
-              return `
-                <div class="legend-item">
-                  <div class="legend-info">
-                    <div class="legend-info-title">${materia ? materia.nombre : 'Materia sin nombre'}</div>
-                    <div class="legend-info-subtitle">${infoEntidad}</div>
-                    <div class="legend-info-details">
-                      ${horariosSorted.map(horario => `
-                        <div class="legend-detail-line">
-                          ${horario.dia}, ${horario.horaInicio} - ${horario.horaFin}
-                        </div>
-                      `).join('')}
-                    </div>
-                  </div>
-                </div>
-              `;
-            }).join('')}
+<div class="legend-container">
+  <div class="legend-title">Detalles de Clases:</div>
+  <div class="legend-items">
+    ${Object.keys(horariosPorMateria).map(materiaId => {
+      const horarios = horariosPorMateria[materiaId];
+      const materia = materias.find(m => String(m.id) === String(materiaId));
+      
+      // Información según el contexto (docentes o grupos)
+      const infoEntidad = currentTab === 'docentes' 
+        ? `Grupo: ${grupos.find(g => g.id === horarios[0].salonId)?.nombre || 'Grupo no encontrado'}`
+        : `Docente: ${docentes.find(d => d.id === horarios[0].docenteId)?.nombre || ''} ${docentes.find(d => d.id === horarios[0].docenteId)?.apellido || ''}`;
+      
+      return `
+        <div class="legend-item">
+          <div class="legend-info">
+            <div class="legend-info-title">${materia ? materia.nombre : 'Materia sin nombre'}</div>
+            <div class="legend-info-subtitle">${infoEntidad}</div>
           </div>
         </div>
+      `;
+    }).join('')}
+  </div>
+</div>
       </body>
       </html>
     `;
