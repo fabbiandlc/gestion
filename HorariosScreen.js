@@ -158,6 +158,14 @@ const HorariosScreen = ({ navigation }) => {
     [grupos]
   );
 
+  const getGrupoNombre = useCallback(
+    (grupoId) => {
+      const grupo = grupos.find((g) => g.id === grupoId);
+      return grupo ? grupo.nombre : "Grupo no encontrado";
+    },
+    [grupos]
+  );
+
   const verificarConflictos = useCallback(
     (horario, horarioId = null) => {
       const conflictos = horarios.filter((h) => {
@@ -559,13 +567,12 @@ const HorariosScreen = ({ navigation }) => {
               margin-bottom: 1px;
             }
             .class-cell {
-              background-color: #E3F2FD;
-              padding: 2px;
-              border-radius: 2px;
-              font-weight: bold;
-              font-size: 10px;
-              white-space: nowrap;
-              overflow: hidden;
+              padding: 2px; 
+              border-radius: 2px; 
+              font-weight: bold; 
+              font-size: 10px; 
+              white-space: nowrap; 
+              overflow: hidden; 
               text-overflow: ellipsis;
             }
             .receso-cell {
@@ -598,10 +605,13 @@ const HorariosScreen = ({ navigation }) => {
                     return '<td class="receso-cell">Receso</td>';
                   }
 
-                  const horario = horariosEntidad.find(h =>
-                    h.dia === dia &&
-                    convertirHoraAMinutos(h.horaInicio) <= convertirHoraAMinutos(bloque.horaInicio) &&
-                    convertirHoraAMinutos(h.horaFin) >= convertirHoraAMinutos(bloque.horaFin)
+                  const horario = horariosEntidad.find(
+                    h =>
+                      h.dia === dia &&
+                      convertirHoraAMinutos(h.horaInicio) <=
+                        convertirHoraAMinutos(bloque.horaInicio) &&
+                      convertirHoraAMinutos(h.horaFin) >=
+                        convertirHoraAMinutos(bloque.horaFin)
                   );
 
                   if (!horario) return '<td></td>';
@@ -618,7 +628,7 @@ const HorariosScreen = ({ navigation }) => {
 
                   return `
                     <td>
-                      <div class="class-cell" style="background-color: ${color}">
+                      <div class="class-cell">
                         ${texto}
                       </div>
                     </td>
@@ -639,7 +649,6 @@ const HorariosScreen = ({ navigation }) => {
 
                 return `
                   <div class="legend-item">
-                    <div class="legend-color" style="background-color: ${color}"></div>
                     <div class="legend-info">
                       <div class="legend-info-title">${materia ? materia.nombre : ''}</div>
                       <div class="legend-info-subtitle">
@@ -693,6 +702,16 @@ const HorariosScreen = ({ navigation }) => {
       ? horarios.filter((h) => h.docenteId === selectedEntity.id)
       : horarios.filter((h) => h.salonId === selectedEntity.id);
   }, [selectedEntity, horarios, currentTab]);
+
+  const handleCellPress = (dia, horaInicio) => {
+    setNewHorario({
+      ...newHorario,
+      dia,
+      horaInicio,
+      [currentTab === 'docentes' ? 'docenteId' : 'salonId']: selectedEntity?.id || '',
+    });
+    setModalVisible(true);
+  };
 
   const renderDocenteItem = ({ item }) => (
     <TouchableOpacity
@@ -775,26 +794,48 @@ const HorariosScreen = ({ navigation }) => {
     );
 
     if (!horarioEnCelda) {
-      return <View style={styles.emptyCell} />;
+      return (
+        <TouchableOpacity
+          style={[
+            styles.celdaHorario,
+            {
+              backgroundColor: 'transparent',
+              justifyContent: 'center',
+              alignItems: 'center',
+              flex: 1,
+            },
+          ]}
+          onPress={() => handleCellPress(dia, bloque.horaInicio)}
+        >
+          <Ionicons name="add" size={24} color="#3E6B9E" />
+        </TouchableOpacity>
+      );
     }
-
-    const salon = grupos.find((s) => s.id === horarioEnCelda.salonId);
-    const backgroundColor = horarioEnCelda.color || getMateriaColor(horarioEnCelda.materiaId);
 
     return (
       <TouchableOpacity
         style={[
-          styles.classCell,
+          styles.celdaHorario,
           {
-            backgroundColor,
+            backgroundColor: horarioEnCelda.color || getMateriaColor(horarioEnCelda.materiaId) || '#E3F2FD',
+            justifyContent: 'center',
+            alignItems: 'center',
+            flex: 1,
           },
         ]}
-        onPress={() => handleEditarHorario(horarioEnCelda)}
+        onPress={() => {
+          setEditingHorario(horarioEnCelda);
+          setNewHorario({
+            ...horarioEnCelda,
+            color: horarioEnCelda.color || '#E3F2FD'
+          });
+          setModalVisible(true);
+        }}
       >
-        <Text style={styles.classCellTitle} numberOfLines={1}>
-          {currentTab === "docentes" 
-            ? salon?.nombre 
-            : materias.find(m => String(m.id) === String(horarioEnCelda.materiaId))?.nombre}
+        <Text style={styles.textoCeldaCentrado} numberOfLines={2}>
+          {currentTab === 'docentes' 
+            ? getGrupoNombre(horarioEnCelda.salonId)
+            : getMateriaNombre(horarioEnCelda.materiaId)}
         </Text>
       </TouchableOpacity>
     );
@@ -1165,20 +1206,6 @@ const HorariosScreen = ({ navigation }) => {
               ? `${selectedEntity.nombre} ${selectedEntity.apellido}`
               : selectedEntity.nombre}
           </Text>
-          <TouchableOpacity
-            style={styles.addButton}
-            onPress={() => {
-              setNewHorario({
-                ...newHorario,
-                [currentTab === "docentes" ? "docenteId" : "salonId"]:
-                  selectedEntity.id,
-              });
-              setEditingHorario(null);
-              setModalVisible(true);
-            }}
-          >
-            <Ionicons name="add" size={24} color="#007BFF" />
-          </TouchableOpacity>
         </View>
         <ScrollView style={styles.scheduleScrollContainer}>
           <ScrollView horizontal showsHorizontalScrollIndicator={false}>
