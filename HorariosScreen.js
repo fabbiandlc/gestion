@@ -480,243 +480,272 @@ const HorariosScreen = ({ navigation }) => {
     );
   };
 
-  const convertirAPdf = async (entidad) => {
-    try {
-      let titulo = '';
-      let subtitulo = '';
+const convertirAPdf = async (entidad) => {
+  try {
+    let titulo = '';
+    let subtitulo = '';
 
-      if (currentTab === 'docentes') {
-        const docente = docentes.find(d => d.id === entidad.id);
-        titulo = `Horario del Docente: ${docente.nombre} ${docente.apellido}`;
-      } else {
-        const grupo = grupos.find(g => g.id === entidad.id);
-        titulo = `Horario del Grupo: ${grupo.nombre}`;
+    if (currentTab === 'docentes') {
+      const docente = docentes.find(d => d.id === entidad.id);
+      titulo = `Horario del Docente: ${docente.nombre} ${docente.apellido}`;
+    } else {
+      const grupo = grupos.find(g => g.id === entidad.id);
+      titulo = `Horario del Grupo: ${grupo.nombre}`;
+    }
+
+    // Filtrar horarios y ordenarlos por día y hora
+    const horariosEntidad = horarios
+      .filter(h => currentTab === 'docentes' ? h.docenteId === entidad.id : h.salonId === entidad.id)
+      .sort((a, b) => {
+        const diasOrden = { 'Lunes': 0, 'Martes': 1, 'Miércoles': 2, 'Jueves': 3, 'Viernes': 4 };
+        if (a.dia !== b.dia) {
+          return diasOrden[a.dia] - diasOrden[b.dia];
+        }
+        return convertirHoraAMinutos(a.horaInicio) - convertirHoraAMinutos(b.horaInicio);
+      });
+
+    // Agrupar horarios por materia
+    const horariosPorMateria = {};
+    horariosEntidad.forEach(horario => {
+      const materiaId = horario.materiaId;
+      if (!horariosPorMateria[materiaId]) {
+        horariosPorMateria[materiaId] = [];
       }
+      horariosPorMateria[materiaId].push(horario);
+    });
 
-      // Filtrar horarios y ordenarlos por día y hora
-      const horariosEntidad = horarios
-        .filter(h => currentTab === 'docentes' ? h.docenteId === entidad.id : h.salonId === entidad.id)
-        .sort((a, b) => {
-          const diasOrden = { 'Lunes': 0, 'Martes': 1, 'Miércoles': 2, 'Jueves': 3, 'Viernes': 4 };
-          if (a.dia !== b.dia) {
-            return diasOrden[a.dia] - diasOrden[b.dia];
+    // Generar HTML para el PDF
+    const html = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <style>
+          @page {
+            size: letter;
+            margin: 10mm;
           }
-          return convertirHoraAMinutos(a.horaInicio) - convertirHoraAMinutos(b.horaInicio);
-        });
-
-      // Generar HTML para el PDF
-      const html = `
-        <!DOCTYPE html>
-        <html>
-        <head>
-          <meta charset="UTF-8">
-          <meta name="viewport" content="width=device-width, initial-scale=1.0">
-          <style>
-            @page {
-              size: letter;
-              margin: 10mm;
-            }
-            body {
-              font-family: Arial, sans-serif;
-              padding: 10px;
-              max-width: 100%;
-              margin: 0;
-            }
-            table {
-              width: 100%;
-              border-collapse: collapse;
-              margin-bottom: 15px;
-              table-layout: fixed;
-            }
-            th, td {
-              border: 1px solid #ddd;
-              padding: 4px;
-              text-align: center;
-              font-size: 10px;
-              height: 24px;
-              overflow: hidden;
-            }
-            th {
-              background-color: #f4f4f4;
-              font-size: 10px;
-            }
-            th:first-child, td:first-child {
-              width: 10%;
-            }
-            .header { 
-              text-align: center; 
-              margin-bottom: 10px; 
-            }
-            h1 { 
-              font-size: 16px; 
-              color: #333;
-              margin: 0 0 5px 0;
-            }
-            .legend-container {
-              margin-top: 10px;
-              border-top: 1px solid #ddd;
-              padding-top: 10px;
-            }
-            .legend-title {
-              font-size: 14px;
-              color: #333;
-              margin-bottom: 8px;
-            }
-            .legend-items {
-              display: grid;
-              grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-              gap: 8px;
-            }
-            .legend-item {
-              font-size: 9px;
-              padding: 5px;
-              border: 1px solid #ddd;
-              border-radius: 3px;
-              display: flex;
-              align-items: flex-start;
-            }
-            .legend-color {
-              width: 10px;
-              height: 10px;
-              margin-right: 5px;
-              border-radius: 2px;
-              margin-top: 2px;
-            }
-            .legend-info {
-              flex: 1;
-            }
-            .legend-info-title {
-              font-weight: bold;
-              margin-bottom: 2px;
-            }
-            .legend-info-subtitle {
-              color: #666;
-              margin-bottom: 1px;
-            }
-            .class-cell {
-              padding: 2px; 
-              border-radius: 2px; 
-              font-weight: bold; 
-              font-size: 10px; 
-              white-space: nowrap; 
-              overflow: hidden; 
-              text-overflow: ellipsis;
-            }
-            .receso-cell {
-              background-color: #f4f4f4;
-              font-style: italic;
-              font-size: 9px;
-            }
-          </style>
-        </head>
-        <body>
-          <div style="text-align: center; margin-bottom: 20px;">
-            <p style="font-size: 14px; margin: 0; font-weight: bold;">COLEGIO DE BACHILLERES DEL ESTADO DE VERACRUZ</p>
-            <p style="font-size: 12px; margin: 3px 0; font-weight: normal;">ORGANISMO PUBLICO DESCENTRALIZADO</p>
-            <p style="font-size: 13px; margin: 3px 0; font-weight: normal;">PLANTEL 18 - COATZACOALCOS</p>
-          </div>
-          <div class="header">
-            <h1>${titulo}</h1>
-            ${subtitulo ? `<p>${subtitulo}</p>` : ''}
-          </div>
-          <table>
+          body {
+            font-family: Arial, sans-serif;
+            padding: 10px;
+            max-width: 100%;
+            margin: 0;
+          }
+          table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 15px;
+            table-layout: fixed;
+          }
+          th, td {
+            border: 1px solid #ddd;
+            padding: 4px;
+            text-align: center;
+            font-size: 10px;
+            height: 24px;
+            overflow: hidden;
+          }
+          th {
+            background-color: #f4f4f4;
+            font-size: 10px;
+          }
+          th:first-child, td:first-child {
+            width: 10%;
+          }
+          .header { 
+            text-align: center; 
+            margin-bottom: 10px; 
+          }
+          h1 { 
+            font-size: 16px; 
+            color: #333;
+            margin: 0 0 5px 0;
+          }
+          .legend-container {
+            margin-top: 10px;
+            border-top: 1px solid #ddd;
+            padding-top: 10px;
+          }
+          .legend-title {
+            font-size: 14px;
+            color: #333;
+            margin-bottom: 8px;
+          }
+          .legend-items {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 8px;
+          }
+          .legend-item {
+            font-size: 9px;
+            padding: 5px;
+            border: 1px solid #ddd;
+            border-radius: 3px;
+            display: flex;
+            align-items: flex-start;
+          }
+          .legend-color {
+            width: 10px;
+            height: 10px;
+            margin-right: 5px;
+            border-radius: 2px;
+            margin-top: 2px;
+          }
+          .legend-info {
+            flex: 1;
+          }
+          .legend-info-title {
+            font-weight: bold;
+            margin-bottom: 2px;
+          }
+          .legend-info-subtitle {
+            color: #666;
+            margin-bottom: 1px;
+          }
+          .legend-info-details {
+            margin-top: 4px;
+          }
+          .legend-detail-line {
+            font-size: 8px;
+            color: #555;
+            margin-top: 2px;
+          }
+          .class-cell {
+            padding: 2px; 
+            border-radius: 2px; 
+            font-weight: bold; 
+            font-size: 10px; 
+            white-space: nowrap; 
+            overflow: hidden; 
+            text-overflow: ellipsis;
+          }
+          .receso-cell {
+            background-color: #f4f4f4;
+            font-style: italic;
+            font-size: 9px;
+          }
+        </style>
+      </head>
+      <body>
+        <div style="text-align: center; margin-bottom: 20px;">
+          <p style="font-size: 14px; margin: 0; font-weight: bold;">COLEGIO DE BACHILLERES DEL ESTADO DE VERACRUZ</p>
+          <p style="font-size: 12px; margin: 3px 0; font-weight: normal;">ORGANISMO PUBLICO DESCENTRALIZADO</p>
+          <p style="font-size: 13px; margin: 3px 0; font-weight: normal;">PLANTEL 18 - COATZACOALCOS</p>
+        </div>
+        <div class="header">
+          <h1>${titulo}</h1>
+          ${subtitulo ? `<p>${subtitulo}</p>` : ''}
+        </div>
+        <table>
+          <tr>
+            <th>Hora</th>
+            ${diasSemana.map(dia => `<th>${dia}</th>`).join('')}
+          </tr>
+          ${bloquesHorarios.map(bloque => `
             <tr>
-              <th>Hora</th>
-              ${diasSemana.map(dia => `<th>${dia}</th>`).join('')}
-            </tr>
-            ${bloquesHorarios.map(bloque => `
-              <tr>
-                <td>${bloque.horaInicio} - ${bloque.horaFin}</td>
-                ${diasSemana.map(dia => {
-                  if (bloque.esReceso) {
-                    return '<td class="receso-cell">Receso</td>';
-                  }
+              <td>${bloque.horaInicio} - ${bloque.horaFin}</td>
+              ${diasSemana.map(dia => {
+                if (bloque.esReceso) {
+                  return '<td class="receso-cell">Receso</td>';
+                }
 
-                  const horario = horariosEntidad.find(
-                    h =>
-                      h.dia === dia &&
-                      convertirHoraAMinutos(h.horaInicio) <=
-                        convertirHoraAMinutos(bloque.horaInicio) &&
-                      convertirHoraAMinutos(h.horaFin) >=
-                        convertirHoraAMinutos(bloque.horaFin)
-                  );
+                const horario = horariosEntidad.find(
+                  h =>
+                    h.dia === dia &&
+                    convertirHoraAMinutos(h.horaInicio) <=
+                      convertirHoraAMinutos(bloque.horaInicio) &&
+                    convertirHoraAMinutos(h.horaFin) >=
+                      convertirHoraAMinutos(bloque.horaFin)
+                );
 
-                  if (!horario) return '<td></td>';
+                if (!horario) return '<td></td>';
 
-                  const color = horario.color || getMateriaColor(horario.materiaId);
-                  let texto = '';
-                  
-                  if (currentTab === 'docentes') {
-                    texto = grupos.find(g => g.id === horario.salonId)?.nombre || '';
-                  } else {
-                    const materia = materias.find(m => String(m.id) === String(horario.materiaId));
-                    texto = materia ? materia.nombre : '';
-                  }
-
-                  return `
-                    <td>
-                      <div class="class-cell">
-                        ${texto}
-                      </div>
-                    </td>
-                  `;
-                }).join('')}
-              </tr>
-            `).join('')}
-          </table>
-
-          <div class="legend-container">
-            <div class="legend-title">Detalles de Clases:</div>
-            <div class="legend-items">
-              ${horariosEntidad.map(horario => {
-                const materia = materias.find(m => String(m.id) === String(horario.materiaId));
-                const docente = docentes.find(d => d.id === horario.docenteId);
-                const salon = grupos.find(g => g.id === horario.salonId);
                 const color = horario.color || getMateriaColor(horario.materiaId);
+                let texto = '';
+                
+                if (currentTab === 'docentes') {
+                  texto = grupos.find(g => g.id === horario.salonId)?.nombre || '';
+                } else {
+                  const materia = materias.find(m => String(m.id) === String(horario.materiaId));
+                  texto = materia ? materia.nombre : '';
+                }
 
                 return `
-                  <div class="legend-item">
-                    <div class="legend-info">
-                      <div class="legend-info-title">${materia ? materia.nombre : ''}</div>
-                      <div class="legend-info-subtitle">
-                        ${currentTab === 'docentes' ?
-                          `Grupo ${salon ? salon.nombre : ''}` :
-                          `${docente ? `${docente.nombre} ${docente.apellido}` : ''}`
-                        }
-                      </div>
-                      <div class="legend-info-subtitle">
-                        ${horario.dia}, ${horario.horaInicio} - ${horario.horaFin}
-                      </div>
+                  <td>
+                    <div class="class-cell">
+                      ${texto}
                     </div>
-                  </div>
+                  </td>
                 `;
               }).join('')}
-            </div>
+            </tr>
+          `).join('')}
+        </table>
+
+        <div class="legend-container">
+          <div class="legend-title">Detalles de Clases:</div>
+          <div class="legend-items">
+            ${Object.keys(horariosPorMateria).map(materiaId => {
+              const horarios = horariosPorMateria[materiaId];
+              const materia = materias.find(m => String(m.id) === String(materiaId));
+              
+              // Ordenar los horarios por día y hora
+              const horariosSorted = [...horarios].sort((a, b) => {
+                const diasOrden = { 'Lunes': 0, 'Martes': 1, 'Miércoles': 2, 'Jueves': 3, 'Viernes': 4 };
+                if (a.dia !== b.dia) {
+                  return diasOrden[a.dia] - diasOrden[b.dia];
+                }
+                return convertirHoraAMinutos(a.horaInicio) - convertirHoraAMinutos(b.horaInicio);
+              });
+              
+              // Información sobre el docente o salón según el contexto
+              const infoEntidad = currentTab === 'docentes' 
+                ? `Grupo ${grupos.find(g => g.id === horarios[0].salonId)?.nombre || ''}` 
+                : `${docentes.find(d => d.id === horarios[0].docenteId)?.nombre || ''} ${docentes.find(d => d.id === horarios[0].docenteId)?.apellido || ''}`;
+              
+              return `
+                <div class="legend-item">
+                  <div class="legend-info">
+                    <div class="legend-info-title">${materia ? materia.nombre : 'Materia sin nombre'}</div>
+                    <div class="legend-info-subtitle">${infoEntidad}</div>
+                    <div class="legend-info-details">
+                      ${horariosSorted.map(horario => `
+                        <div class="legend-detail-line">
+                          ${horario.dia}, ${horario.horaInicio} - ${horario.horaFin}
+                        </div>
+                      `).join('')}
+                    </div>
+                  </div>
+                </div>
+              `;
+            }).join('')}
           </div>
-        </body>
-        </html>
-      `;
+        </div>
+      </body>
+      </html>
+    `;
 
-      // Generar el PDF
-      const { uri } = await Print.printToFileAsync({
-        html,
-        base64: false,
-        width: 612, // Ancho de página carta en puntos (8.5 x 72)
-        height: 792 // Alto de página carta en puntos (11 x 72)
-      });
+    // Generar el PDF
+    const { uri } = await Print.printToFileAsync({
+      html,
+      base64: false,
+      width: 612, // Ancho de página carta en puntos (8.5 x 72)
+      height: 792 // Alto de página carta en puntos (11 x 72)
+    });
 
-      // Compartir el PDF
-      await Sharing.shareAsync(uri, {
-        mimeType: 'application/pdf',
-        dialogTitle: 'Compartir horario',
-        UTI: 'com.adobe.pdf'
-      });
+    // Compartir el PDF
+    await Sharing.shareAsync(uri, {
+      mimeType: 'application/pdf',
+      dialogTitle: 'Compartir horario',
+      UTI: 'com.adobe.pdf'
+    });
 
-    } catch (error) {
-      console.error('Error al generar PDF:', error);
-      Alert.alert('Error', 'No se pudo generar el PDF. Intenta de nuevo.');
-    }
-  };
+  } catch (error) {
+    console.error('Error al generar PDF:', error);
+    Alert.alert('Error', 'No se pudo generar el PDF. Intenta de nuevo.');
+  }
+};
 
   const handleSeleccionarEntidad = (entity) => {
     setSelectedEntity(entity);
