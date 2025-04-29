@@ -178,16 +178,28 @@ const AdministracionScreen = ({ navigation }) => {
     }
   };
 
+  const convertirHoraAMinutos = (hora) => {
+    const [horas, minutos] = hora.split(':');
+    return parseInt(horas) * 60 + parseInt(minutos);
+  };
+
+  const calcularHorasAcademicas = (horarios) => {
+    if (!horarios || horarios.length === 0) return 0;
+    
+    const totalMinutos = horarios.reduce((total, h) => {
+      const inicio = convertirHoraAMinutos(h.horaInicio);
+      const fin = convertirHoraAMinutos(h.horaFin);
+      return total + (fin - inicio);
+    }, 0);
+    
+    return Math.round(totalMinutos / 50); // 50 minutos = 1 hora académica
+  };
+
   const renderDocenteItem = ({ item, index }) => {
     const horariosDocente = horarios ? horarios.filter(h => h.docenteId === item.id) : [];
-    
-    // Calcular horas de clase
-    const horasClase = horariosDocente.reduce((total, h) => {
-      const inicio = h.horaInicio.split(':').map(Number);
-      const fin = h.horaFin.split(':').map(Number);
-      const duracion = (fin[0] * 60 + fin[1]) - (inicio[0] * 60 + inicio[1]);
-      return total + duracion;
-    }, 0);
+    const horasProgramadas = calcularHorasAcademicas(horariosDocente);
+    const materiasUnicas = horariosDocente.length > 0 ? 
+      [...new Set(horariosDocente.map(h => h.materiaId))].length : 0;
     
     return (
       <View style={styles.card}>
@@ -196,23 +208,20 @@ const AdministracionScreen = ({ navigation }) => {
             {item.nombre} {item.apellido}
           </Text>
           <Text style={styles.cardDate}>
-            {item.email || "Sin email registrado"}
-          </Text>
-          <Text style={styles.cardDate}>
             Número de Empleado: {item.numeroEmpleado || "No asignado"}
           </Text>
         </View>
         <View style={styles.cardStats}>
           <View style={styles.statItem}>
-            <Ionicons name="calendar-outline" size={16} color="#fff" />
+            <Ionicons name="book-outline" size={16} color="#fff" />
             <Text style={styles.statText}>
-              {horariosDocente.length} clases
+              Materias: {materiasUnicas}
             </Text>
           </View>
           <View style={styles.statItem}>
             <Ionicons name="time-outline" size={16} color="#fff" />
             <Text style={styles.statText}>
-              {Math.round(horasClase/60)} horas semanales
+              {horasProgramadas} horas programadas
             </Text>
           </View>
         </View>
@@ -238,40 +247,30 @@ const AdministracionScreen = ({ navigation }) => {
 
   const renderMateriaItem = ({ item, index }) => {
     const horariosMateria = horarios ? horarios.filter(h => h.materiaId === item.id) : [];
-    
-    // Calcular docentes únicos que imparten esta materia
+    const horasProgramadas = calcularHorasAcademicas(horariosMateria);
     const docentesUnicos = horariosMateria.length > 0 ? 
       [...new Set(horariosMateria.map(h => h.docenteId))].length : 0;
-    
-    // Calcular horas de clase
-    const horasClase = horariosMateria.reduce((total, h) => {
-      const inicio = h.horaInicio.split(':').map(Number);
-      const fin = h.horaFin.split(':').map(Number);
-      const duracion = (fin[0] * 60 + fin[1]) - (inicio[0] * 60 + inicio[1]);
-      return total + duracion;
-    }, 0);
     
     return (
       <View style={styles.card}>
         <View style={styles.cardHeader}>
           <Text style={styles.cardTitle}>{item.nombre}</Text>
+          {item.codigo && <Text style={styles.cardDate}>Código: {item.codigo}</Text>}
         </View>
-        {horariosMateria.length > 0 && (
-          <View style={styles.cardStats}>
-            <View style={styles.statItem}>
-              <Ionicons name="people-outline" size={16} color="#fff" />
-              <Text style={styles.statText}>
-                {docentesUnicos} docente{docentesUnicos !== 1 ? 's' : ''}
-              </Text>
-            </View>
-            <View style={styles.statItem}>
-              <Ionicons name="time-outline" size={16} color="#fff" />
-              <Text style={styles.statText}>
-                {Math.round(horasClase/60)} horas semanales
-              </Text>
-            </View>
+        <View style={styles.cardStats}>
+          <View style={styles.statItem}>
+            <Ionicons name="people-outline" size={16} color="#fff" />
+            <Text style={styles.statText}>
+              Docentes: {docentesUnicos}
+            </Text>
           </View>
-        )}
+          <View style={styles.statItem}>
+            <Ionicons name="time-outline" size={16} color="#fff" />
+            <Text style={styles.statText}>
+              Horas: {horasProgramadas}
+            </Text>
+          </View>
+        </View>
         <View style={styles.cardActions}>
           <TouchableOpacity
             style={[styles.actionButton, styles.editButton]}
@@ -294,18 +293,9 @@ const AdministracionScreen = ({ navigation }) => {
 
   const renderGrupoItem = ({ item, index }) => {
     const horariosGrupo = horarios ? horarios.filter(h => h.salonId === item.id) : [];
-    
-    // Calcular docentes únicos que imparten en este grupo
+    const horasProgramadas = calcularHorasAcademicas(horariosGrupo);
     const docentesUnicos = horariosGrupo.length > 0 ? 
       [...new Set(horariosGrupo.map(h => h.docenteId))].length : 0;
-    
-    // Calcular horas de clase
-    const horasClase = horariosGrupo.reduce((total, h) => {
-      const inicio = h.horaInicio.split(':').map(Number);
-      const fin = h.horaFin.split(':').map(Number);
-      const duracion = (fin[0] * 60 + fin[1]) - (inicio[0] * 60 + inicio[1]);
-      return total + duracion;
-    }, 0);
     
     return (
       <View style={styles.card}>
@@ -324,7 +314,7 @@ const AdministracionScreen = ({ navigation }) => {
             <View style={styles.statItem}>
               <Ionicons name="time-outline" size={16} color="#fff" />
               <Text style={styles.statText}>
-                {Math.round(horasClase/60)} horas semanales
+                {horasProgramadas} horas programadas
               </Text>
             </View>
           </View>

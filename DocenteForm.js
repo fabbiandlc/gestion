@@ -23,7 +23,7 @@ const DocenteForm = ({
   const [formData, setFormData] = useState({
     id: uuidv4(),
     nombre: "",
-    apellido: "",
+    apellido: "", // Mantenemos el campo para cumplir con la restricción NOT NULL
     email: "",
     numeroEmpleado: "",
     materias: [],
@@ -43,7 +43,7 @@ const DocenteForm = ({
       setFormData({
         id: uuidv4(),
         nombre: "",
-        apellido: "",
+        apellido: "", // Mantenemos el campo para cumplir con la restricción NOT NULL
         email: "",
         numeroEmpleado: "",
         materias: [],
@@ -60,6 +60,11 @@ const DocenteForm = ({
         alert("Por favor completa los campos obligatorios: Nombre");
       }
       return;
+    }
+    
+    // Asegurar que apellido no sea nulo para la base de datos
+    if (formData.apellido === null) {
+      setFormData({...formData, apellido: ""});
     }
 
     setIsSaving(true);
@@ -83,7 +88,6 @@ const DocenteForm = ({
       setFormData({
         id: uuidv4(),
         nombre: "",
-        apellido: "",
         email: "",
         numeroEmpleado: "",
         materias: [],
@@ -126,15 +130,6 @@ const DocenteForm = ({
             value={formData.nombre}
             onChangeText={(text) => setFormData({ ...formData, nombre: text })}
             placeholder="Ingresa el nombre del docente"
-            placeholderTextColor="#AAAAAA"
-          />
-
-          <Text style={styles.label}>Apellido</Text>
-          <TextInput
-            style={styles.input}
-            value={formData.apellido}
-            onChangeText={(text) => setFormData({ ...formData, apellido: text })}
-            placeholder="Ingresa el apellido del docente"
             placeholderTextColor="#AAAAAA"
           />
 

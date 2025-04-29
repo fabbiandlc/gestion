@@ -8,7 +8,6 @@ import {
   ScrollView,
   KeyboardAvoidingView,
   Platform,
-  Switch,
 } from "react-native";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import { insert, update } from "./Database.js"; // Assuming these exist
@@ -26,7 +25,7 @@ const GrupoForm = ({
   const [formData, setFormData] = useState({
     id: null,
     nombre: "",
-    turno: "Matutino",
+    turno: "Matutino", // Mantenemos turno en la estructura pero quitamos el componente visual
     materias: [],
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
@@ -43,7 +42,7 @@ const GrupoForm = ({
       setFormData({
         id: uuidv4(), // Unique ID for new groups
         nombre: "",
-        turno: "Matutino",
+        turno: "Matutino", // Valor por defecto
         materias: [],
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
@@ -93,6 +92,7 @@ const GrupoForm = ({
     }
   };
 
+  // Mantenemos la función pero no la usamos en la UI
   const toggleTurno = () => {
     setFormData({
       ...formData,
@@ -132,19 +132,7 @@ const GrupoForm = ({
             maxLength={3}
           />
 
-          <View style={styles.switchContainer}>
-            <Text style={styles.label}>Turno</Text>
-            <View style={styles.switchRow}>
-              <Text style={styles.switchLabel}>Matutino</Text>
-              <Switch
-                value={formData.turno === "Vespertino"}
-                onValueChange={toggleTurno}
-                trackColor={{ false: "#007BFF", true: "#007BFF" }}
-                thumbColor="#fff"
-              />
-              <Text style={styles.switchLabel}>Vespertino</Text>
-            </View>
-          </View>
+          {/* Eliminamos el contenedor de Switch pero mantenemos la lógica del turno en formData */}
 
           <View style={styles.formFooter}>
             <Text style={styles.requiredText}>* Campo obligatorio</Text>
@@ -228,6 +216,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#1E1E1E", // Matches COLORS.inputBg
     color: "#FFFFFF", // Matches COLORS.text
   },
+  // Mantenemos los estilos por si se necesitan en el futuro
   switchContainer: {
     marginBottom: 16,
   },

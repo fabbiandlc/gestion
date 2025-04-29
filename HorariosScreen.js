@@ -50,6 +50,11 @@ const HorariosScreen = ({ navigation }) => {
     color: "#E3F2FD",
   });
 
+  const [originalHours, setOriginalHours] = useState({
+    horaInicio: "",
+    horaFin: "",
+  });
+
   const coloresDisponibles = [
     { nombre: "Azul", valor: "#3E6B9E" }, // Azul más oscuro
     { nombre: "Verde", valor: "#3A7D44" }, // Verde más oscuro
@@ -123,6 +128,15 @@ const HorariosScreen = ({ navigation }) => {
       setFilteredGrupos(grupos);
     }
   }, [searchQuery, docentes, grupos, currentTab]);
+
+  useEffect(() => {
+    if (editingHorario) {
+      setOriginalHours({
+        horaInicio: editingHorario.horaInicio,
+        horaFin: editingHorario.horaFin
+      });
+    }
+  }, [editingHorario]);
 
   const getDocenteNombre = useCallback(
     (docenteId) => {
@@ -212,12 +226,25 @@ const HorariosScreen = ({ navigation }) => {
       Alert.alert("Error", "Por favor, completa todos los campos");
       return;
     }
-
+  
     // Verificar que la hora de inicio sea menor que la hora de fin
     const inicioMinutos = convertirHoraAMinutos(newHorario.horaInicio);
     const finMinutos = convertirHoraAMinutos(newHorario.horaFin);
-
+  
     if (inicioMinutos >= finMinutos) {
+      // En lugar de mostrar un error, ajustar automáticamente la hora de fin
+      const nextHora = horasDisponibles.find(
+        (h) => convertirHoraAMinutos(h) > inicioMinutos
+      );
+      if (nextHora) {
+        setNewHorario(prev => ({...prev, horaFin: nextHora}));
+        Alert.alert(
+          "Ajuste de horario",
+          "La hora de fin se ha ajustado automáticamente para que sea posterior a la hora de inicio."
+        );
+        return;
+      }
+      // Si no hay una hora posterior disponible, mostrar el error
       Alert.alert(
         "Error",
         "La hora de inicio debe ser anterior a la hora de fin"
@@ -366,7 +393,7 @@ const HorariosScreen = ({ navigation }) => {
       horaFin: "07:50",
       materiaId: "",
       salonId: "",
-      color: "#3E6B9E",
+      color: coloresDisponibles[0].valor, // Usar el primer color disponible
     });
   };
 
@@ -703,11 +730,41 @@ const HorariosScreen = ({ navigation }) => {
       : horarios.filter((h) => h.salonId === selectedEntity.id);
   }, [selectedEntity, horarios, currentTab]);
 
+  const countTotalHours = (entityId) => {
+    const entityHorarios = currentTab === 'docentes' 
+      ? horarios.filter(h => h.docenteId === entityId)
+      : horarios.filter(h => h.salonId === entityId);
+
+    let totalMinutes = 0;
+
+    entityHorarios.forEach(horario => {
+      const start = convertirHoraAMinutos(horario.horaInicio);
+      const end = convertirHoraAMinutos(horario.horaFin);
+      totalMinutes += (end - start);
+    });
+
+    // Convertir minutos a horas (50 minutos = 1 hora académica)
+    return Math.round(totalMinutes / 50);
+  };
+
   const handleCellPress = (dia, horaInicio) => {
+    // Encontrar el bloque horario correspondiente para obtener la hora de fin
+    const bloqueActual = bloquesHorarios.find(bloque => bloque.horaInicio === horaInicio);
+    
+    // Encontrar la siguiente hora disponible después de la hora de inicio
+    const siguienteHora = horasDisponibles.find(h => 
+      convertirHoraAMinutos(h) > convertirHoraAMinutos(horaInicio)
+    );
+    
+    // Usar la hora de fin del bloque si existe, o la siguiente hora disponible
+    const horaFin = bloqueActual ? bloqueActual.horaFin : siguienteHora;
+    
     setNewHorario({
       ...newHorario,
       dia,
       horaInicio,
+      horaFin: horaFin || "07:50", // Aseguramos que horaFin siempre sea posterior a horaInicio
+      color: coloresDisponibles[0].valor, // Asignar color predeterminado
       [currentTab === 'docentes' ? 'docenteId' : 'salonId']: selectedEntity?.id || '',
     });
     setModalVisible(true);
@@ -723,8 +780,7 @@ const HorariosScreen = ({ navigation }) => {
           {item.nombre} {item.apellido}
         </Text>
         <Text style={styles.cardSubtitle}>
-          {horarios.filter((h) => h.docenteId === item.id).length} clases
-          programadas
+          {countTotalHours(item.id)} horas programadas
         </Text>
       </View>
       <View style={styles.cardActions}>
@@ -753,8 +809,7 @@ const HorariosScreen = ({ navigation }) => {
       <View style={styles.cardHeader}>
         <Text style={styles.cardTitle}>{item.nombre}</Text>
         <Text style={styles.cardSubtitle}>
-          {horarios.filter((h) => h.salonId === item.id).length} clases
-          programadas
+          {countTotalHours(item.id)} horas programadas
         </Text>
       </View>
       <View style={styles.cardActions}>

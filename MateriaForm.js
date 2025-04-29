@@ -23,7 +23,7 @@ const MateriaForm = ({
     nombre: "",
     horasSemana: "",
     creditos: "",
-    semestre: "",
+    semestre: "", // Mantenemos en la estructura de datos pero quitamos el campo visual
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
   });
@@ -98,14 +98,7 @@ const MateriaForm = ({
             placeholderTextColor="#AAAAAA"
           />
 
-          <Text style={styles.label}>Semestre</Text>
-          <TextInput
-            style={styles.input}
-            value={formData.semestre}
-            onChangeText={(text) => setFormData({ ...formData, semestre: text })}
-            placeholder="Semestre"
-            placeholderTextColor="#AAAAAA"
-          />
+          {/* Eliminamos el campo de semestre visual pero mantenemos la propiedad en el formData */}
 
           <View style={styles.formFooter}>
             <Text style={styles.requiredText}>* Campo obligatorio</Text>
