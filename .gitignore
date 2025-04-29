@@ -27,3 +27,7 @@ Downloads/
 Documents/
 Music/
 Favorites/
+
+# Al final de .gitignore
+.env*
+!.env.example
