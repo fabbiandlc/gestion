@@ -16,9 +16,8 @@ import * as Sharing from 'expo-sharing';
 import Ionicons from "react-native-vector-icons/Ionicons";
 import { Picker } from "@react-native-picker/picker";
 import { useDataContext } from "./DataContext";
-import { fetchAll, update } from "./Database";
-import { v4 as uuidv4 } from "uuid";
 import { stylesHorarios as styles } from "./stylesHorarios";
+import { v4 as uuidv4 } from "uuid";
 
 const HorariosScreen = ({ navigation }) => {
   const {
@@ -34,10 +33,10 @@ const HorariosScreen = ({ navigation }) => {
   const [filteredDocentes, setFilteredDocentes] = useState([]);
   const [filteredGrupos, setFilteredGrupos] = useState([]);
   const [modalVisible, setModalVisible] = useState(false);
-  const [selectedEntity, setSelectedEntity] = useState(null); // Puede ser docente o grupo
+  const [selectedEntity, setSelectedEntity] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
-  const [currentView, setCurrentView] = useState("list"); // "list" o "schedule"
-  const [currentTab, setCurrentTab] = useState("docentes"); // "docentes" o "grupos"
+  const [currentView, setCurrentView] = useState("list");
+  const [currentTab, setCurrentTab] = useState("docentes");
   const [editingHorario, setEditingHorario] = useState(null);
 
   const [newHorario, setNewHorario] = useState({
@@ -56,23 +55,20 @@ const HorariosScreen = ({ navigation }) => {
   });
 
   const coloresDisponibles = [
-    { nombre: "Azul", valor: "#3E6B9E" }, // Azul más oscuro
-    { nombre: "Verde", valor: "#3A7D44" }, // Verde más oscuro
-    { nombre: "Morado", valor: "#5D4A8C" }, // Morado más oscuro
-    { nombre: "Rosa", valor: "#A45A76" }, // Rosa más oscuro
-    { nombre: "Naranja", valor: "#B56B3C" }, // Naranja más oscuro
-    { nombre: "Amarillo", valor: "#A59132" }, // Amarillo más oscuro
+    { nombre: "Azul", valor: "#3E6B9E" },
+    { nombre: "Verde", valor: "#3A7D44" },
+    { nombre: "Morado", valor: "#5D4A8C" },
+    { nombre: "Rosa", valor: "#A45A76" },
+    { nombre: "Naranja", valor: "#B56B3C" },
+    { nombre: "Amarillo", valor: "#A59132" },
   ];
 
-  // Define time slots
   const timeSlots = [
     '07:00', '07:50', '08:40', '09:30', '10:20', '11:10', '12:00',
-    '12:30', '13:30', '14:20', '15:10', '16:00', // Morning/Afternoon
-    '16:30', '17:20', '18:10', '19:00', '19:50'  // Evening
+    '12:30', '13:30', '14:20', '15:10', '16:00',
+    '16:30', '17:20', '18:10', '19:00', '19:50'
   ];
-  
-  const breakSlot = '16:00 - 16:30';
-  
+
   const convertirHoraAMinutos = (hora) => {
     const [hh, mm] = hora.split(':').map(Number);
     return hh * 60 + mm;
@@ -83,7 +79,7 @@ const HorariosScreen = ({ navigation }) => {
       { horaInicio: "07:00", horaFin: "07:50", esReceso: false },
       { horaInicio: "07:50", horaFin: "08:40", esReceso: false },
       { horaInicio: "08:40", horaFin: "09:30", esReceso: false },
-      { horaInicio: "09:30", horaFin: "10:00", esReceso: true }, // Receso ajustado
+      { horaInicio: "09:30", horaFin: "10:00", esReceso: true },
       { horaInicio: "10:00", horaFin: "10:50", esReceso: false },
       { horaInicio: "10:50", horaFin: "11:40", esReceso: false },
       { horaInicio: "11:40", horaFin: "12:30", esReceso: false },
@@ -158,7 +154,7 @@ const HorariosScreen = ({ navigation }) => {
 
   const getMateriaNombre = useCallback(
     (materiaId) => {
-      const materia = materias.find((m) => m.id === materiaId);
+      const materia = materias.find((m) => String(m.id) === String(materiaId));
       return materia ? materia.nombre : "Materia no encontrada";
     },
     [materias]
@@ -166,7 +162,7 @@ const HorariosScreen = ({ navigation }) => {
 
   const getMateriaColor = useCallback(
     (materiaId) => {
-      const materia = materias.find((m) => m.id === materiaId);
+      const materia = materias.find((m) => String(m.id) === String(materiaId));
       return materia && materia.color ? materia.color : "#E3F2FD";
     },
     [materias]
@@ -211,20 +207,6 @@ const HorariosScreen = ({ navigation }) => {
     [horarios]
   );
 
-  const handleGuardarDocente = () => {
-    if (!newDocente.nombre || !newDocente.apellido) {
-      Alert.alert("Error", "Todos los campos son obligatorios");
-      return;
-    }
-
-    const id = uuidv4();
-    const nuevoDocente = { ...newDocente, id };
-    setDocentes([...docentes, nuevoDocente]);
-
-    setNewDocente({ nombre: "", apellido: "" });
-    setDocenteModalVisible(false);
-  };
-
   const handleGuardarHorario = async () => {
     if (
       !newHorario.docenteId ||
@@ -234,13 +216,11 @@ const HorariosScreen = ({ navigation }) => {
       Alert.alert("Error", "Por favor, completa todos los campos");
       return;
     }
-  
-    // Verificar que la hora de inicio sea menor que la hora de fin
+
     const inicioMinutos = convertirHoraAMinutos(newHorario.horaInicio);
     const finMinutos = convertirHoraAMinutos(newHorario.horaFin);
-  
+
     if (inicioMinutos >= finMinutos) {
-      // En lugar de mostrar un error, ajustar automáticamente la hora de fin
       const nextHora = horasDisponibles.find(
         (h) => convertirHoraAMinutos(h) > inicioMinutos
       );
@@ -248,11 +228,10 @@ const HorariosScreen = ({ navigation }) => {
         setNewHorario(prev => ({...prev, horaFin: nextHora}));
         Alert.alert(
           "Ajuste de horario",
-          "La hora de fin se ha ajustado automáticamente para que sea posterior a la hora de inicio."
+          "La hora de fin se ha ajustado automáticamente."
         );
         return;
       }
-      // Si no hay una hora posterior disponible, mostrar el error
       Alert.alert(
         "Error",
         "La hora de inicio debe ser anterior a la hora de fin"
@@ -260,7 +239,6 @@ const HorariosScreen = ({ navigation }) => {
       return;
     }
 
-    // Verificar si hay conflictos con otros horarios
     const horariosConflicto = horarios.filter((h) => {
       if (editingHorario && h.id === editingHorario.id) return false;
 
@@ -298,31 +276,24 @@ const HorariosScreen = ({ navigation }) => {
     }
 
     try {
-      // Actualizar las relaciones entre docentes, materias y grupos
       let updatedDocentes = [...docentes];
       let updatedHorarios = [...horarios];
 
-      // Crear el horario a guardar
       const horarioToSave = {
         ...newHorario,
         id: editingHorario ? editingHorario.id : uuidv4(),
       };
 
-      // Encontrar el docente y actualizar sus materias y grupos
       const docenteIndex = updatedDocentes.findIndex(d => d.id === newHorario.docenteId);
       if (docenteIndex !== -1) {
         const docente = {...updatedDocentes[docenteIndex]};
-        
-        // Inicializar los arrays si no existen
         docente.materias = Array.isArray(docente.materias) ? [...docente.materias] : [];
         docente.grupos = Array.isArray(docente.grupos) ? [...docente.grupos] : [];
         
-        // Agregar la materia si no existe en el array
         if (!docente.materias.includes(newHorario.materiaId)) {
           docente.materias.push(newHorario.materiaId);
         }
         
-        // Agregar el grupo (salon) si no existe en el array
         if (!docente.grupos.includes(newHorario.salonId)) {
           docente.grupos.push(newHorario.salonId);
         }
@@ -331,20 +302,15 @@ const HorariosScreen = ({ navigation }) => {
       }
 
       if (editingHorario) {
-        // Si estamos editando, verificar si cambió el docente, materia o grupo
         const oldHorario = horarios.find(h => h.id === editingHorario.id);
         if (oldHorario) {
-          // Si cambió el docente, actualizar las relaciones del docente anterior
           if (oldHorario.docenteId !== newHorario.docenteId) {
             const oldDocenteIndex = updatedDocentes.findIndex(d => d.id === oldHorario.docenteId);
             if (oldDocenteIndex !== -1) {
               const oldDocente = {...updatedDocentes[oldDocenteIndex]};
-              
-              // Inicializar los arrays si no existen
               oldDocente.materias = Array.isArray(oldDocente.materias) ? [...oldDocente.materias] : [];
               oldDocente.grupos = Array.isArray(oldDocente.grupos) ? [...oldDocente.grupos] : [];
               
-              // Verificar si el docente anterior ya no tiene esta materia en otros horarios
               const tieneMateriaEnOtrosHorarios = horarios.some(h => 
                 h.id !== oldHorario.id && 
                 h.docenteId === oldHorario.docenteId && 
@@ -355,7 +321,6 @@ const HorariosScreen = ({ navigation }) => {
                 oldDocente.materias = oldDocente.materias.filter(m => m !== oldHorario.materiaId);
               }
 
-              // Verificar si el docente anterior ya no tiene este grupo en otros horarios
               const tieneGrupoEnOtrosHorarios = horarios.some(h => 
                 h.id !== oldHorario.id && 
                 h.docenteId === oldHorario.docenteId && 
@@ -371,17 +336,14 @@ const HorariosScreen = ({ navigation }) => {
           }
         }
 
-        // Actualizar horario existente
         const index = horarios.findIndex((h) => h.id === editingHorario.id);
         if (index !== -1) {
           updatedHorarios[index] = horarioToSave;
         }
       } else {
-        // Agregar nuevo horario
         updatedHorarios.push(horarioToSave);
       }
 
-      // Guardar los cambios
       await setDocentes(updatedDocentes);
       await setHorarios(updatedHorarios);
       setModalVisible(false);
@@ -401,7 +363,7 @@ const HorariosScreen = ({ navigation }) => {
       horaFin: "07:50",
       materiaId: "",
       salonId: "",
-      color: coloresDisponibles[0].valor, // Usar el primer color disponible
+      color: coloresDisponibles[0].valor,
     });
   };
 
@@ -429,41 +391,33 @@ const HorariosScreen = ({ navigation }) => {
           text: "Eliminar",
           onPress: async () => {
             try {
-              // Obtener el horario a eliminar
               const horarioAEliminar = horarios.find(h => h.id === id);
               if (!horarioAEliminar) return;
 
-              // Actualizar las relaciones del docente
               let updatedDocentes = [...docentes];
               const docenteIndex = updatedDocentes.findIndex(d => d.id === horarioAEliminar.docenteId);
               
               if (docenteIndex !== -1) {
                 const docente = {...updatedDocentes[docenteIndex]};
-                
-                // Inicializar los arrays si no existen
                 docente.materias = Array.isArray(docente.materias) ? [...docente.materias] : [];
                 docente.grupos = Array.isArray(docente.grupos) ? [...docente.grupos] : [];
                 
-                // Verificar si el docente tiene esta materia en otros horarios
                 const tieneMateriaEnOtrosHorarios = horarios.some(h => 
                   h.id !== id && 
                   h.docenteId === horarioAEliminar.docenteId && 
                   h.materiaId === horarioAEliminar.materiaId
                 );
                 
-                // Si no tiene esta materia en otros horarios, eliminarla de su lista
                 if (!tieneMateriaEnOtrosHorarios) {
                   docente.materias = docente.materias.filter(m => m !== horarioAEliminar.materiaId);
                 }
                 
-                // Verificar si el docente tiene este grupo en otros horarios
                 const tieneGrupoEnOtrosHorarios = horarios.some(h => 
                   h.id !== id && 
                   h.docenteId === horarioAEliminar.docenteId && 
                   h.salonId === horarioAEliminar.salonId
                 );
                 
-                // Si no tiene este grupo en otros horarios, eliminarlo de su lista
                 if (!tieneGrupoEnOtrosHorarios) {
                   docente.grupos = docente.grupos.filter(g => g !== horarioAEliminar.salonId);
                 }
@@ -471,10 +425,8 @@ const HorariosScreen = ({ navigation }) => {
                 updatedDocentes[docenteIndex] = docente;
               }
               
-              // Eliminar el horario
               const updatedHorarios = horarios.filter(h => h.id !== id);
               
-              // Guardar los cambios
               await setDocentes(updatedDocentes);
               await setHorarios(updatedHorarios);
             } catch (error) {
@@ -488,256 +440,240 @@ const HorariosScreen = ({ navigation }) => {
     );
   };
 
-const convertirAPdf = async (entidad) => {
-  try {
-    let titulo = '';
-    let subtitulo = '';
+  const convertirAPdf = async (entidad) => {
+    try {
+      let titulo = '';
+      let subtitulo = '';
 
-    if (currentTab === 'docentes') {
-      const docente = docentes.find(d => d.id === entidad.id);
-      titulo = `Horario del Docente: ${docente.nombre} ${docente.apellido}`;
-    } else {
-      const grupo = grupos.find(g => g.id === entidad.id);
-      titulo = `Horario del Grupo: ${grupo.nombre}`;
-    }
+      if (currentTab === 'docentes') {
+        const docente = docentes.find(d => d.id === entidad.id);
+        titulo = `Horario del Docente: ${docente.nombre} ${docente.apellido}`;
+      } else {
+        const grupo = grupos.find(g => g.id === entidad.id);
+        titulo = `Horario del Grupo: ${grupo.nombre}`;
+      }
 
-    // Filtrar horarios y ordenarlos por día y hora
-    const horariosEntidad = horarios
-      .filter(h => currentTab === 'docentes' ? h.docenteId === entidad.id : h.salonId === entidad.id)
-      .sort((a, b) => {
-        const diasOrden = { 'Lunes': 0, 'Martes': 1, 'Miércoles': 2, 'Jueves': 3, 'Viernes': 4 };
-        if (a.dia !== b.dia) {
-          return diasOrden[a.dia] - diasOrden[b.dia];
+      const horariosEntidad = horarios
+        .filter(h => currentTab === 'docentes' ? h.docenteId === entidad.id : h.salonId === entidad.id)
+        .sort((a, b) => {
+          const diasOrden = { 'Lunes': 0, 'Martes': 1, 'Miércoles': 2, 'Jueves': 3, 'Viernes': 4 };
+          if (a.dia !== b.dia) {
+            return diasOrden[a.dia] - diasOrden[b.dia];
+          }
+          return convertirHoraAMinutos(a.horaInicio) - convertirHoraAMinutos(b.horaInicio);
+        });
+
+      const horariosPorMateria = {};
+      horariosEntidad.forEach(horario => {
+        const materiaId = horario.materiaId;
+        if (!horariosPorMateria[materiaId]) {
+          horariosPorMateria[materiaId] = [];
         }
-        return convertirHoraAMinutos(a.horaInicio) - convertirHoraAMinutos(b.horaInicio);
+        horariosPorMateria[materiaId].push(horario);
       });
 
-    // Agrupar horarios por materia
-    const horariosPorMateria = {};
-    horariosEntidad.forEach(horario => {
-      const materiaId = horario.materiaId;
-      if (!horariosPorMateria[materiaId]) {
-        horariosPorMateria[materiaId] = [];
-      }
-      horariosPorMateria[materiaId].push(horario);
-    });
-
-    // Generar HTML para el PDF
-    const html = `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <style>
-          @page {
-            size: letter;
-            margin: 10mm;
-          }
-          body {
-            font-family: Arial, sans-serif;
-            padding: 10px;
-            max-width: 100%;
-            margin: 0;
-          }
-          table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-bottom: 15px;
-            table-layout: fixed;
-          }
-          th, td {
-            border: 1px solid #ddd;
-            padding: 4px;
-            text-align: center;
-            font-size: 10px;
-            height: 24px;
-            overflow: hidden;
-          }
-          th {
-            background-color: #f4f4f4;
-            font-size: 10px;
-          }
-          th:first-child, td:first-child {
-            width: 10%;
-          }
-          .header { 
-            text-align: center; 
-            margin-bottom: 10px; 
-          }
-          h1 { 
-            font-size: 16px; 
-            color: #333;
-            margin: 0 0 5px 0;
-          }
-          .legend-container {
-            margin-top: 10px;
-            border-top: 1px solid #ddd;
-            padding-top: 10px;
-          }
-          .legend-title {
-            font-size: 14px;
-            color: #333;
-            margin-bottom: 8px;
-          }
-          .legend-items {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-            gap: 8px;
-          }
-          .legend-item {
-            font-size: 9px;
-            padding: 5px;
-            border: 1px solid #ddd;
-            border-radius: 3px;
-            display: flex;
-            align-items: flex-start;
-          }
-          .legend-color {
-            width: 10px;
-            height: 10px;
-            margin-right: 5px;
-            border-radius: 2px;
-            margin-top: 2px;
-          }
-          .legend-info {
-            flex: 1;
-          }
-          .legend-info-title {
-            font-weight: bold;
-            margin-bottom: 2px;
-          }
-          .legend-info-subtitle {
-            color: #666;
-            margin-bottom: 1px;
-          }
-          .legend-info-details {
-            margin-top: 4px;
-          }
-          .legend-detail-line {
-            font-size: 8px;
-            color: #555;
-            margin-top: 2px;
-          }
-          .class-cell {
-            padding: 2px; 
-            border-radius: 2px; 
-            font-weight: bold; 
-            font-size: 10px; 
-            white-space: nowrap; 
-            overflow: hidden; 
-            text-overflow: ellipsis;
-          }
-          .receso-cell {
-            background-color: #f4f4f4;
-            font-style: italic;
-            font-size: 9px;
-          }
-        </style>
-      </head>
-      <body>
-        <div style="text-align: center; margin-bottom: 20px;">
-          <p style="font-size: 14px; margin: 0; font-weight: bold;">COLEGIO DE BACHILLERES DEL ESTADO DE VERACRUZ</p>
-          <p style="font-size: 12px; margin: 3px 0; font-weight: normal;">ORGANISMO PUBLICO DESCENTRALIZADO</p>
-          <p style="font-size: 13px; margin: 3px 0; font-weight: normal;">PLANTEL 18 - COATZACOALCOS</p>
-        </div>
-        <div class="header">
-          <h1>${titulo}</h1>
-          ${subtitulo ? `<p>${subtitulo}</p>` : ''}
-        </div>
-        <table>
-          <tr>
-            <th>Hora</th>
-            ${diasSemana.map(dia => `<th>${dia}</th>`).join('')}
-          </tr>
-          ${bloquesHorarios.map(bloque => `
+      const html = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <style>
+            @page {
+              size: letter;
+              margin: 10mm;
+            }
+            body {
+              font-family: Arial, sans-serif;
+              padding: 10px;
+              max-width: 100%;
+              margin: 0;
+            }
+            table {
+              width: 100%;
+              border-collapse: collapse;
+              margin-bottom: 15px;
+              table-layout: fixed;
+            }
+            th, td {
+              border: 1px solid #ddd;
+              padding: 4px;
+              text-align: center;
+              font-size: 10px;
+              height: 24px;
+              overflow: hidden;
+            }
+            th {
+              background-color: #f4f4f4;
+              font-size: 10px;
+            }
+            th:first-child, td:first-child {
+              width: 10%;
+            }
+            .header { 
+              text-align: center; 
+              margin-bottom: 10px; 
+            }
+            h1 { 
+              font-size: 16px; 
+              color: #333;
+              margin: 0 0 5px 0;
+            }
+            .legend-container {
+              margin-top: 10px;
+              border-top: 1px solid #ddd;
+              padding-top: 10px;
+            }
+            .legend-title {
+              font-size: 14px;
+              color: #333;
+              margin-bottom: 8px;
+            }
+            .legend-items {
+              display: grid;
+              grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+              gap: 8px;
+            }
+            .legend-item {
+              font-size: 9px;
+              padding: 5px;
+              border: 1px solid #ddd;
+              border-radius: 3px;
+              display: flex;
+              align-items: flex-start;
+            }
+            .legend-color {
+              width: 10px;
+              height: 10px;
+              margin-right: 5px;
+              border-radius: 2px;
+              margin-top: 2px;
+            }
+            .legend-info {
+              flex: 1;
+            }
+            .legend-info-title {
+              font-weight: bold;
+              margin-bottom: 2px;
+            }
+            .legend-info-subtitle {
+              color: #666;
+              margin-bottom: 1px;
+            }
+            .class-cell {
+              padding: 2px;
+              font-weight: bold;
+              font-size: 10px;
+              white-space: nowrap;
+              overflow: hidden;
+              text-overflow: ellipsis;
+              background-color: transparent;
+              border: none;
+            }
+            .receso-cell {
+              background-color: #f4f4f4;
+              font-style: italic;
+              font-size: 9px;
+            }
+          </style>
+        </head>
+        <body>
+          <div style="text-align: center; margin-bottom: 20px;">
+            <p style="font-size: 14px; margin: 0; font-weight: bold;">COLEGIO DE BACHILLERES DEL ESTADO DE VERACRUZ</p>
+            <p style="font-size: 12px; margin: 3px 0; font-weight: normal;">ORGANISMO PUBLICO DESCENTRALIZADO</p>
+            <p style="font-size: 13px; margin: 3px 0; font-weight: normal;">PLANTEL 18 - COATZACOALCOS</p>
+          </div>
+          <div class="header">
+            <h1>${titulo}</h1>
+            ${subtitulo ? `<p>${subtitulo}</p>` : ''}
+          </div>
+          <table>
             <tr>
-              <td>${bloque.horaInicio} - ${bloque.horaFin}</td>
-              ${diasSemana.map(dia => {
-                if (bloque.esReceso) {
-                  return '<td class="receso-cell">Receso</td>';
-                }
+              <th>Hora</th>
+              ${diasSemana.map(dia => `<th>${dia}</th>`).join('')}
+            </tr>
+            ${bloquesHorarios.map(bloque => `
+              <tr>
+                <td>${bloque.horaInicio} - ${bloque.horaFin}</td>
+                ${diasSemana.map(dia => {
+                  if (bloque.esReceso) {
+                    return '<td class="receso-cell">Receso</td>';
+                  }
 
-                const horario = horariosEntidad.find(
-                  h =>
-                    h.dia === dia &&
-                    convertirHoraAMinutos(h.horaInicio) <=
-                      convertirHoraAMinutos(bloque.horaInicio) &&
-                    convertirHoraAMinutos(h.horaFin) >=
-                      convertirHoraAMinutos(bloque.horaFin)
-                );
+                  const horario = horariosEntidad.find(
+                    h =>
+                      h.dia === dia &&
+                      convertirHoraAMinutos(h.horaInicio) <=
+                        convertirHoraAMinutos(bloque.horaInicio) &&
+                      convertirHoraAMinutos(h.horaFin) >=
+                        convertirHoraAMinutos(bloque.horaFin)
+                  );
 
-                if (!horario) return '<td></td>';
+                  if (!horario) return '<td></td>';
 
-                const color = horario.color || getMateriaColor(horario.materiaId);
-                let texto = '';
-                
-                if (currentTab === 'docentes') {
-                  texto = grupos.find(g => g.id === horario.salonId)?.nombre || '';
-                } else {
-                  const materia = materias.find(m => String(m.id) === String(horario.materiaId));
-                  texto = materia ? materia.nombre : '';
-                }
+                  let texto = '';
+                  if (currentTab === 'docentes') {
+                    texto = grupos.find(g => g.id === horario.salonId)?.nombre || 'Grupo no encontrado';
+                  } else {
+                    const materia = materias.find(m => String(m.id) === String(horario.materiaId)) || { abreviatura: '', nombre: 'Materia no encontrada' };
+                    texto = materia.abreviatura || materia.nombre;
+                  }
 
+                  return `
+                    <td>
+                      <div class="class-cell">
+                        ${texto}
+                      </div>
+                    </td>
+                  `;
+                }).join('')}
+              </tr>
+            `).join('')}
+          </table>
+
+          <div class="legend-container">
+            <div class="legend-title">Detalles de Clases:</div>
+            <div class="legend-items">
+              ${Object.keys(horariosPorMateria).map(materiaId => {
+                const horarios = horariosPorMateria[materiaId];
+                const materia = materias.find(m => String(m.id) === String(materiaId)) || { nombre: 'Sin materia', abreviatura: '' };
+                const infoEntidad = currentTab === 'docentes'
+                  ? `Grupo: ${grupos.find(g => g.id === horarios[0].salonId)?.nombre || 'Grupo no encontrado'}`
+                  : `Docente: ${docentes.find(d => d.id === horarios[0].docenteId)?.nombre || ''} ${docentes.find(d => d.id === horarios[0].docenteId)?.apellido || ''}`;
                 return `
-                  <td>
-                    <div class="class-cell">
-                      ${texto}
+                  <div class="legend-item">
+                    <div class="legend-color" style="background-color: ${horarios[0].color || getMateriaColor(materiaId)}"></div>
+                    <div class="legend-info">
+                      ${materia.abreviatura ? `<div class="legend-info-title">${materia.abreviatura}</div>` : ''}
+                      <div class="legend-info-title">${materia.nombre}</div>
+                      <div class="legend-info-subtitle">${infoEntidad}</div>
                     </div>
-                  </td>
+                  </div>
                 `;
               }).join('')}
-            </tr>
-          `).join('')}
-        </table>
-
-<div class="legend-container">
-  <div class="legend-title">Detalles de Clases:</div>
-  <div class="legend-items">
-    ${Object.keys(horariosPorMateria).map(materiaId => {
-      const horarios = horariosPorMateria[materiaId];
-      const materia = materias.find(m => String(m.id) === String(materiaId));
-      
-      // Información según el contexto (docentes o grupos)
-      const infoEntidad = currentTab === 'docentes' 
-        ? `Grupo: ${grupos.find(g => g.id === horarios[0].salonId)?.nombre || 'Grupo no encontrado'}`
-        : `Docente: ${docentes.find(d => d.id === horarios[0].docenteId)?.nombre || ''} ${docentes.find(d => d.id === horarios[0].docenteId)?.apellido || ''}`;
-      
-      return `
-        <div class="legend-item">
-          <div class="legend-info">
-            <div class="legend-info-title">${materia ? materia.nombre : 'Materia sin nombre'}</div>
-            <div class="legend-info-subtitle">${infoEntidad}</div>
+            </div>
           </div>
-        </div>
+        </body>
+        </html>
       `;
-    }).join('')}
-  </div>
-</div>
-      </body>
-      </html>
-    `;
 
-    // Generar el PDF
-    const { uri } = await Print.printToFileAsync({
-      html,
-      base64: false,
-      width: 612, // Ancho de página carta en puntos (8.5 x 72)
-      height: 792 // Alto de página carta en puntos (11 x 72)
-    });
+      const { uri } = await Print.printToFileAsync({
+        html,
+        base64: false,
+        width: 612,
+        height: 792,
+      });
 
-    // Compartir el PDF
-    await Sharing.shareAsync(uri, {
-      mimeType: 'application/pdf',
-      dialogTitle: 'Compartir horario',
-      UTI: 'com.adobe.pdf'
-    });
-
-  } catch (error) {
-    console.error('Error al generar PDF:', error);
-    Alert.alert('Error', 'No se pudo generar el PDF. Intenta de nuevo.');
-  }
-};
+      await Sharing.shareAsync(uri, {
+        mimeType: 'application/pdf',
+        dialogTitle: 'Compartir horario',
+        UTI: 'com.adobe.pdf',
+      });
+    } catch (error) {
+      console.error('Error al generar PDF:', error);
+      Alert.alert('Error', 'No se pudo generar el PDF. Intenta de nuevo.');
+    }
+  };
 
   const handleSeleccionarEntidad = (entity) => {
     setSelectedEntity(entity);
@@ -764,28 +700,23 @@ const convertirAPdf = async (entidad) => {
       totalMinutes += (end - start);
     });
 
-    // Convertir minutos a horas (50 minutos = 1 hora académica)
     return Math.round(totalMinutes / 50);
   };
 
   const handleCellPress = (dia, horaInicio) => {
-    // Encontrar el bloque horario correspondiente para obtener la hora de fin
     const bloqueActual = bloquesHorarios.find(bloque => bloque.horaInicio === horaInicio);
-    
-    // Encontrar la siguiente hora disponible después de la hora de inicio
     const siguienteHora = horasDisponibles.find(h => 
       convertirHoraAMinutos(h) > convertirHoraAMinutos(horaInicio)
     );
     
-    // Usar la hora de fin del bloque si existe, o la siguiente hora disponible
     const horaFin = bloqueActual ? bloqueActual.horaFin : siguienteHora;
     
     setNewHorario({
       ...newHorario,
       dia,
       horaInicio,
-      horaFin: horaFin || "07:50", // Aseguramos que horaFin siempre sea posterior a horaInicio
-      color: coloresDisponibles[0].valor, // Asignar color predeterminado
+      horaFin: horaFin || "07:50",
+      color: coloresDisponibles[0].valor,
       [currentTab === 'docentes' ? 'docenteId' : 'salonId']: selectedEntity?.id || '',
     });
     setModalVisible(true);
@@ -888,12 +819,15 @@ const convertirAPdf = async (entidad) => {
       );
     }
 
+    const materia = materias.find(m => String(m.id) === String(horarioEnCelda.materiaId)) || { nombre: 'Sin materia', abreviatura: '' };
+
     return (
       <TouchableOpacity
         style={[
           styles.celdaHorario,
           {
-            backgroundColor: horarioEnCelda.color || getMateriaColor(horarioEnCelda.materiaId) || '#E3F2FD',
+            backgroundColor: 'transparent',
+            borderWidth: 0,
             justifyContent: 'center',
             alignItems: 'center',
             flex: 1,
@@ -903,65 +837,19 @@ const convertirAPdf = async (entidad) => {
           setEditingHorario(horarioEnCelda);
           setNewHorario({
             ...horarioEnCelda,
-            color: horarioEnCelda.color || '#E3F2FD'
+            color: horarioEnCelda.color || '#E3F2FD',
           });
           setModalVisible(true);
         }}
       >
         <Text style={styles.textoCeldaCentrado} numberOfLines={2}>
-          {currentTab === 'docentes' 
+          {currentTab === 'docentes'
             ? getGrupoNombre(horarioEnCelda.salonId)
-            : getMateriaNombre(horarioEnCelda.materiaId)}
+            : materia.abreviatura || materia.nombre}
         </Text>
       </TouchableOpacity>
     );
   };
-
-  const renderDocenteForm = () => (
-    <View style={styles.modalContainer}>
-      <View style={styles.modalContent}>
-        <Text style={styles.modalTitle}>Nuevo Docente</Text>
-        <Text style={styles.inputLabel}>Nombre</Text>
-        <TextInput
-          style={styles.formInput}
-          placeholder="Ingresar nombre"
-          placeholderTextColor="#666"
-          value={newDocente.nombre}
-          onChangeText={(text) =>
-            setNewDocente({ ...newDocente, nombre: text })
-          }
-          clearButtonMode="while-editing"
-        />
-        <TextInput
-          style={styles.formInput}
-          placeholder="Ingresar apellido"
-          placeholderTextColor="#666"
-          value={newDocente.apellido}
-          onChangeText={(text) =>
-            setNewDocente({ ...newDocente, apellido: text })
-          }
-          clearButtonMode="while-editing"
-        />
-        <View style={styles.modalButtons}>
-          <TouchableOpacity
-            style={[styles.modalButton, styles.cancelButton]}
-            onPress={() => {
-              setDocenteModalVisible(false);
-              setNewDocente({ nombre: "", apellido: "" });
-            }}
-          >
-            <Text style={styles.cancelButtonText}>Cancelar</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.modalButton, styles.saveButton]}
-            onPress={handleGuardarDocente}
-          >
-            <Text style={styles.saveButtonText}>Guardar</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-    </View>
-  );
 
   const renderHorarioForm = () => (
     <View style={styles.modalContainer}>
@@ -994,11 +882,11 @@ const convertirAPdf = async (entidad) => {
             selectedValue={String(newHorario.materiaId)}
             style={styles.picker}
             onValueChange={(itemValue) => {
-              const materia = materias.find((m) => String(m.id) === String(itemValue));
+              const materiaSeleccionada = materias.find((m) => String(m.id) === String(itemValue));
               setNewHorario({
                 ...newHorario,
                 materiaId: String(itemValue),
-                color: materia?.color || newHorario.color,
+                color: materiaSeleccionada?.color || newHorario.color,
               });
             }}
           >
@@ -1007,12 +895,12 @@ const convertirAPdf = async (entidad) => {
               <Picker.Item
                 key={String(materia.id)}
                 label={
-  materia.nombre
-    ? materia.codigo
-      ? `${materia.nombre} (${materia.codigo})`
-      : materia.nombre
-    : "Materia sin nombre"
-}
+                  materia.nombre
+                    ? materia.codigo
+                      ? `${materia.nombre} (${materia.codigo})`
+                      : materia.nombre
+                    : "Materia sin nombre"
+                }
                 value={String(materia.id)}
               />
             ))}
@@ -1257,7 +1145,6 @@ const convertirAPdf = async (entidad) => {
           </View>
         }
       />
-
     </>
   );
 
@@ -1321,7 +1208,7 @@ const convertirAPdf = async (entidad) => {
             <View style={styles.legendContainer}>
               <Text style={styles.legendTitle}>Detalles de Clases:</Text>
               {horariosEntidad.map((horario) => {
-                const materia = materias.find(m => String(m.id) === String(horario.materiaId));
+                const materia = materias.find(m => String(m.id) === String(horario.materiaId)) || { nombre: 'Sin materia', abreviatura: '' };
                 const docente = docentes.find(d => d.id === horario.docenteId);
                 const salon = grupos.find(s => s.id === horario.salonId);
 
@@ -1337,8 +1224,13 @@ const convertirAPdf = async (entidad) => {
                       ]}
                     />
                     <View style={styles.legendInfo}>
+                      {materia.abreviatura && (
+                        <Text style={styles.legendTextAbreviatura}>
+                          {materia.abreviatura}
+                        </Text>
+                      )}
                       <Text style={styles.legendText}>
-                        {materia ? materia.nombre : ""}
+                        {materia.nombre}
                       </Text>
                       <Text style={styles.legendSubtext}>
                         {currentTab === "docentes" ? (
@@ -1349,6 +1241,7 @@ const convertirAPdf = async (entidad) => {
                         ) : (
                           <>
                             {docente ? `${docente.nombre} ${docente.apellido}` : ""}
+                            {materia ? ` | Materia: ${materia.nombre}` : ""}
                           </>
                         )}
                       </Text>

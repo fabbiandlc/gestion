@@ -21,9 +21,10 @@ const MateriaForm = ({
   const [formData, setFormData] = useState({
     id: Date.now(),
     nombre: "",
+    abreviatura: "", // Added abreviatura field
     horasSemana: "",
     creditos: "",
-    semestre: "", // Mantenemos en la estructura de datos pero quitamos el campo visual
+    semestre: "",
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
   });
@@ -33,6 +34,7 @@ const MateriaForm = ({
     if (editIndex !== null && materias[editIndex]) {
       setFormData({
         ...materias[editIndex],
+        abreviatura: materias[editIndex].abreviatura || "", // Ensure abreviatura is included
         updatedAt: new Date().toISOString(),
       });
     }
@@ -43,6 +45,10 @@ const MateriaForm = ({
     // Validación básica
     if (!formData.nombre.trim()) {
       alert("Por favor completa el campo obligatorio: Nombre");
+      return;
+    }
+    if (!formData.abreviatura.trim()) {
+      alert("Por favor completa el campo obligatorio: Abreviatura");
       return;
     }
 
@@ -98,10 +104,21 @@ const MateriaForm = ({
             placeholderTextColor="#AAAAAA"
           />
 
-          {/* Eliminamos el campo de semestre visual pero mantenemos la propiedad en el formData */}
+          <Text style={styles.label}>Abreviatura *</Text>
+          <TextInput
+            style={styles.input}
+            value={formData.abreviatura}
+            onChangeText={(text) =>
+              setFormData({ ...formData, abreviatura: text.toUpperCase() })
+            }
+            placeholder="Abreviatura (ej. MAT)"
+            placeholderTextColor="#AAAAAA"
+            maxLength={10} // Limit to reasonable length for abbreviations
+            autoCapitalize="characters" // Force uppercase input
+          />
 
           <View style={styles.formFooter}>
-            <Text style={styles.requiredText}>* Campo obligatorio</Text>
+            <Text style={styles.requiredText}>* Campos obligatorios</Text>
           </View>
         </ScrollView>
 
@@ -130,7 +147,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "rgba(0, 0, 0, 0.7)", // Matches COLORS.modalOverlay
+    backgroundColor: "rgba(0, 0, 0, 0.7)",
   },
   modalView: {
     width: "90%",
@@ -153,12 +170,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 15,
     borderBottomWidth: 1,
-    borderBottomColor: "#333333", // Matches COLORS.border
+    borderBottomColor: "#333333",
   },
   modalTitle: {
     fontSize: 18,
     fontWeight: "bold",
-    color: "#FFFFFF", // Matches COLORS.text
+    color: "#FFFFFF",
   },
   closeButton: {
     padding: 5,
@@ -170,24 +187,24 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "500",
     marginBottom: 8,
-    color: "#FFFFFF", // Matches COLORS.text
+    color: "#FFFFFF",
   },
   input: {
     borderWidth: 1,
-    borderColor: "#333333", // Matches COLORS.border
+    borderColor: "#333333",
     borderRadius: 8,
     padding: 12,
     marginBottom: 16,
     fontSize: 16,
-    backgroundColor: "#1E1E1E", // Matches COLORS.inputBg
-    color: "#FFFFFF", // Matches COLORS.text
+    backgroundColor: "#1E1E1E",
+    color: "#FFFFFF",
   },
   formFooter: {
     marginTop: 10,
     marginBottom: 20,
   },
   requiredText: {
-    color: "#AAAAAA", // Matches COLORS.textSecondary
+    color: "#AAAAAA",
     fontSize: 14,
     fontStyle: "italic",
   },
@@ -196,7 +213,7 @@ const styles = StyleSheet.create({
     justifyContent: "flex-end",
     padding: 15,
     borderTopWidth: 1,
-    borderTopColor: "#333333", // Matches COLORS.border
+    borderTopColor: "#333333",
   },
   button: {
     paddingVertical: 10,
@@ -206,11 +223,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   cancelButton: {
-    backgroundColor: "#333333", // Matches COLORS.border (consistent with DocenteForm)
+    backgroundColor: "#333333",
     marginRight: 10,
   },
   cancelButtonText: {
-    color: "#AAAAAA", // Matches COLORS.textSecondary
+    color: "#AAAAAA",
     fontWeight: "500",
   },
   saveButton: {

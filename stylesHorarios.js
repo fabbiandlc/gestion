@@ -1,7 +1,9 @@
-export const stylesHorarios = {
+import { StyleSheet } from 'react-native';
+
+export const stylesHorarios = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#121212", // Tema oscuro - fondo principal
+    backgroundColor: "#121212",
   },
   tabContainer: {
     flexDirection: "row",
@@ -10,7 +12,7 @@ export const stylesHorarios = {
     paddingVertical: 10,
     borderBottomWidth: 1,
     borderBottomColor: "#333333",
-    shadowColor: "#444", // Igual que AdministracionScreen
+    shadowColor: "#444",
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.2,
     shadowRadius: 2,
@@ -24,7 +26,7 @@ export const stylesHorarios = {
     borderRadius: 20,
   },
   activeTab: {
-    backgroundColor: "#1E3A5F", // Igual que AdministracionScreen
+    backgroundColor: "#1E3A5F",
   },
   tabText: {
     fontSize: 16,
@@ -33,7 +35,7 @@ export const stylesHorarios = {
     marginLeft: 6,
   },
   activeTabText: {
-    color: "#FFFFFF", // Igual que AdministracionScreen
+    color: "#FFFFFF",
     fontWeight: "600",
   },
   searchContainer: {
@@ -51,14 +53,14 @@ export const stylesHorarios = {
   },
   searchIcon: {
     marginRight: 8,
-    color: "#AAAAAA", // Color consistente para el icono de búsqueda
+    color: "#AAAAAA",
   },
   searchInput: {
     flex: 1,
     height: 46,
     fontSize: 16,
-    color: "#AAAAAA", // Color del texto de entrada
-    placeholderTextColor: "#AAAAAA", // Color del placeholder
+    color: "#AAAAAA",
+    placeholderTextColor: "#AAAAAA",
   },
   list: {
     padding: 10,
@@ -94,7 +96,7 @@ export const stylesHorarios = {
     justifyContent: "flex-end",
   },
   viewButton: {
-    backgroundColor: "#888888", // Gris igual que deleteButton de AdministracionScreen
+    backgroundColor: "#888888",
     paddingVertical: 8,
     paddingHorizontal: 16,
     borderRadius: 6,
@@ -102,7 +104,7 @@ export const stylesHorarios = {
     alignItems: "center",
   },
   buttonText: {
-    color: "#FFFFFF", // Texto blanco
+    color: "#FFFFFF",
     marginLeft: 4,
     fontWeight: "500",
   },
@@ -174,7 +176,7 @@ export const stylesHorarios = {
     flex: 1,
     height: 46,
     fontSize: 16,
-    color: "#AAAAAA", // Igual que searchInput
+    color: "#AAAAAA",
     borderWidth: 1,
     borderColor: "#333333",
     borderRadius: 6,
@@ -198,13 +200,13 @@ export const stylesHorarios = {
     borderRadius: 6,
     marginBottom: 12,
     overflow: "hidden",
-    backgroundColor: "#1E1E1E", // Fondo consistente para los pickers
+    backgroundColor: "#1E1E1E",
   },
   picker: {
     height: 50,
     width: "100%",
     color: "#FFFFFF",
-    backgroundColor: "#1E1E1E", // Fondo consistente para los pickers
+    backgroundColor: "#1E1E1E",
   },
   timeContainer: {
     flexDirection: "row",
@@ -228,24 +230,24 @@ export const stylesHorarios = {
     marginHorizontal: 5,
   },
   saveButton: {
-    backgroundColor: "#888888", // Gris igual que deleteButton de AdministracionScreen
+    backgroundColor: "#888888",
   },
   saveButtonText: {
-    color: "#FFFFFF", // Texto blanco
+    color: "#FFFFFF",
     fontWeight: "600",
     fontSize: 16,
   },
   cancelButton: {
-    backgroundColor: "#888888", // Gris igual que deleteButton de AdministracionScreen
+    backgroundColor: "#888888",
   },
   cancelButtonText: {
-    color: "#FFFFFF", // Texto blanco
+    color: "#FFFFFF",
     fontWeight: "600",
     fontSize: 16,
   },
   scheduleContainer: {
     flex: 1,
-    backgroundColor: "#121212", // Fondo consistente
+    backgroundColor: "#121212",
   },
   scheduleHeader: {
     flexDirection: "row",
@@ -274,7 +276,7 @@ export const stylesHorarios = {
   },
   scheduleScrollContainer: {
     flex: 1,
-    backgroundColor: "#1A1A1A", // Un poco más claro que el fondo principal para contraste
+    backgroundColor: "#1A1A1A",
   },
   scheduleTable: {
     margin: 10,
@@ -302,31 +304,31 @@ export const stylesHorarios = {
     height: 40,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#2A2A2A", // Más oscuro para el encabezado
+    backgroundColor: "#2A2A2A",
     borderWidth: 0.5,
     borderColor: "#333333",
   },
   dayHeaderText: {
     fontSize: 14,
     fontWeight: "600",
-    color: "#4A90E2", // Azul de acento para el texto del encabezado
+    color: "#4A90E2",
   },
   tableCell: {
     width: 120,
-    height: 50, // Altura fija más compacta
+    height: 50,
     padding: 2,
     borderWidth: 0.5,
     borderColor: "#333333",
     overflow: "hidden",
-    backgroundColor: "#1A1A1A", // Fondo consistente para las celdas
+    backgroundColor: "#1A1A1A",
   },
   emptyCell: {
     flex: 1,
-    backgroundColor: "#1A1A1A", // Fondo consistente para las celdas vacías
+    backgroundColor: "#1A1A1A",
   },
   recesoCell: {
     flex: 1,
-    backgroundColor: "#2C2C2C", // Ligeramente más claro para distinguir el receso
+    backgroundColor: "#2C2C2C",
     justifyContent: "center",
     alignItems: "center",
   },
@@ -335,28 +337,17 @@ export const stylesHorarios = {
     color: "#AAAAAA",
     fontWeight: "500",
   },
-  classCell: {
+  celdaHorario: {
     flex: 1,
-    borderRadius: 4,
-    padding: 4,
+    height: 50,
     justifyContent: "center",
     alignItems: "center",
-    borderColor: "#444444", // Borde más visible para las clases
+    padding: 5,
   },
-  classCellTitle: {
+  textoCeldaCentrado: {
     fontSize: 14,
-    fontWeight: "600",
-    color: "#000000", // Negro para contrastar con los fondos de color de la celda
+    color: "#FFFFFF",
     textAlign: "center",
-  },
-  classCellSubtitle: {
-    fontSize: 10,
-    color: "#333333", // Oscuro para contrastar con los fondos de color de la celda
-  },
-  classCellTime: {
-    fontSize: 9,
-    color: "#333333", // Oscuro para contrastar con los fondos de color de la celda
-    marginTop: 2,
   },
   legendScrollContainer: {
     maxHeight: 200,
@@ -396,6 +387,12 @@ export const stylesHorarios = {
     fontSize: 14,
     color: "#FFFFFF",
   },
+  legendTextAbreviatura: {
+    fontSize: 14,
+    fontWeight: "bold",
+    color: "#FFFFFF",
+    marginBottom: 2,
+  },
   legendSubtext: {
     fontSize: 12,
     color: "#AAAAAA",
@@ -406,7 +403,7 @@ export const stylesHorarios = {
   legendButton: {
     padding: 5,
     marginLeft: 5,
-    backgroundColor: "#888888", // Fondo gris igual que deleteButton
+    backgroundColor: "#888888",
     borderRadius: 6,
   },
-};
+});
