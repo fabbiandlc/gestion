@@ -542,13 +542,6 @@ const HorariosScreen = ({ navigation }) => {
               display: flex;
               align-items: flex-start;
             }
-            .legend-color {
-              width: 10px;
-              height: 10px;
-              margin-right: 5px;
-              border-radius: 2px;
-              margin-top: 2px;
-            }
             .legend-info {
               flex: 1;
             }
@@ -642,7 +635,6 @@ const HorariosScreen = ({ navigation }) => {
                   : `Docente: ${docentes.find(d => d.id === horarios[0].docenteId)?.nombre || ''} ${docentes.find(d => d.id === horarios[0].docenteId)?.apellido || ''}`;
                 return `
                   <div class="legend-item">
-                    <div class="legend-color" style="background-color: ${horarios[0].color || getMateriaColor(materiaId)}"></div>
                     <div class="legend-info">
                       ${materia.abreviatura ? `<div class="legend-info-title">${materia.abreviatura}</div>` : ''}
                       <div class="legend-info-title">${materia.nombre}</div>
@@ -896,8 +888,8 @@ const HorariosScreen = ({ navigation }) => {
                 key={String(materia.id)}
                 label={
                   materia.nombre
-                    ? materia.codigo
-                      ? `${materia.nombre} (${materia.codigo})`
+                    ? materia.abreviatura
+                      ? `${materia.abreviatura} - ${materia.nombre}`
                       : materia.nombre
                     : "Materia sin nombre"
                 }
@@ -1214,15 +1206,6 @@ const HorariosScreen = ({ navigation }) => {
 
                 return (
                   <View key={horario.id} style={styles.legendItem}>
-                    <View
-                      style={[
-                        styles.legendColor,
-                        {
-                          backgroundColor:
-                            horario.color || getMateriaColor(horario.materiaId),
-                        },
-                      ]}
-                    />
                     <View style={styles.legendInfo}>
                       {materia.abreviatura && (
                         <Text style={styles.legendTextAbreviatura}>
