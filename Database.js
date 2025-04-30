@@ -8,21 +8,7 @@ export const initDatabase = async () => {
   try {
     await db.execAsync(`PRAGMA journal_mode = WAL;`);
     
-    // Verificar y migrar la tabla Docentes para añadir la columna numeroEmpleado si es necesario
-    try {
-      const columns = await db.getAllAsync("PRAGMA table_info(Docentes);");
-      const hasNumeroEmpleado = columns.some(col => col.name === 'numeroEmpleado');
-      
-      if (!hasNumeroEmpleado) {
-        console.log("Migrando tabla Docentes para agregar la columna numeroEmpleado...");
-        await db.execAsync(`ALTER TABLE Docentes ADD COLUMN numeroEmpleado TEXT;`);
-        console.log("Migración completada con éxito.");
-      }
-    } catch (migrateError) {
-      console.error("Error durante la migración:", migrateError);
-      // Continuar con la inicialización normal
-    }
-
+    // First create tables if they don't exist with all columns
     await db.execAsync(`
       CREATE TABLE IF NOT EXISTS Docentes (
         id TEXT PRIMARY KEY NOT NULL,
@@ -79,6 +65,20 @@ export const initDatabase = async () => {
         pendingChanges BOOLEAN DEFAULT FALSE
       );
     `);
+
+    // Then try to migrate existing tables if needed
+    try {
+      const columns = await db.getAllAsync("PRAGMA table_info(Docentes);");
+      const hasNumeroEmpleado = columns.some(col => col.name === 'numeroEmpleado');
+      
+      if (!hasNumeroEmpleado) {
+        console.log("Migrando tabla Docentes para agregar la columna numeroEmpleado...");
+        await db.execAsync(`ALTER TABLE Docentes ADD COLUMN numeroEmpleado TEXT;`);
+        console.log("Migración completada con éxito.");
+      }
+    } catch (migrateError) {
+      console.error("Error durante la migración:", migrateError);
+    }
 
     const syncInfo = await db.getAllAsync(`SELECT * FROM SyncInfo LIMIT 1;`);
     if (syncInfo.length === 0) {

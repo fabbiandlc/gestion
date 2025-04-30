@@ -64,9 +64,18 @@ const HorariosScreen = ({ navigation }) => {
     { nombre: "Amarillo", valor: "#A59132" }, // Amarillo más oscuro
   ];
 
+  // Define time slots
+  const timeSlots = [
+    '07:00', '07:50', '08:40', '09:30', '10:20', '11:10', '12:00',
+    '12:30', '13:30', '14:20', '15:10', '16:00', // Morning/Afternoon
+    '16:30', '17:20', '18:10', '19:00', '19:50'  // Evening
+  ];
+  
+  const breakSlot = '16:00 - 16:30';
+  
   const convertirHoraAMinutos = (hora) => {
-    const [horas, minutos] = hora.split(":");
-    return parseInt(horas) * 60 + parseInt(minutos);
+    const [hh, mm] = hora.split(':').map(Number);
+    return hh * 60 + mm;
   };
 
   const bloquesHorarios = useMemo(
@@ -79,10 +88,9 @@ const HorariosScreen = ({ navigation }) => {
       { horaInicio: "10:50", horaFin: "11:40", esReceso: false },
       { horaInicio: "11:40", horaFin: "12:30", esReceso: false },
       { horaInicio: "12:30", horaFin: "13:20", esReceso: false },
-      { horaInicio: "13:20", horaFin: "14:10", esReceso: false },
-      { horaInicio: "14:10", horaFin: "15:00", esReceso: false },
-      { horaInicio: "15:00", horaFin: "15:50", esReceso: false },
-      { horaInicio: "15:50", horaFin: "16:00", esReceso: false },
+      { horaInicio: "13:30", horaFin: "14:20", esReceso: false },
+      { horaInicio: "14:20", horaFin: "15:10", esReceso: false },
+      { horaInicio: "15:10", horaFin: "16:00", esReceso: false },
       { horaInicio: "16:00", horaFin: "16:30", esReceso: true },
       { horaInicio: "16:30", horaFin: "17:20", esReceso: false },
       { horaInicio: "17:20", horaFin: "18:10", esReceso: false },
