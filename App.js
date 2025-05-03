@@ -13,7 +13,7 @@ import {
 import Ionicons from "react-native-vector-icons/Ionicons";
 import { SafeAreaView, SafeAreaProvider } from "react-native-safe-area-context";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { supabase } from "./supabaseConfig"; // Added import
+import { supabase } from "./supabaseConfig";
 import HomeScreen from "./HomeScreen";
 import Calendario from "./Calendario";
 import AdministracionScreen from "./AdministracionScreen";
@@ -193,7 +193,6 @@ export default function App() {
           <View style={{ width: 24 }} />
         </View>
         {currentScreen === "Actividades" && <HomeScreen />}
-        {currentScreen === "Calendario" && <Calendario />}
         {currentScreen === "Gestión" && <AdministracionScreen />}
         {currentScreen === "Horarios" && <HorariosScreen />}
         {currentScreen === "Estadísticas" && <EstadisticasScreen />}
@@ -204,7 +203,6 @@ export default function App() {
 
   const drawerItems = [
     { name: "Actividades", icon: "home-outline" },
-    { name: "Calendario", icon: "calendar-outline" },
     { name: "Gestión", icon: "pencil-outline" },
     { name: "Horarios", icon: "time-outline" },
     { name: "Estadísticas", icon: "stats-chart-outline" },

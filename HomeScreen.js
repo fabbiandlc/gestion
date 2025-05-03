@@ -14,6 +14,7 @@ import ActivityForm from "./ActivityForm";
 import { styles } from "./styles";
 import { v4 as uuidv4 } from "uuid";
 import Ionicons from "react-native-vector-icons/Ionicons";
+import CalendarioWrapper from "./Calendario";
 
 const ActionButton = memo(({ onPress, style, children }) => (
   <TouchableOpacity style={[styles.actionButton, style]} onPress={onPress} activeOpacity={0.7}>
@@ -61,35 +62,37 @@ const ActivitySummary = ({ activity, onClose }) => {
   );
 };
 
-const ActivityCard = memo(
+const ActivityItem = memo(
   ({ activity, onEdit, onDelete, onViewSummary, index }) => {
     const listItems = Array.isArray(activity.notes)
       ? activity.notes.filter((note) => note.content.trim() !== "")
       : [];
     return (
-      <View style={styles.card}>
-        <Text style={styles.cardTitle}>{activity.activityName}</Text>
-        <Text style={styles.cardText}>
-          Fecha: {new Date(activity.activityDate).toLocaleDateString("es-MX")}
-        </Text>
-        <Text style={styles.cardText}>
-          Hora:{" "}
-          {new Date(activity.activityTime).toLocaleTimeString("es-MX", {
-            hour: "2-digit",
-            minute: "2-digit",
-          })}
-        </Text>
-        {listItems.length > 0 && (
-          <Text style={styles.cardText}>Notas: {listItems.length}</Text>
-        )}
-        <View style={styles.cardButtons}>
+      <View style={styles.listItem}>
+        <TouchableOpacity
+          style={styles.listItemContent}
+          onPress={() => onViewSummary(activity)}
+        >
+          <Text style={styles.listItemTime}>
+            {new Date(activity.activityTime).toLocaleTimeString("es-MX", {
+              hour: "2-digit",
+              minute: "2-digit",
+            })}
+          </Text>
+          <View style={styles.listItemDetails}>
+            <Text style={styles.listItemTitle}>{activity.activityName}</Text>
+            {listItems.length > 0 && (
+              <Text style={styles.listItemNotes}>
+                Notas: {listItems.length}
+              </Text>
+            )}
+          </View>
+        </TouchableOpacity>
+        <View style={styles.listItemButtons}>
           <ActionButton
-            style={styles.viewButton}
-            onPress={() => onViewSummary(index)}
+            style={styles.editButton}
+            onPress={() => onEdit(index)}
           >
-            Resumen
-          </ActionButton>
-          <ActionButton style={styles.editButton} onPress={() => onEdit(index)}>
             Editar
           </ActionButton>
           <ActionButton
@@ -109,8 +112,19 @@ const HomeScreen = () => {
   const { deleteItem } = useDataContext();
   const [modalVisible, setModalVisible] = useState(false);
   const [summaryModalVisible, setSummaryModalVisible] = useState(false);
+  const [calendarModalVisible, setCalendarModalVisible] = useState(false);
   const [selectedActivity, setSelectedActivity] = useState(null);
   const [editIndex, setEditIndex] = useState(null);
+  const [selectedDate, setSelectedDate] = useState(new Date());
+
+  const filteredActivities = activities.filter((activity) => {
+    const activityDate = new Date(activity.activityDate);
+    return (
+      activityDate.getFullYear() === selectedDate.getFullYear() &&
+      activityDate.getMonth() === selectedDate.getMonth() &&
+      activityDate.getDate() === selectedDate.getDate()
+    );
+  });
 
   const handleEdit = useCallback((index) => {
     setEditIndex(index);
@@ -129,14 +143,11 @@ const HomeScreen = () => {
             onPress: async () => {
               try {
                 const activityId = activities[index].id;
-                // Call deleteItem from DataContext
                 await deleteItem("Activities", activityId);
-                // Update ActivitiesContext's activities state
                 setActivities((prev) => {
                   const newActivities = prev.filter((_, idx) => idx !== index);
                   return newActivities;
                 });
-                // Close summary modal and clear selectedActivity if needed
                 if (selectedActivity && selectedActivity.id === activityId) {
                   setSummaryModalVisible(false);
                   setSelectedActivity(null);
@@ -154,11 +165,14 @@ const HomeScreen = () => {
   );
 
   const handleViewSummary = useCallback(
-    (index) => {
-      setSelectedActivity({ ...activities[index], notes: Array.isArray(activities[index].notes) ? activities[index].notes : [] });
+    (activity) => {
+      setSelectedActivity({
+        ...activity,
+        notes: Array.isArray(activity.notes) ? activity.notes : [],
+      });
       setSummaryModalVisible(true);
     },
-    [activities]
+    []
   );
 
   const handleModalClose = useCallback(() => {
@@ -197,21 +211,79 @@ const HomeScreen = () => {
     [editIndex, activities, setActivities]
   );
 
+  const handlePreviousDay = useCallback(() => {
+    setSelectedDate((prev) => {
+      const newDate = new Date(prev);
+      newDate.setDate(prev.getDate() - 1);
+      return newDate;
+    });
+  }, []);
+
+  const handleNextDay = useCallback(() => {
+    setSelectedDate((prev) => {
+      const newDate = new Date(prev);
+      newDate.setDate(prev.getDate() + 1);
+      return newDate;
+    });
+  }, []);
+
+  const handleCalendarDayPress = useCallback((day) => {
+    const [year, month, date] = day.dateString.split("-").map(Number);
+    const selected = new Date(year, month - 1, date);
+    setSelectedDate(selected);
+    setCalendarModalVisible(false);
+  }, []);
+
   return (
     <SafeAreaView style={styles.container}>
-      <ScrollView style={styles.activitiesContainer} showsVerticalScrollIndicator={false}>
-        {activities.map((activity, index) => (
-          <ActivityCard
-            key={activity.id}
-            activity={activity}
-            index={index}
-            onEdit={handleEdit}
-            onDelete={handleDelete}
-            onViewSummary={handleViewSummary}
-          />
-        ))}
+      <View style={styles.dateHeader}>
+        <TouchableOpacity onPress={handlePreviousDay}>
+          <Ionicons name="chevron-back" size={24} color="#fff" />
+        </TouchableOpacity>
+        <Text style={styles.dateHeaderText}>
+          {selectedDate.toLocaleDateString("es-MX", {
+            weekday: "long",
+            year: "numeric",
+            month: "long",
+            day: "numeric",
+          })}
+        </Text>
+        <TouchableOpacity onPress={handleNextDay}>
+          <Ionicons name="chevron-forward" size={24} color="#fff" />
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.calendarIcon}
+          onPress={() => setCalendarModalVisible(true)}
+        >
+          <Ionicons name="calendar-outline" size={24} color="#fff" />
+        </TouchableOpacity>
+      </View>
+      <ScrollView
+        style={styles.activitiesContainer}
+        showsVerticalScrollIndicator={false}
+      >
+        {filteredActivities.length > 0 ? (
+          filteredActivities.map((activity, index) => (
+            <ActivityItem
+              key={activity.id}
+              activity={activity}
+              index={activities.findIndex((act) => act.id === activity.id)}
+              onEdit={handleEdit}
+              onDelete={handleDelete}
+              onViewSummary={handleViewSummary}
+            />
+          ))
+        ) : (
+          <Text style={styles.noActivitiesText}>
+            No hay actividades para este día
+          </Text>
+        )}
       </ScrollView>
-      <TouchableOpacity style={styles.addButton} onPress={handleAddActivity} activeOpacity={0.7}>
+      <TouchableOpacity
+        style={styles.addButton}
+        onPress={handleAddActivity}
+        activeOpacity={0.7}
+      >
         <Ionicons name="add" size={32} color="#000000" />
       </TouchableOpacity>
       <Modal
@@ -227,7 +299,12 @@ const HomeScreen = () => {
           onSubmit={handleFormSubmit}
           initialData={
             editIndex !== null
-              ? { ...activities[editIndex], notes: Array.isArray(activities[editIndex].notes) ? activities[editIndex].notes : [] }
+              ? {
+                  ...activities[editIndex],
+                  notes: Array.isArray(activities[editIndex].notes)
+                    ? activities[editIndex].notes
+                    : [],
+                }
               : undefined
           }
         />
@@ -244,6 +321,33 @@ const HomeScreen = () => {
             onClose={() => setSummaryModalVisible(false)}
           />
         )}
+      </Modal>
+      <Modal
+        animationType="slide"
+        transparent={false}
+        visible={calendarModalVisible}
+        onRequestClose={() => setCalendarModalVisible(false)}
+      >
+        <SafeAreaView style={styles.fullScreenModalContainer}>
+          <View style={styles.modalHeader}>
+            <TouchableOpacity
+              style={styles.modalBackButton}
+              onPress={() => setCalendarModalVisible(false)}
+            >
+              <Ionicons name="arrow-back" size={24} color="#fff" />
+            </TouchableOpacity>
+            <Text style={styles.modalHeaderText}>Calendario</Text>
+            <TouchableOpacity
+              style={styles.modalCloseButton}
+              onPress={() => setCalendarModalVisible(false)}
+            >
+              <Ionicons name="close" size={24} color="#fff" />
+            </TouchableOpacity>
+          </View>
+          <View style={styles.calendarModalContent}>
+            <CalendarioWrapper onDayPress={handleCalendarDayPress} />
+          </View>
+        </SafeAreaView>
       </Modal>
     </SafeAreaView>
   );

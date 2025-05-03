@@ -1,4 +1,4 @@
-  import { StyleSheet } from "react-native";
+import { StyleSheet } from "react-native";
 
 const COLORS = {
   primary: "#4A90E2",
@@ -26,59 +26,71 @@ const BORDER_RADIUS = {
 };
 
 export const styles = StyleSheet.create({
-
   container: {
     flex: 1,
     backgroundColor: COLORS.background,
   },
-  header: {
+  dateHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     padding: SPACING.md,
+    backgroundColor: "#000",
     borderBottomWidth: 1,
     borderBottomColor: COLORS.border,
-    backgroundColor: COLORS.background,
   },
-  headerTitle: {
-    fontSize: 24,
-    fontWeight: 'bold',
+  dateHeaderText: {
+    fontSize: 18,
+    fontWeight: "bold",
     color: COLORS.text,
-    textAlign: 'center',
+    flex: 1,
+    textAlign: "center",
+  },
+  calendarIcon: {
+    padding: SPACING.sm,
   },
   activitiesContainer: {
     padding: SPACING.md,
   },
-  card: {
-    flexDirection: "column", 
-    padding: SPACING.md,
-    marginBottom: SPACING.md,
+  listItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    padding: SPACING.sm,
+    marginBottom: SPACING.sm,
     backgroundColor: "#252525",
-    borderRadius: BORDER_RADIUS.md,
+    borderRadius: BORDER_RADIUS.sm,
     borderWidth: 1,
     borderColor: COLORS.border,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 6,
-    elevation: 3,
   },
-  cardTitle: {
-    fontSize: 18,
+  listItemContent: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  listItemTime: {
+    fontSize: 14,
     fontWeight: "bold",
     color: COLORS.text,
-    marginBottom: SPACING.sm,
+    width: 60,
+    marginRight: SPACING.sm,
   },
-  cardText: {
-    fontSize: 14,
+  listItemDetails: {
+    flex: 1,
+  },
+  listItemTitle: {
+    fontSize: 16,
+    fontWeight: "600",
     color: COLORS.text,
-    marginBottom: SPACING.sm,
   },
-  cardButtons: {
+  listItemNotes: {
+    fontSize: 12,
+    color: COLORS.gray,
+  },
+  listItemButtons: {
     flexDirection: "row",
-    justifyContent: "flex-end",
-    marginTop: SPACING.sm,
     gap: SPACING.sm,
   },
-  viewButton: {
-    backgroundColor: COLORS.white,
+  actionButton: {
     paddingVertical: SPACING.sm,
     paddingHorizontal: SPACING.md,
     borderRadius: BORDER_RADIUS.sm,
@@ -87,19 +99,9 @@ export const styles = StyleSheet.create({
   },
   editButton: {
     backgroundColor: COLORS.white,
-    paddingVertical: SPACING.sm,
-    paddingHorizontal: SPACING.md,
-    borderRadius: BORDER_RADIUS.sm,
-    alignItems: "center",
-    justifyContent: "center",
   },
   deleteButton: {
     backgroundColor: "#666666",
-    paddingVertical: SPACING.sm,
-    paddingHorizontal: SPACING.md,
-    borderRadius: BORDER_RADIUS.sm,
-    alignItems: "center",
-    justifyContent: "center",
   },
   buttonText: {
     color: COLORS.white,
@@ -134,12 +136,42 @@ export const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
+  fullScreenModalContainer: {
+    flex: 1,
+    backgroundColor: COLORS.background,
+  },
+  modalHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    padding: SPACING.md,
+    backgroundColor: "#000",
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.border,
+  },
+  modalHeaderText: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: COLORS.text,
+  },
+  modalBackButton: {
+    padding: SPACING.sm,
+  },
+  modalCloseButton: {
+    padding: SPACING.sm,
+  },
   modalContent: {
     width: "90%",
     backgroundColor: "#1E1E1E",
     padding: SPACING.lg,
     borderRadius: BORDER_RADIUS.md,
     maxHeight: "80%",
+  },
+  calendarModalContent: {
+    flex: 1,
+    width: "100%",
+    padding: SPACING.md,
+    backgroundColor: "#1E1E1E",
   },
   summaryTitle: {
     fontSize: 20,
@@ -184,6 +216,12 @@ export const styles = StyleSheet.create({
     alignItems: "center",
     marginTop: SPACING.md,
   },
+  noActivitiesText: {
+    fontSize: 16,
+    color: COLORS.gray,
+    textAlign: "center",
+    marginTop: SPACING.md,
+  },
   formScrollView: {
     paddingBottom: SPACING.lg,
   },
@@ -218,7 +256,7 @@ export const styles = StyleSheet.create({
     paddingVertical: SPACING.sm,
     paddingHorizontal: SPACING.md,
     borderRadius: BORDER_RADIUS.sm,
-    alignItems: 'center',
+    alignItems: "center",
     marginHorizontal: SPACING.sm,
     borderWidth: 1,
     borderColor: COLORS.border,
@@ -230,14 +268,14 @@ export const styles = StyleSheet.create({
   pickerButtonText: {
     color: COLORS.white,
     fontSize: 16,
-    fontWeight: '500',
+    fontWeight: "500",
   },
   selectorScroll: {
     marginBottom: SPACING.md,
     maxHeight: 100,
   },
   selectorContainer: {
-    backgroundColor: '#252525',
+    backgroundColor: "#252525",
     borderRadius: BORDER_RADIUS.sm,
     marginBottom: SPACING.md,
     padding: SPACING.sm,
@@ -245,13 +283,13 @@ export const styles = StyleSheet.create({
     borderColor: COLORS.border,
   },
   selectorOption: {
-    backgroundColor: '#333333',
+    backgroundColor: "#333333",
     paddingVertical: SPACING.sm,
     paddingHorizontal: SPACING.md,
     borderRadius: BORDER_RADIUS.sm,
     marginRight: SPACING.sm,
     minWidth: 60,
-    alignItems: 'center',
+    alignItems: "center",
   },
   selectorOptionSelected: {
     backgroundColor: COLORS.primary,
@@ -262,43 +300,43 @@ export const styles = StyleSheet.create({
   },
   selectorOptionTextSelected: {
     color: COLORS.white,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
   formSection: {
     marginBottom: SPACING.lg,
   },
   formLabelContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     marginBottom: SPACING.sm,
   },
   formIcon: {
     marginRight: SPACING.sm,
   },
   removeNoteButton: {
-    position: 'absolute',
+    position: "absolute",
     top: 5,
     right: 5,
     zIndex: 1,
-    backgroundColor: 'rgba(0,0,0,0.6)',
+    backgroundColor: "rgba(0,0,0,0.6)",
     borderRadius: 12,
     width: 24,
     height: 24,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   statsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "space-between",
     marginBottom: SPACING.lg,
   },
   statCard: {
-    backgroundColor: '#252525',
+    backgroundColor: "#252525",
     borderRadius: BORDER_RADIUS.md,
     padding: SPACING.md,
     marginBottom: SPACING.md,
-    width: '48%', // for 2 cards per row
+    width: "48%",
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.3,
@@ -312,29 +350,29 @@ export const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     marginBottom: SPACING.sm,
   },
   statLabel: {
     fontSize: 14,
     color: COLORS.text,
     marginBottom: SPACING.sm,
-    fontWeight: '500',
+    fontWeight: "500",
   },
   statNumber: {
     fontSize: 22,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     color: COLORS.text,
   },
   chartContainer: {
-    marginTop: 20, 
+    marginTop: 20,
     marginBottom: 25,
-    alignItems: 'center',
+    alignItems: "center",
   },
   chartTitle: {
     fontSize: 18,
-    fontWeight: '600',
+    fontWeight: "600",
     color: COLORS.text,
     marginBottom: 10,
   },
@@ -346,19 +384,19 @@ export const styles = StyleSheet.create({
     paddingVertical: SPACING.md,
     paddingHorizontal: SPACING.lg,
     borderRadius: BORDER_RADIUS.md,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
     marginTop: SPACING.md,
   },
   exportButtonText: {
-    color: '#fff',
+    color: "#fff",
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     marginLeft: 10,
   },
   dateTimePickerButtonText: {
-    color: '#fff',
+    color: "#fff",
     fontSize: 16,
   },
   noteContainer: {
@@ -386,7 +424,7 @@ export const styles = StyleSheet.create({
     marginBottom: SPACING.md,
   },
   addNoteButtonText: {
-    color: COLORS.white, // Cambia a blanco
+    color: COLORS.white,
     fontSize: 16,
     fontWeight: "500",
   },
@@ -410,63 +448,63 @@ export const styles = StyleSheet.create({
     backgroundColor: COLORS.white,
   },
   centerContent: {
-    flex: 1, 
-    justifyContent: 'center',
-    alignItems: 'center',
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
     padding: 20,
   },
   loadingText: {
-    color: '#fff',
+    color: "#fff",
     marginTop: 10,
     fontSize: 16,
   },
   errorText: {
-    color: '#ff6b6b', 
+    color: "#ff6b6b",
     marginTop: 15,
     fontSize: 16,
-    textAlign: 'center',
+    textAlign: "center",
     marginBottom: 20,
   },
   retryButton: {
-    backgroundColor: '#007BFF',
+    backgroundColor: "#007BFF",
     paddingVertical: 10,
     paddingHorizontal: 20,
     borderRadius: 25,
     marginTop: 10,
   },
   retryButtonText: {
-    color: '#fff',
+    color: "#fff",
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
   refreshButton: {
-    flexDirection: 'row',
-    backgroundColor: '#28a745', 
+    flexDirection: "row",
+    backgroundColor: "#28a745",
     paddingVertical: 12,
     paddingHorizontal: 20,
     borderRadius: 25,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 15, 
-    marginBottom: 30, 
-    alignSelf: 'center',
-    shadowColor: '#000',
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: 15,
+    marginBottom: 30,
+    alignSelf: "center",
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.3,
     shadowRadius: 4,
     elevation: 6,
   },
   refreshButtonText: {
-    color: '#fff',
+    color: "#fff",
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     marginLeft: 10,
   },
   noDataText: {
-    color: '#aaa',      // Grey color for placeholder text
-    textAlign: 'center',
+    color: "#aaa",
+    textAlign: "center",
     marginTop: 15,
     marginBottom: 15,
-    fontStyle: 'italic',
-  }
+    fontStyle: "italic",
+  },
 });

@@ -78,7 +78,7 @@ const ActivityItem = memo(({ activity, onEdit, onDelete }) => (
         style={stylesCalendar.deleteButton}
         activeOpacity={0.7}
       >
-        <Ionicons name="trash-outline" size={18} color="#FFFFFF" style={{marginRight: 6}} />
+        <Ionicons name="trash-outline" size={18} color="#FFFFFF" style={{ marginRight: 6 }} />
         <Text style={stylesCalendar.buttonText}>Eliminar</Text>
       </TouchableOpacity>
     </View>
@@ -122,7 +122,7 @@ const ActivitiesList = memo(({ activities, date, onEdit, onDelete }) => {
   );
 });
 
-const Calendario = () => {
+const Calendario = ({ onDayPress }) => {
   const {
     activities,
     setActivities,
@@ -194,8 +194,11 @@ const Calendario = () => {
   const handleDayPress = useCallback(
     (day) => {
       setSelectedDate(day.dateString);
+      if (onDayPress) {
+        onDayPress(day);
+      }
     },
-    [setSelectedDate]
+    [setSelectedDate, onDayPress]
   );
 
   return (
@@ -218,7 +221,7 @@ const Calendario = () => {
   );
 };
 
-const CalendarioWrapper = () => {
+const CalendarioWrapper = ({ onDayPress }) => {
   const { activities } = useContext(ActivitiesContext);
 
   React.useEffect(() => {
@@ -227,7 +230,7 @@ const CalendarioWrapper = () => {
     }
   }, [activities]);
 
-  return <Calendario />;
+  return <Calendario onDayPress={onDayPress} />;
 };
 
 export default memo(CalendarioWrapper);
