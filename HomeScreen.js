@@ -205,6 +205,11 @@ const HomeScreen = () => {
       } else {
         setActivities((prev) => [...prev, newActivity]);
       }
+
+      // Redirect to the activity's date
+      const activityDate = new Date(activityData.activityDate);
+      setSelectedDate(activityDate);
+
       setModalVisible(false);
       setEditIndex(null);
     },

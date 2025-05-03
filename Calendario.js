@@ -56,7 +56,7 @@ const CALENDAR_THEME = {
   textDisabledColor: "#888888",
   monthTextColor: "#FFFFFF",
   arrowColor: "#FFFFFF",
-  dotColor: "#4A90E2",
+  dotColor: "#FFFFFF", // Default dot color, overridden in markedDates
   selectedDayBackgroundColor: "#252525",
   selectedDayTextColor: "#FFFFFF",
 };
@@ -174,20 +174,31 @@ const Calendario = ({ onDayPress }) => {
   );
 
   const markedDates = useMemo(() => {
-    const dates = {};
-    activities.forEach((activity) => {
+    const today = new Date();
+    const todayString = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
+    
+    const dates = activities.reduce((acc, activity) => {
       const activityDate = new Date(activity.activityDate);
       const year = activityDate.getFullYear();
       const month = String(activityDate.getMonth() + 1).padStart(2, "0");
       const day = String(activityDate.getDate()).padStart(2, "0");
       const dateString = `${year}-${month}-${day}`;
-      dates[dateString] = {
+      acc[dateString] = {
         marked: true,
-        dotColor: "#4A90E2",
+        dotColor: "#FFFFFF", // White dot for days with activities
         selected: dateString === selectedDate,
         selectedColor: "#252525",
       };
+      return acc;
+    }, {
+      [todayString]: {
+        marked: true,
+        dotColor: "red", // Red dot for current day
+        selected: todayString === selectedDate,
+        selectedColor: "#252525",
+      },
     });
+
     return dates;
   }, [activities, selectedDate]);
 
