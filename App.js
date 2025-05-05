@@ -24,8 +24,6 @@ import EstadisticasScreen from "./EstadisticasScreen";
 import { ActivitiesProvider } from "./ActivitiesContext";
 import { DataProvider } from "./DataContext";
 import "react-native-get-random-values";
-import { AppState } from "react-native";
-import { backupToSupabase } from "./Database";
 
 const { width } = Dimensions.get("window");
 
@@ -74,22 +72,6 @@ export default function App() {
 
     return () => backHandler.remove();
   }, [isDrawerOpen]);
-
-  useEffect(() => {
-    const handleAppStateChange = (nextAppState) => {
-      if (nextAppState === "background" || nextAppState === "inactive") {
-        backupToSupabase()
-          .then(() => console.log("Copia de seguridad realizada al cerrar/app background"))
-          .catch((err) => console.warn("Error al hacer backup automático:", err));
-      }
-    };
-
-    const subscription = AppState.addEventListener("change", handleAppStateChange);
-
-    return () => {
-      subscription.remove();
-    };
-  }, []);
 
   const openDrawer = () => {
     setIsDrawerOpen(true);

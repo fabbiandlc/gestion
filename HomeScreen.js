@@ -133,6 +133,10 @@ const HomeScreen = () => {
 
   const handleDelete = useCallback(
     (index) => {
+      console.log("handleDelete called with index:", index);
+      console.log("activities:", activities);
+      console.log("selectedActivity:", selectedActivity);
+  
       Alert.alert(
         "Eliminar Actividad",
         "¿Estás seguro de que deseas eliminar esta actividad?",
@@ -142,7 +146,11 @@ const HomeScreen = () => {
             text: "Eliminar",
             onPress: async () => {
               try {
-                const activityId = activities[index].id;
+                const activityId = activities[index]?.id;
+                if (!activityId) {
+                  throw new Error("Activity at index not found");
+                }
+                console.log("Deleting activity with ID:", activityId);
                 await deleteItem("Activities", activityId);
                 setActivities((prev) => {
                   const newActivities = prev.filter((_, idx) => idx !== index);
