@@ -4,11 +4,35 @@ import NetInfo from '@react-native-community/netinfo';
 
 const db = SQLite.openDatabaseSync("AppDatabase.db");
 
+const validFields = {
+  Docentes: ["id", "nombre", "apellido", "email", "telefono", "numeroEmpleado", "materias", "grupos", "especialidad"],
+  Materias: ["id", "nombre", "codigo", "horasSemana", "creditos", "semestre", "color", "descripcion"],
+  Grupos: ["id", "nombre", "grado", "turno", "tutor", "materias"],
+  Horarios: ["id", "docenteId", "dia", "horaInicio", "horaFin", "materiaId", "salonId", "color"],
+  Activities: ["id", "activityName", "activityDate", "activityTime", "notes"],
+  Directivos: ["id", "nombre", "rol", "generoFemenino"],
+};
+
+const updateDirectivosColumns = async () => {
+  try {
+    await db.runAsync(`
+      UPDATE Directivos
+      SET rol = 'Director',
+          generoFemenino = 0
+      WHERE (rol = '' OR rol IS NULL OR generoFemenino IS NULL) AND id IN (
+        SELECT id FROM Directivos LIMIT 1
+      );
+    `);
+    console.log("Updated 'rol' and 'generoFemenino' for existing Directivos records.");
+  } catch (error) {
+    console.error("Error updating Directivos columns:", error);
+  }
+};
+
 export const initDatabase = async () => {
   try {
     await db.execAsync(`PRAGMA journal_mode = WAL;`);
-    
-    // First create tables if they don't exist with all columns
+
     await db.execAsync(`
       CREATE TABLE IF NOT EXISTS Docentes (
         id TEXT PRIMARY KEY NOT NULL,
@@ -59,6 +83,12 @@ export const initDatabase = async () => {
         activityTime TEXT NOT NULL,
         notes TEXT
       );
+      CREATE TABLE IF NOT EXISTS Directivos (
+        id TEXT PRIMARY KEY NOT NULL,
+        nombre TEXT NOT NULL,
+        rol TEXT NOT NULL,
+        generoFemenino BOOLEAN DEFAULT FALSE
+      );
       CREATE TABLE IF NOT EXISTS SyncInfo (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         lastSync TEXT,
@@ -66,18 +96,28 @@ export const initDatabase = async () => {
       );
     `);
 
-    // Then try to migrate existing tables if needed
-    try {
-      const columns = await db.getAllAsync("PRAGMA table_info(Docentes);");
-      const hasNumeroEmpleado = columns.some(col => col.name === 'numeroEmpleado');
-      
-      if (!hasNumeroEmpleado) {
-        console.log("Migrando tabla Docentes para agregar la columna numeroEmpleado...");
-        await db.execAsync(`ALTER TABLE Docentes ADD COLUMN numeroEmpleado TEXT;`);
-        console.log("Migración completada con éxito.");
-      }
-    } catch (migrateError) {
-      console.error("Error durante la migración:", migrateError);
+    const schema = await db.getAllAsync("PRAGMA table_info(Directivos);");
+    const hasRolColumn = schema.some((column) => column.name === "rol");
+    const hasGeneroFemeninoColumn = schema.some((column) => column.name === "generoFemenino");
+
+    if (!hasRolColumn) {
+      console.log("Adding 'rol' column to Directivos table...");
+      await db.execAsync(`
+        ALTER TABLE Directivos ADD COLUMN rol TEXT NOT NULL DEFAULT '';
+      `);
+      console.log("'rol' column added successfully.");
+    }
+
+    if (!hasGeneroFemeninoColumn) {
+      console.log("Adding 'generoFemenino' column to Directivos table...");
+      await db.execAsync(`
+        ALTER TABLE Directivos ADD COLUMN generoFemenino BOOLEAN DEFAULT FALSE;
+      `);
+      console.log("'generoFemenino' column added successfully.");
+    }
+
+    if (!hasRolColumn || !hasGeneroFemeninoColumn) {
+      await updateDirectivosColumns();
     }
 
     const syncInfo = await db.getAllAsync(`SELECT * FROM SyncInfo LIMIT 1;`);
@@ -92,76 +132,25 @@ export const initDatabase = async () => {
   }
 };
 
-export const fetchAll = async (table) => {
-  try {
-    const result = await db.getAllAsync(`SELECT * FROM ${table};`);
-    return result || [];
-  } catch (error) {
-    console.error(`Error fetching ${table}:`, error);
-    return [];
-  }
-};
-
-const validFields = {
-  Docentes: [
-    "id",
-    "nombre",
-    "apellido",
-    "email",
-    "telefono",
-    "numeroEmpleado",
-    "materias",
-    "grupos",
-    "especialidad",
-  ],
-  Materias: [
-    "id",
-    "nombre",
-    "codigo",
-    "horasSemana",
-    "creditos",
-    "semestre",
-    "color",
-    "descripcion",
-  ],
-  Grupos: ["id", "nombre", "grado", "turno", "tutor", "materias"],
-  Horarios: [
-    "id",
-    "docenteId",
-    "dia",
-    "horaInicio",
-    "horaFin",
-    "materiaId",
-    "salonId",
-    "color",
-  ],
-  Activities: ["id", "activityName", "activityDate", "activityTime", "notes"],
-};
-
 export const insert = async (table, data) => {
   try {
-    const filteredData = Object.fromEntries(
-      Object.entries(data).filter(([key]) => validFields[table].includes(key))
-    );
-    if (filteredData.materias && Array.isArray(filteredData.materias)) {
-      filteredData.materias = JSON.stringify(filteredData.materias);
-    }
-    if (filteredData.grupos && Array.isArray(filteredData.grupos)) {
-      filteredData.grupos = JSON.stringify(filteredData.grupos);
-    }
-    if (filteredData.notes && Array.isArray(filteredData.notes)) {
-      filteredData.notes = JSON.stringify(filteredData.notes);
-    }
-    const keys = Object.keys(filteredData).join(",");
-    const placeholders = Object.keys(filteredData)
-      .map(() => "?")
-      .join(",");
+    const fields = validFields[table];
+    if (!fields) throw new Error(`Invalid table: ${table}`);
+
+    const filteredData = {};
+    fields.forEach((field) => {
+      if (data[field] !== undefined) {
+        filteredData[field] = data[field];
+      }
+    });
+
+    const columns = Object.keys(filteredData).join(", ");
+    const placeholders = Object.keys(filteredData).map(() => "?").join(", ");
     const values = Object.values(filteredData);
-    await db.runAsync(
-      `INSERT OR REPLACE INTO ${table} (${keys}) VALUES (${placeholders});`,
-      values
-    );
-    await db.runAsync(`UPDATE SyncInfo SET pendingChanges = TRUE;`);
+
+    const query = `INSERT OR REPLACE INTO ${table} (${columns}) VALUES (${placeholders});`;
+    await db.runAsync(query, values);
+    console.log(`Inserted/Updated ${table} record:`, filteredData.id);
   } catch (error) {
     console.error(`Error inserting into ${table}:`, error);
     throw error;
@@ -170,27 +159,23 @@ export const insert = async (table, data) => {
 
 export const update = async (table, data, id) => {
   try {
-    const filteredData = Object.fromEntries(
-      Object.entries(data).filter(([key]) => validFields[table].includes(key))
-    );
-    if (filteredData.materias && Array.isArray(filteredData.materias)) {
-      filteredData.materias = JSON.stringify(filteredData.materias);
-    }
-    if (filteredData.grupos && Array.isArray(filteredData.grupos)) {
-      filteredData.grupos = JSON.stringify(filteredData.grupos);
-    }
-    if (filteredData.notes && Array.isArray(filteredData.notes)) {
-      filteredData.notes = JSON.stringify(filteredData.notes);
-    }
-    const setClause = Object.keys(filteredData)
-      .map((key) => `${key} = ?`)
-      .join(",");
-    const values = [...Object.values(filteredData), id];
-    await db.runAsync(
-      `UPDATE ${table} SET ${setClause} WHERE id = ?;`,
-      values
-    );
-    await db.runAsync(`UPDATE SyncInfo SET pendingChanges = TRUE;`);
+    const fields = validFields[table];
+    if (!fields) throw new Error(`Invalid table: ${table}`);
+
+    const filteredData = {};
+    fields.forEach((field) => {
+      if (data[field] !== undefined && field !== 'id') {
+        filteredData[field] = data[field];
+      }
+    });
+
+    const setClause = Object.keys(filteredData).map((key) => `${key} = ?`).join(", ");
+    const values = Object.values(filteredData);
+    values.push(id);
+
+    const query = `UPDATE ${table} SET ${setClause} WHERE id = ?;`;
+    await db.runAsync(query, values);
+    console.log(`Updated ${table} record:`, id);
   } catch (error) {
     console.error(`Error updating ${table}:`, error);
     throw error;
@@ -199,37 +184,25 @@ export const update = async (table, data, id) => {
 
 export const remove = async (table, id) => {
   try {
+    if (!validFields[table]) throw new Error(`Invalid table: ${table}`);
     await db.runAsync(`DELETE FROM ${table} WHERE id = ?;`, [id]);
-    await db.runAsync(`UPDATE SyncInfo SET pendingChanges = TRUE;`);
+    console.log(`Deleted ${table} record:`, id);
   } catch (error) {
     console.error(`Error deleting from ${table}:`, error);
     throw error;
   }
 };
 
-export const exportBackup = async () => {
+export const fetchAll = async (table) => {
   try {
-    const tables = ["Docentes", "Materias", "Grupos", "Horarios", "Activities"];
-    const backupData = {};
-
-    for (const table of tables) {
-      const data = await fetchAll(table);
-      backupData[table] = data.map((item) => {
-        const filteredItem = {};
-        validFields[table].forEach((field) => {
-          if (item[field] !== undefined) {
-            filteredItem[field] = item[field];
-          }
-        });
-        return filteredItem;
-      });
-    }
-
-    console.log("Exported backup:", backupData);
-    return JSON.stringify(backupData, null, 2);
+    if (!validFields[table]) throw new Error(`Invalid table: ${table}`);
+    const query = `SELECT * FROM ${table};`;
+    const results = await db.getAllAsync(query);
+    console.log(`Fetched ${results.length} records from ${table}`);
+    return results;
   } catch (error) {
-    console.error("Error exporting backup:", error);
-    return null;
+    console.error(`Error fetching from ${table}:`, error);
+    throw error;
   }
 };
 
@@ -246,6 +219,7 @@ export const importBackup = async (backupData) => {
       "Grupos",
       "Horarios",
       "Activities",
+      "Directivos",
     ];
 
     if (!Object.keys(data).some((table) => validTables.includes(table))) {
@@ -255,13 +229,13 @@ export const importBackup = async (backupData) => {
 
     await db.execAsync("BEGIN TRANSACTION;");
 
-    // Clear tables to avoid constraint issues
     await db.execAsync(`
       DELETE FROM Horarios;
       DELETE FROM Activities;
       DELETE FROM Grupos;
       DELETE FROM Materias;
       DELETE FROM Docentes;
+      DELETE FROM Directivos;
     `);
 
     for (const table of validTables) {
@@ -271,6 +245,18 @@ export const importBackup = async (backupData) => {
           if (!item.id) {
             console.warn(`Skipping ${table} item without ID:`, item);
             continue;
+          }
+          if (table === "Directivos") {
+            if (!item.rol) {
+              item.rol = "Director";
+            }
+            if (item.generoFemenino === undefined) {
+              item.generoFemenino = false;
+            }
+            if (item.puesto && !item.rol) {
+              item.rol = item.puesto;
+              delete item.puesto;
+            }
           }
           await insert(table, item);
           console.log(`Inserted/Updated ${table} item:`, item.id);

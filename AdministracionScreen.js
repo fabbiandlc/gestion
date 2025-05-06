@@ -15,10 +15,11 @@ import { useDataContext } from "./DataContext";
 import DocenteForm from "./DocenteForm";
 import MateriaForm from "./MateriaForm";
 import GrupoForm from "./GrupoForm";
+import DirectivoForm from "./DirectivoForm";
 
 const AdministracionScreen = ({ navigation }) => {
   const [activeSection, setActiveSection] = useState("docentes");
-  const { docentes, setDocentes, materias, setMaterias, grupos, setGrupos, horarios } =
+  const { docentes, setDocentes, materias, setMaterias, grupos, setGrupos, horarios, directivos, setDirectivos } =
     useDataContext();
 
   const [modalVisible, setModalVisible] = useState(false);
@@ -35,10 +36,12 @@ const AdministracionScreen = ({ navigation }) => {
         return materias;
       case "grupos":
         return grupos;
+      case "directivos":
+        return directivos;
       default:
         return [];
     }
-  }, [activeSection, docentes, materias, grupos]);
+  }, [activeSection, docentes, materias, grupos, directivos]);
 
   const getActiveSetter = useCallback(() => {
     switch (activeSection) {
@@ -48,10 +51,12 @@ const AdministracionScreen = ({ navigation }) => {
         return setMaterias;
       case "grupos":
         return setGrupos;
+      case "directivos":
+        return setDirectivos;
       default:
         return () => {};
     }
-  }, [activeSection, setDocentes, setMaterias, setGrupos]);
+  }, [activeSection, setDocentes, setMaterias, setGrupos, setDirectivos]);
 
   const filteredItems = useMemo(() => {
     let result = [...getActiveData()];
@@ -67,6 +72,8 @@ const AdministracionScreen = ({ navigation }) => {
           case "materias":
             return item.nombre.toLowerCase().includes(query);
           case "grupos":
+            return item.nombre.toLowerCase().includes(query);
+          case "directivos":
             return item.nombre.toLowerCase().includes(query);
           default:
             return false;
@@ -91,6 +98,12 @@ const AdministracionScreen = ({ navigation }) => {
           break;
         case "fecha":
           comparison = new Date(a.createdAt) - new Date(b.createdAt);
+          break;
+        case "puesto":
+          comparison =
+            activeSection === "directivos"
+              ? a.puesto.localeCompare(b.puesto)
+              : 0;
           break;
         default:
           comparison = 0;
@@ -119,6 +132,7 @@ const AdministracionScreen = ({ navigation }) => {
         docentes: "docente",
         materias: "materia",
         grupos: "grupo",
+        directivos: "directivo",
       };
 
       Alert.alert(
@@ -173,6 +187,8 @@ const AdministracionScreen = ({ navigation }) => {
         return renderMateriaItem({ item, index });
       case "grupos":
         return renderGrupoItem({ item, index });
+      case "directivos":
+        return renderDirectivoItem({ item, index });
       default:
         return null;
     }
@@ -339,6 +355,39 @@ const AdministracionScreen = ({ navigation }) => {
     );
   };
 
+  const renderDirectivoItem = ({ item, index }) => {
+    // Safely handle undefined rol with fallback
+    const rol = item.rol || "Sin rol";
+    const displayRol = item.generoFemenino
+      ? rol.replace("Director", "Directora").replace("Subdirector", "Subdirectora")
+      : rol;
+  
+    return (
+      <View style={styles.card}>
+        <View style={styles.cardHeader}>
+          <Text style={styles.cardTitle}>{item.nombre}</Text>
+          <Text style={styles.cardDate}>Rol: {displayRol}</Text>
+        </View>
+        <View style={styles.cardActions}>
+          <TouchableOpacity
+            style={[styles.actionButton, styles.editButton]}
+            onPress={() => handleEdit(index)}
+          >
+            <Ionicons name="create-outline" size={18} color="#000" />
+            <Text style={[styles.actionButtonText, styles.editButtonText]}>Editar</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.actionButton, styles.deleteButton]}
+            onPress={() => handleDelete(index)}
+          >
+            <Ionicons name="trash-outline" size={18} color="#fff" />
+            <Text style={styles.actionButtonText}>Eliminar</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
+  };
+
   const getFormComponent = () => {
     switch (activeSection) {
       case "docentes":
@@ -373,6 +422,16 @@ const AdministracionScreen = ({ navigation }) => {
             materias={materias}
           />
         );
+      case "directivos":
+        return (
+          <DirectivoForm
+            setModalVisible={setModalVisible}
+            editIndex={editIndex}
+            setEditIndex={setEditIndex}
+            directivos={directivos}
+            setDirectivos={setDirectivos}
+          />
+        );
       default:
         return null;
     }
@@ -392,6 +451,11 @@ const AdministracionScreen = ({ navigation }) => {
           { key: "nombre", label: "Nombre" },
           { key: "turno", label: "Turno" },
         ];
+      case "directivos":
+        return [
+          { key: "nombre", label: "Nombre" },
+          { key: "puesto", label: "Puesto" },
+        ];
       default:
         return [];
     }
@@ -402,6 +466,7 @@ const AdministracionScreen = ({ navigation }) => {
       docentes: "docentes",
       materias: "materias",
       grupos: "grupos",
+      directivos: "directivos",
     };
     return searchQuery
       ? "Intenta con otra búsqueda"
@@ -425,10 +490,7 @@ const AdministracionScreen = ({ navigation }) => {
             color={activeSection === "docentes" ? "#fff" : "#666"}
           />
           <Text
-            style={[
-              styles.tabText,
-              activeSection === "docentes" && styles.activeTabText,
-            ]}
+            style={[styles.tabText, activeSection === "docentes" ? styles.activeTabText : null]}
           >
             Docentes
           </Text>
@@ -447,10 +509,7 @@ const AdministracionScreen = ({ navigation }) => {
             color={activeSection === "materias" ? "#fff" : "#666"}
           />
           <Text
-            style={[
-              styles.tabText,
-              activeSection === "materias" && styles.activeTabText,
-            ]}
+            style={[styles.tabText, activeSection === "materias" ? styles.activeTabText : null]}
           >
             Materias
           </Text>
@@ -469,12 +528,28 @@ const AdministracionScreen = ({ navigation }) => {
             color={activeSection === "grupos" ? "#fff" : "#666"}
           />
           <Text
-            style={[
-              styles.tabText,
-              activeSection === "grupos" && styles.activeTabText,
-            ]}
+            style={[styles.tabText, activeSection === "grupos" ? styles.activeTabText : null]}
           >
             Grupos
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.tab, activeSection === "directivos" && styles.activeTab]}
+          onPress={() => {
+            setActiveSection("directivos");
+            setSearchQuery("");
+            setSortBy("nombre");
+          }}
+        >
+          <Ionicons
+            name="briefcase-outline"
+            size={20}
+            color={activeSection === "directivos" ? "#fff" : "#666"}
+          />
+          <Text
+            style={[styles.tabText, activeSection === "directivos" ? styles.activeTabText : null]}
+          >
+            Directivos
           </Text>
         </TouchableOpacity>
       </View>
@@ -491,7 +566,7 @@ const AdministracionScreen = ({ navigation }) => {
           value={searchQuery}
           onChangeText={setSearchQuery}
           clearButtonMode="while-editing"
-          placeholderTextColor="#666" // Color similar al de las pestañas inactivas
+          placeholderTextColor="#666"
         />
       </View>
       <View style={styles.sortContainer}>
@@ -543,7 +618,9 @@ const AdministracionScreen = ({ navigation }) => {
                   ? "person-outline"
                   : activeSection === "materias"
                   ? "book-outline"
-                  : "people-outline"
+                  : activeSection === "grupos"
+                  ? "people-outline"
+                  : "briefcase-outline"
               }
               size={64}
               color="#ccc"

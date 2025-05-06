@@ -9,6 +9,7 @@ export const DataProvider = ({ children }) => {
   const [grupos, setGrupos] = useState([]);
   const [horarios, setHorarios] = useState([]);
   const [activities, setActivities] = useState([]);
+  const [directivos, setDirectivos] = useState([]);
 
   // Initial data load
   useEffect(() => {
@@ -21,18 +22,21 @@ export const DataProvider = ({ children }) => {
           gruposData,
           horariosData,
           activitiesData,
+          directivosData,
         ] = await Promise.all([
           fetchAll("Docentes"),
           fetchAll("Materias"),
           fetchAll("Grupos"),
           fetchAll("Horarios"),
           fetchAll("Activities"),
+          fetchAll("Directivos"),
         ]);
         setDocentes(docentesData || []);
         setMaterias(materiasData || []);
         setGrupos(gruposData || []);
         setHorarios(horariosData || []);
         setActivities(activitiesData || []);
+        setDirectivos(directivosData || []);
       } catch (error) {
         console.error("Error loading initial data:", error);
       }
@@ -82,6 +86,8 @@ export const DataProvider = ({ children }) => {
     updateTable("Horarios", setHorarios, newHorarios);
   const updateActivities = (newActivities) =>
     updateTable("Activities", setActivities, newActivities);
+  const updateDirectivos = (newDirectivos) =>
+    updateTable("Directivos", setDirectivos, newDirectivos);
 
   const deleteItem = async (table, id) => {
     try {
@@ -102,6 +108,9 @@ export const DataProvider = ({ children }) => {
         case "Activities":
           setActivities(activities.filter((a) => a.id !== id));
           break;
+        case "Directivos":
+          setDirectivos(directivos.filter((d) => d.id !== id));
+          break;
       }
     } catch (error) {
       console.error(`Error deleting from ${table}:`, error);
@@ -121,6 +130,8 @@ export const DataProvider = ({ children }) => {
         setHorarios: updateHorarios,
         activities,
         setActivities: updateActivities,
+        directivos,
+        setDirectivos: updateDirectivos,
         deleteItem,
       }}
     >
