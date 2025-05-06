@@ -38,6 +38,8 @@ const HorariosScreen = ({ navigation }) => {
   const [currentView, setCurrentView] = useState("list");
   const [currentTab, setCurrentTab] = useState("docentes");
   const [editingHorario, setEditingHorario] = useState(null);
+  const [selectedMateriaId, setSelectedMateriaId] = useState("");
+  const [selectedSalonId, setSelectedSalonId] = useState("");
 
   const [newHorario, setNewHorario] = useState({
     docenteId: "",
@@ -111,6 +113,10 @@ const HorariosScreen = ({ navigation }) => {
     );
   }, [bloquesHorarios]);
 
+  const materiasOrdenadas = useMemo(() => {
+    return [...materias].sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+  }, [materias]);
+
   useEffect(() => {
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
@@ -144,7 +150,7 @@ const HorariosScreen = ({ navigation }) => {
 
   const getDocenteNombre = useCallback(
     (docenteId) => {
-      const docente = docentes.find((d) => d.id === docenteId);
+      const docente = docentes.find((d) => String(d.id) === String(docenteId));
       return docente
         ? `${docente.nombre} ${docente.apellido}`
         : "Docente no encontrado";
@@ -170,7 +176,7 @@ const HorariosScreen = ({ navigation }) => {
 
   const getSalonNombre = useCallback(
     (salonId) => {
-      const grupo = grupos.find((g) => g.id === salonId);
+      const grupo = grupos.find((g) => String(g.id) === String(salonId));
       return grupo ? grupo.nombre : "Salón no encontrado";
     },
     [grupos]
@@ -178,7 +184,7 @@ const HorariosScreen = ({ navigation }) => {
 
   const getGrupoNombre = useCallback(
     (grupoId) => {
-      const grupo = grupos.find((g) => g.id === grupoId);
+      const grupo = grupos.find((g) => String(g.id) === String(grupoId));
       return grupo ? grupo.nombre : "Grupo no encontrado";
     },
     [grupos]
@@ -198,7 +204,7 @@ const HorariosScreen = ({ navigation }) => {
         return (
           inicio1 < fin2 &&
           fin1 > inicio2 &&
-          (h.docenteId === horario.docenteId || h.salonId === horario.salonId)
+          (String(h.docenteId) === String(horario.docenteId) || String(h.salonId) === String(horario.salonId))
         );
       });
 
@@ -206,6 +212,61 @@ const HorariosScreen = ({ navigation }) => {
     },
     [horarios]
   );
+
+  const handleAutoAssignHorario = async (dia, horaInicio, horaFin) => {
+    if (!selectedMateriaId || !selectedSalonId || !selectedEntity) {
+      return;
+    }
+
+    const horario = {
+      id: uuidv4(),
+      docenteId: currentTab === "docentes" ? selectedEntity.id : "",
+      dia,
+      horaInicio,
+      horaFin,
+      materiaId: selectedMateriaId,
+      salonId: selectedSalonId,
+      color: getMateriaColor(selectedMateriaId),
+    };
+
+    if (verificarConflictos(horario)) {
+      Alert.alert(
+        "Conflicto de horario",
+        "Ya existe una clase asignada para este docente o salón en el mismo horario"
+      );
+      return;
+    }
+
+    try {
+      let updatedDocentes = [...docentes];
+      let updatedHorarios = [...horarios];
+
+      const docenteId = currentTab === "docentes" ? selectedEntity.id : docentes[0]?.id; // Fallback to first docente if grupo view
+      const docenteIndex = updatedDocentes.findIndex(d => String(d.id) === String(docenteId));
+      if (docenteIndex !== -1) {
+        const docente = {...updatedDocentes[docenteIndex]};
+        docente.materias = Array.isArray(docente.materias) ? [...docente.materias] : [];
+        docente.grupos = Array.isArray(docente.grupos) ? [...docente.grupos] : [];
+        
+        if (!docente.materias.includes(selectedMateriaId)) {
+          docente.materias.push(selectedMateriaId);
+        }
+        
+        if (!docente.grupos.includes(selectedSalonId)) {
+          docente.grupos.push(selectedSalonId);
+        }
+        
+        updatedDocentes[docenteIndex] = docente;
+      }
+
+      updatedHorarios.push(horario);
+      await setDocentes(updatedDocentes);
+      await setHorarios(updatedHorarios);
+    } catch (error) {
+      console.error("Error al asignar horario:", error);
+      Alert.alert("Error", "No se pudo asignar el horario");
+    }
+  };
 
   const handleGuardarHorario = async () => {
     if (
@@ -245,8 +306,8 @@ const HorariosScreen = ({ navigation }) => {
       const hInicioMinutos = convertirHoraAMinutos(h.horaInicio);
       const hFinMinutos = convertirHoraAMinutos(h.horaFin);
 
-      const mismoDocente = h.docenteId === newHorario.docenteId;
-      const mismoSalon = h.salonId === newHorario.salonId;
+      const mismoDocente = String(h.docenteId) === String(newHorario.docenteId);
+      const mismoSalon = String(h.salonId) === String(newHorario.salonId);
       const mismoDia = h.dia === newHorario.dia;
 
       const hayConflictoHorario =
@@ -263,7 +324,7 @@ const HorariosScreen = ({ navigation }) => {
 
     if (horariosConflicto.length > 0) {
       const tipoConflicto = horariosConflicto.some(
-        (h) => h.docenteId === newHorario.docenteId
+        (h) => String(h.docenteId) === String(newHorario.docenteId)
       )
         ? "docente"
         : "grupo";
@@ -284,7 +345,7 @@ const HorariosScreen = ({ navigation }) => {
         id: editingHorario ? editingHorario.id : uuidv4(),
       };
 
-      const docenteIndex = updatedDocentes.findIndex(d => d.id === newHorario.docenteId);
+      const docenteIndex = updatedDocentes.findIndex(d => String(d.id) === String(newHorario.docenteId));
       if (docenteIndex !== -1) {
         const docente = {...updatedDocentes[docenteIndex]};
         docente.materias = Array.isArray(docente.materias) ? [...docente.materias] : [];
@@ -304,8 +365,8 @@ const HorariosScreen = ({ navigation }) => {
       if (editingHorario) {
         const oldHorario = horarios.find(h => h.id === editingHorario.id);
         if (oldHorario) {
-          if (oldHorario.docenteId !== newHorario.docenteId) {
-            const oldDocenteIndex = updatedDocentes.findIndex(d => d.id === oldHorario.docenteId);
+          if (String(oldHorario.docenteId) !== String(newHorario.docenteId)) {
+            const oldDocenteIndex = updatedDocentes.findIndex(d => String(d.id) === String(oldHorario.docenteId));
             if (oldDocenteIndex !== -1) {
               const oldDocente = {...updatedDocentes[oldDocenteIndex]};
               oldDocente.materias = Array.isArray(oldDocente.materias) ? [...oldDocente.materias] : [];
@@ -313,22 +374,22 @@ const HorariosScreen = ({ navigation }) => {
               
               const tieneMateriaEnOtrosHorarios = horarios.some(h => 
                 h.id !== oldHorario.id && 
-                h.docenteId === oldHorario.docenteId && 
-                h.materiaId === oldHorario.materiaId
+                String(h.docenteId) === String(oldHorario.docenteId) && 
+                String(h.materiaId) === String(oldHorario.materiaId)
               );
 
               if (!tieneMateriaEnOtrosHorarios) {
-                oldDocente.materias = oldDocente.materias.filter(m => m !== oldHorario.materiaId);
+                oldDocente.materias = oldDocente.materias.filter(m => String(m) !== String(oldHorario.materiaId));
               }
 
               const tieneGrupoEnOtrosHorarios = horarios.some(h => 
                 h.id !== oldHorario.id && 
-                h.docenteId === oldHorario.docenteId && 
-                h.salonId === oldHorario.salonId
+                String(h.docenteId) === String(oldHorario.docenteId) && 
+                String(h.salonId) === String(oldHorario.salonId)
               );
 
               if (!tieneGrupoEnOtrosHorarios) {
-                oldDocente.grupos = oldDocente.grupos.filter(g => g !== oldHorario.salonId);
+                oldDocente.grupos = oldDocente.grupos.filter(g => String(g) !== String(oldHorario.salonId));
               }
 
               updatedDocentes[oldDocenteIndex] = oldDocente;
@@ -395,7 +456,7 @@ const HorariosScreen = ({ navigation }) => {
               if (!horarioAEliminar) return;
 
               let updatedDocentes = [...docentes];
-              const docenteIndex = updatedDocentes.findIndex(d => d.id === horarioAEliminar.docenteId);
+              const docenteIndex = updatedDocentes.findIndex(d => String(d.id) === String(horarioAEliminar.docenteId));
               
               if (docenteIndex !== -1) {
                 const docente = {...updatedDocentes[docenteIndex]};
@@ -404,22 +465,22 @@ const HorariosScreen = ({ navigation }) => {
                 
                 const tieneMateriaEnOtrosHorarios = horarios.some(h => 
                   h.id !== id && 
-                  h.docenteId === horarioAEliminar.docenteId && 
-                  h.materiaId === horarioAEliminar.materiaId
+                  String(h.docenteId) === String(horarioAEliminar.docenteId) && 
+                  String(h.materiaId) === String(horarioAEliminar.materiaId)
                 );
                 
                 if (!tieneMateriaEnOtrosHorarios) {
-                  docente.materias = docente.materias.filter(m => m !== horarioAEliminar.materiaId);
+                  docente.materias = docente.materias.filter(m => String(m) !== String(horarioAEliminar.materiaId));
                 }
                 
                 const tieneGrupoEnOtrosHorarios = horarios.some(h => 
                   h.id !== id && 
-                  h.docenteId === horarioAEliminar.docenteId && 
-                  h.salonId === horarioAEliminar.salonId
+                  String(h.docenteId) === String(horarioAEliminar.docenteId) && 
+                  String(h.salonId) === String(horarioAEliminar.salonId)
                 );
                 
                 if (!tieneGrupoEnOtrosHorarios) {
-                  docente.grupos = docente.grupos.filter(g => g !== horarioAEliminar.salonId);
+                  docente.grupos = docente.grupos.filter(g => String(g) !== String(horarioAEliminar.salonId));
                 }
                 
                 updatedDocentes[docenteIndex] = docente;
@@ -442,19 +503,30 @@ const HorariosScreen = ({ navigation }) => {
 
   const convertirAPdf = async (entidad) => {
     try {
+      // Verificar datos disponibles
+      if (!Array.isArray(grupos) || grupos.length === 0) {
+        console.warn('No hay grupos disponibles:', grupos);
+        Alert.alert('Error', 'No hay datos de grupos disponibles para generar el PDF.');
+        return;
+      }
+  
       let titulo = '';
       let subtitulo = '';
-
+  
       if (currentTab === 'docentes') {
-        const docente = docentes.find(d => d.id === entidad.id);
-        titulo = `Horario del Docente: ${docente.nombre} ${docente.apellido}`;
+        const docente = docentes?.find(d => String(d.id) === String(entidad.id));
+        titulo = docente
+          ? `Horario del Docente: ${docente.nombre} ${docente.apellido}`
+          : `Horario del Docente: ID ${entidad.id} (No encontrado)`;
       } else {
-        const grupo = grupos.find(g => g.id === entidad.id);
-        titulo = `Horario del Grupo: ${grupo.nombre}`;
+        const grupo = grupos?.find(g => String(g.id) === String(entidad.id));
+        titulo = grupo
+          ? `Horario del Grupo: ${grupo.nombre}`
+          : `Horario del Grupo: ID ${entidad.id} (No encontrado)`;
       }
-
+  
       const horariosEntidad = horarios
-        .filter(h => currentTab === 'docentes' ? h.docenteId === entidad.id : h.salonId === entidad.id)
+        .filter(h => currentTab === 'docentes' ? String(h.docenteId) === String(entidad.id) : String(h.salonId) === String(entidad.id))
         .sort((a, b) => {
           const diasOrden = { 'Lunes': 0, 'Martes': 1, 'Miércoles': 2, 'Jueves': 3, 'Viernes': 4 };
           if (a.dia !== b.dia) {
@@ -462,16 +534,19 @@ const HorariosScreen = ({ navigation }) => {
           }
           return convertirHoraAMinutos(a.horaInicio) - convertirHoraAMinutos(b.horaInicio);
         });
-
+  
       const horariosPorMateria = {};
       horariosEntidad.forEach(horario => {
-        const materiaId = horario.materiaId;
+        const materiaId = String(horario.materiaId);
         if (!horariosPorMateria[materiaId]) {
           horariosPorMateria[materiaId] = [];
         }
         horariosPorMateria[materiaId].push(horario);
       });
-
+  
+      console.log('Grupos:', JSON.stringify(grupos));
+      console.log('Horarios:', JSON.stringify(horariosEntidad));
+  
       const html = `
         <!DOCTYPE html>
         <html>
@@ -592,7 +667,7 @@ const HorariosScreen = ({ navigation }) => {
                   if (bloque.esReceso) {
                     return '<td class="receso-cell">Receso</td>';
                   }
-
+  
                   const horario = horariosEntidad.find(
                     h =>
                       h.dia === dia &&
@@ -601,17 +676,23 @@ const HorariosScreen = ({ navigation }) => {
                       convertirHoraAMinutos(h.horaFin) >=
                         convertirHoraAMinutos(bloque.horaFin)
                   );
-
+  
                   if (!horario) return '<td></td>';
-
+  
                   let texto = '';
                   if (currentTab === 'docentes') {
-                    texto = grupos.find(g => g.id === horario.salonId)?.nombre || 'Grupo no encontrado';
+                    const grupo = Array.isArray(grupos) && grupos.length > 0
+                      ? grupos.find(g => String(g.id) === String(horario.salonId))
+                      : null;
+                    console.log(`Tabla - salonId: ${horario.salonId}, Grupo:`, grupo);
+                    texto = grupo?.nombre || 'Grupo no disponible';
                   } else {
-                    const materia = materias.find(m => String(m.id) === String(horario.materiaId)) || { abreviatura: '', nombre: 'Materia no encontrada' };
+                    const materia = Array.isArray(materias) && materias.length > 0
+                      ? materias.find(m => String(m.id) === String(horario.materiaId)) || { abreviatura: '', nombre: 'Materia no encontrada' }
+                      : { abreviatura: '', nombre: 'Materia no encontrada' };
                     texto = materia.abreviatura || materia.nombre;
                   }
-
+  
                   return `
                     <td>
                       <div class="class-cell">
@@ -623,22 +704,37 @@ const HorariosScreen = ({ navigation }) => {
               </tr>
             `).join('')}
           </table>
-
+  
           <div class="legend-container">
             <div class="legend-title">Detalles de Clases:</div>
             <div class="legend-items">
               ${Object.keys(horariosPorMateria).map(materiaId => {
                 const horarios = horariosPorMateria[materiaId];
-                const materia = materias.find(m => String(m.id) === String(materiaId)) || { nombre: 'Sin materia', abreviatura: '' };
-                const infoEntidad = currentTab === 'docentes'
-                  ? `Grupo: ${grupos.find(g => g.id === horarios[0].salonId)?.nombre || 'Grupo no encontrado'}`
-                  : `Docente: ${docentes.find(d => d.id === horarios[0].docenteId)?.nombre || ''} ${docentes.find(d => d.id === horarios[0].docenteId)?.apellido || ''}`;
+                const materia = Array.isArray(materias) && materias.length > 0
+                  ? materias.find(m => String(m.id) === String(materiaId)) || { nombre: 'Sin materia', abreviatura: '' }
+                  : { nombre: 'Sin materia', abreviatura: '' };
+                const gruposNombres = Array.isArray(grupos) && grupos.length > 0
+                  ? [...new Set(horarios.map(h => String(h.salonId)))].map(salonId => {
+                      const grupo = grupos.find(g => String(g.id) === salonId);
+                      console.log(`Leyenda - salonId: ${salonId}, Grupo:`, grupo);
+                      return grupo?.nombre || 'Grupo no disponible';
+                    }).join(', ')
+                  : 'Grupo no disponible';
+                const docente = currentTab === 'grupos' && Array.isArray(docentes) && docentes.length > 0
+                  ? docentes.find(d => String(d.id) === String (horarios[0]?.docenteId))
+                  : null;
+                const docenteNombre = docente ? `${docente.nombre} ${docente.apellido}` : 'Docente no encontrado';
+  
                 return `
                   <div class="legend-item">
                     <div class="legend-info">
                       ${materia.abreviatura ? `<div class="legend-info-title">${materia.abreviatura}</div>` : ''}
                       <div class="legend-info-title">${materia.nombre}</div>
-                      <div class="legend-info-subtitle">${infoEntidad}</div>
+                      ${currentTab === 'docentes' ? `
+                        <div class="legend-info-subtitle">Grupos: ${gruposNombres}</div>
+                      ` : `
+                        <div class="legend-info-subtitle">Docente: ${docenteNombre}</div>
+                      `}
                     </div>
                   </div>
                 `;
@@ -648,14 +744,14 @@ const HorariosScreen = ({ navigation }) => {
         </body>
         </html>
       `;
-
+  
       const { uri } = await Print.printToFileAsync({
         html,
         base64: false,
         width: 612,
         height: 792,
       });
-
+  
       await Sharing.shareAsync(uri, {
         mimeType: 'application/pdf',
         dialogTitle: 'Compartir horario',
@@ -666,23 +762,35 @@ const HorariosScreen = ({ navigation }) => {
       Alert.alert('Error', 'No se pudo generar el PDF. Intenta de nuevo.');
     }
   };
-
   const handleSeleccionarEntidad = (entity) => {
     setSelectedEntity(entity);
     setCurrentView("schedule");
+    setSelectedMateriaId("");
+    setSelectedSalonId("");
   };
 
   const horariosEntidad = useMemo(() => {
     if (!selectedEntity) return [];
     return currentTab === "docentes"
-      ? horarios.filter((h) => h.docenteId === selectedEntity.id)
-      : horarios.filter((h) => h.salonId === selectedEntity.id);
+      ? horarios.filter((h) => String(h.docenteId) === String(selectedEntity.id))
+      : horarios.filter((h) => String(h.salonId) === String(selectedEntity.id));
   }, [selectedEntity, horarios, currentTab]);
+
+  const horariosPorMateria = useMemo(() => {
+    const grouped = {};
+    horariosEntidad.forEach(horario => {
+      if (!grouped[horario.materiaId]) {
+        grouped[horario.materiaId] = [];
+      }
+      grouped[horario.materiaId].push(horario);
+    });
+    return grouped;
+  }, [horariosEntidad]);
 
   const countTotalHours = (entityId) => {
     const entityHorarios = currentTab === 'docentes' 
-      ? horarios.filter(h => h.docenteId === entityId)
-      : horarios.filter(h => h.salonId === entityId);
+      ? horarios.filter(h => String(h.docenteId) === String(entityId))
+      : horarios.filter(h => String(h.salonId) === String(entityId));
 
     let totalMinutes = 0;
 
@@ -703,15 +811,21 @@ const HorariosScreen = ({ navigation }) => {
     
     const horaFin = bloqueActual ? bloqueActual.horaFin : siguienteHora;
     
-    setNewHorario({
-      ...newHorario,
-      dia,
-      horaInicio,
-      horaFin: horaFin || "07:50",
-      color: coloresDisponibles[0].valor,
-      [currentTab === 'docentes' ? 'docenteId' : 'salonId']: selectedEntity?.id || '',
-    });
-    setModalVisible(true);
+    if (selectedMateriaId && selectedSalonId) {
+      handleAutoAssignHorario(dia, horaInicio, horaFin);
+    } else {
+      setNewHorario({
+        ...newHorario,
+        dia,
+        horaInicio,
+        horaFin: horaFin || "07:50",
+        color: coloresDisponibles[0].valor,
+        [currentTab === 'docentes' ? 'docenteId' : 'salonId']: selectedEntity?.id || '',
+        materiaId: selectedMateriaId || "",
+        salonId: selectedSalonId || "",
+      });
+      setModalVisible(true);
+    }
   };
 
   const renderDocenteItem = ({ item }) => (
@@ -814,7 +928,7 @@ const HorariosScreen = ({ navigation }) => {
     const materia = materias.find(m => String(m.id) === String(horarioEnCelda.materiaId)) || { nombre: 'Sin materia', abreviatura: '' };
 
     return (
-      <TouchableOpacity
+      <View
         style={[
           styles.celdaHorario,
           {
@@ -823,23 +937,39 @@ const HorariosScreen = ({ navigation }) => {
             justifyContent: 'center',
             alignItems: 'center',
             flex: 1,
+            position: 'relative',
           },
         ]}
-        onPress={() => {
-          setEditingHorario(horarioEnCelda);
-          setNewHorario({
-            ...horarioEnCelda,
-            color: horarioEnCelda.color || '#E3F2FD',
-          });
-          setModalVisible(true);
-        }}
       >
-        <Text style={styles.textoCeldaCentrado} numberOfLines={2}>
-          {currentTab === 'docentes'
-            ? getGrupoNombre(horarioEnCelda.salonId)
-            : materia.abreviatura || materia.nombre}
-        </Text>
-      </TouchableOpacity>
+        <TouchableOpacity
+          style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}
+          onPress={() => {
+            setEditingHorario(horarioEnCelda);
+            setNewHorario({
+              ...horarioEnCelda,
+              color: horarioEnCelda.color || '#E3F2FD',
+            });
+            setModalVisible(true);
+          }}
+        >
+          <Text style={styles.textoCeldaCentrado} numberOfLines={2}>
+            {currentTab === 'docentes'
+              ? getGrupoNombre(horarioEnCelda.salonId)
+              : materia.abreviatura || materia.nombre}
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={{
+            position: 'absolute',
+            top: 2,
+            right: 2,
+            padding: 2,
+          }}
+          onPress={() => handleEliminarHorario(horarioEnCelda.id)}
+        >
+          <Ionicons name="trash-outline" size={16} color="#FF3B30" />
+        </TouchableOpacity>
+      </View>
     );
   };
 
@@ -883,7 +1013,7 @@ const HorariosScreen = ({ navigation }) => {
             }}
           >
             <Picker.Item label="Selecciona una materia..." value="" />
-            {materias.map((materia) => (
+            {materiasOrdenadas.map((materia) => (
               <Picker.Item
                 key={String(materia.id)}
                 label={
@@ -1151,6 +1281,8 @@ const HorariosScreen = ({ navigation }) => {
             onPress={() => {
               setCurrentView("list");
               setSelectedEntity(null);
+              setSelectedMateriaId("");
+              setSelectedSalonId("");
             }}
           >
             <Ionicons name="arrow-back" size={24} color="#007BFF" />
@@ -1161,6 +1293,42 @@ const HorariosScreen = ({ navigation }) => {
               ? `${selectedEntity.nombre} ${selectedEntity.apellido}`
               : selectedEntity.nombre}
           </Text>
+        </View>
+        <View style={styles.pickerContainer}>
+          <Picker
+            selectedValue={selectedMateriaId}
+            style={styles.picker}
+            onValueChange={(itemValue) => setSelectedMateriaId(itemValue)}
+          >
+            <Picker.Item label="Selecciona una materia..." value="" />
+            {materiasOrdenadas.map((materia) => (
+              <Picker.Item
+                key={materia.id}
+                label={
+                  materia.abreviatura
+                    ? `${materia.abreviatura} - ${materia.nombre}`
+                    : materia.nombre
+                }
+                value={materia.id}
+              />
+            ))}
+          </Picker>
+        </View>
+        <View style={styles.pickerContainer}>
+          <Picker
+            selectedValue={selectedSalonId}
+            style={styles.picker}
+            onValueChange={(itemValue) => setSelectedSalonId(itemValue)}
+          >
+            <Picker.Item label="Selecciona un salón..." value="" />
+            {grupos.map((grupo) => (
+              <Picker.Item
+                key={grupo.id}
+                label={grupo.nombre}
+                value={grupo.id}
+              />
+            ))}
+          </Picker>
         </View>
         <ScrollView style={styles.scheduleScrollContainer}>
           <ScrollView horizontal showsHorizontalScrollIndicator={false}>
@@ -1195,17 +1363,17 @@ const HorariosScreen = ({ navigation }) => {
             </View>
           </ScrollView>
         </ScrollView>
-        {horariosEntidad.length > 0 && (
+        {Object.keys(horariosPorMateria).length > 0 && (
           <ScrollView style={styles.legendScrollContainer}>
             <View style={styles.legendContainer}>
               <Text style={styles.legendTitle}>Detalles de Clases:</Text>
-              {horariosEntidad.map((horario) => {
-                const materia = materias.find(m => String(m.id) === String(horario.materiaId)) || { nombre: 'Sin materia', abreviatura: '' };
-                const docente = docentes.find(d => d.id === horario.docenteId);
-                const salon = grupos.find(s => s.id === horario.salonId);
-
+              {Object.keys(horariosPorMateria).map((materiaId) => {
+                const horarios = horariosPorMateria[materiaId];
+                const materia = materias.find(m => String(m.id) === String(materiaId)) || { nombre: 'Sin materia', abreviatura: '' };
+                const gruposUnicos = [...new Set(horarios.map(h => h.salonId))];
+                
                 return (
-                  <View key={horario.id} style={styles.legendItem}>
+                  <View key={materiaId} style={styles.legendItem}>
                     <View style={styles.legendInfo}>
                       {materia.abreviatura && (
                         <Text style={styles.legendTextAbreviatura}>
@@ -1215,27 +1383,22 @@ const HorariosScreen = ({ navigation }) => {
                       <Text style={styles.legendText}>
                         {materia.nombre}
                       </Text>
-                      <Text style={styles.legendSubtext}>
-                        {currentTab === "docentes" ? (
-                          <>
-                            {salon ? `Grupo ${salon.nombre}` : ""}
-                            {materia ? ` | Materia: ${materia.nombre}` : ""}
-                          </>
-                        ) : (
-                          <>
-                            {docente ? `${docente.nombre} ${docente.apellido}` : ""}
-                            {materia ? ` | Materia: ${materia.nombre}` : ""}
-                          </>
-                        )}
-                      </Text>
-                      <Text style={styles.legendSubtext}>
-                        {horario.dia}, {horario.horaInicio} - {horario.horaFin}
-                      </Text>
+                      {currentTab === "docentes" ? (
+                        <Text style={styles.legendSubtext}>
+                          Grupos: {gruposUnicos.map(salonId => 
+                            getGrupoNombre(salonId)
+                          ).join(', ')}
+                        </Text>
+                      ) : (
+                        <Text style={styles.legendSubtext}>
+                          Docente: {getDocenteNombre(horarios[0].docenteId)}
+                        </Text>
+                      )}
                     </View>
                     <View style={styles.legendActions}>
                       <TouchableOpacity
                         style={styles.legendButton}
-                        onPress={() => handleEditarHorario(horario)}
+                        onPress={() => handleEditarHorario(horarios[0])}
                       >
                         <Ionicons
                           name="create-outline"
@@ -1245,7 +1408,7 @@ const HorariosScreen = ({ navigation }) => {
                       </TouchableOpacity>
                       <TouchableOpacity
                         style={styles.legendButton}
-                        onPress={() => handleEliminarHorario(horario.id)}
+                        onPress={() => handleEliminarHorario(horarios[0].id)}
                       >
                         <Ionicons
                           name="trash-outline"
