@@ -33,6 +33,13 @@ export interface Directivo {
   generoFemenino: boolean
 }
 
+export interface Administrativo {
+  id: string
+  nombre: string
+  celular: string
+  correo: string
+}
+
 export interface Horario {
   id: string
   dia: string
@@ -58,36 +65,42 @@ interface DataContextType {
   materias: Materia[]
   grupos: Grupo[]
   directivos: Directivo[]
+  administrativos: Administrativo[]
   horarios: Horario[]
   actividades: Actividad[]
   addDocente: (docente: Omit<Docente, "id">) => void
   addMateria: (materia: Omit<Materia, "id">) => void
   addGrupo: (grupo: Omit<Grupo, "id">) => void
   addDirectivo: (directivo: Omit<Directivo, "id">) => void
+  addAdministrativo: (administrativo: Omit<Administrativo, "id">) => void
   addHorario: (horario: Omit<Horario, "id">) => void
   addActividad: (actividad: Omit<Actividad, "id">) => void
   updateDocente: (id: string, docente: Partial<Docente>) => void
   updateMateria: (id: string, materia: Partial<Materia>) => void
   updateGrupo: (id: string, grupo: Partial<Grupo>) => void
   updateDirectivo: (id: string, directivo: Partial<Directivo>) => void
+  updateAdministrativo: (id: string, administrativo: Partial<Administrativo>) => void
   updateHorario: (id: string, horario: Partial<Horario>) => void
   updateActividad: (id: string, actividad: Partial<Actividad>) => void
   deleteDocente: (id: string) => void
   deleteMateria: (id: string) => void
   deleteGrupo: (id: string) => void
   deleteDirectivo: (id: string) => void
+  deleteAdministrativo: (id: string) => void
   deleteHorario: (id: string) => void
   deleteActividad: (id: string) => void
   clearDocentes: () => void
   clearMaterias: () => void
   clearGrupos: () => void
   clearDirectivos: () => void
+  clearAdministrativos: () => void
   clearHorarios: () => void
   clearHorariosByEntity: (entityId: string, isDocente: boolean) => void
   getDocenteById: (id: string) => Docente | undefined
   getMateriaById: (id: string) => Materia | undefined
   getGrupoById: (id: string) => Grupo | undefined
   getDirectivoById: (id: string) => Directivo | undefined
+  getAdministrativoById: (id: string) => Administrativo | undefined
   loadAllData: () => Promise<boolean>
 }
 
@@ -112,6 +125,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [materias, setMaterias] = useState<Materia[]>([])
   const [grupos, setGrupos] = useState<Grupo[]>(getDefaultGroups()) // Inicializar con grupos predeterminados
   const [directivos, setDirectivos] = useState<Directivo[]>([])
+  const [administrativos, setAdministrativos] = useState<Administrativo[]>([])
   const [horarios, setHorarios] = useState<Horario[]>([])
   const [actividades, setActividades] = useState<Actividad[]>([])
 
@@ -124,6 +138,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const materiasData = await AsyncStorage.getItem("materias")
       const gruposData = await AsyncStorage.getItem("grupos")
       const directivosData = await AsyncStorage.getItem("directivos")
+      const administrativosData = await AsyncStorage.getItem("administrativos")
       const horariosData = await AsyncStorage.getItem("horarios")
       const actividadesData = await AsyncStorage.getItem("actividades")
 
@@ -142,6 +157,10 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (directivosData) {
         console.log("Cargando directivos:", JSON.parse(directivosData).length);
         setDirectivos(JSON.parse(directivosData));
+      }
+      if (administrativosData) {
+        console.log("Cargando administrativos:", JSON.parse(administrativosData).length);
+        setAdministrativos(JSON.parse(administrativosData));
       }
       if (horariosData) {
         console.log("Cargando horarios:", JSON.parse(horariosData).length);
@@ -251,6 +270,19 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     saveDirectivos()
   }, [directivos])
 
+  // Guardar administrativos cuando cambien
+  useEffect(() => {
+    const saveAdministrativos = async () => {
+      try {
+        console.log("Guardando administrativos:", administrativos) // Para debug
+        await AsyncStorage.setItem("administrativos", JSON.stringify(administrativos))
+      } catch (e) {
+        console.error("Error al guardar administrativos:", e)
+      }
+    }
+    saveAdministrativos()
+  }, [administrativos])
+
   // Guardar horarios cuando cambien
   useEffect(() => {
     const saveHorarios = async () => {
@@ -303,6 +335,11 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setDirectivos(prev => [...prev, newDirectivo])
   }
 
+  const addAdministrativo = (administrativo: Omit<Administrativo, "id">) => {
+    const newAdministrativo = { ...administrativo, id: `administrativo_${Date.now()}_${Math.random().toString(36).substr(2, 9)}` }
+    setAdministrativos(prev => [...prev, newAdministrativo])
+  }
+
   const addHorario = (horario: Omit<Horario, "id">) => {
     const newHorario = { ...horario, id: `horario_${Date.now()}_${Math.random().toString(36).substr(2, 9)}` }
     setHorarios([...horarios, newHorario])
@@ -328,6 +365,10 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const updateDirectivo = (id: string, directivo: Partial<Directivo>) => {
     setDirectivos(directivos.map((d) => (d.id === id ? { ...d, ...directivo } : d)))
+  }
+
+  const updateAdministrativo = (id: string, administrativo: Partial<Administrativo>) => {
+    setAdministrativos(administrativos.map((a) => (a.id === id ? { ...a, ...administrativo } : a)))
   }
 
   const updateHorario = (id: string, horario: Partial<Horario>) => {
@@ -361,6 +402,10 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setDirectivos(directivos.filter((d) => d.id !== id))
   }
 
+  const deleteAdministrativo = (id: string) => {
+    setAdministrativos(administrativos.filter((a) => a.id !== id))
+  }
+
   const deleteHorario = (id: string) => {
     setHorarios(horarios.filter((h) => h.id !== id))
   }
@@ -385,6 +430,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   
   const clearMaterias = () => setMaterias([]);
   const clearDirectivos = () => setDirectivos([]);
+  const clearAdministrativos = () => setAdministrativos([]);
   const clearHorarios = () => setHorarios([]);
   
   // Función para eliminar todos los horarios de una entidad específica
@@ -424,6 +470,10 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return directivos.find((d) => d.id === id)
   }
 
+  const getAdministrativoById = (id: string) => {
+    return administrativos.find((a) => a.id === id)
+  }
+
   return (
     <DataContext.Provider
       value={{
@@ -431,36 +481,42 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         materias,
         grupos,
         directivos,
+        administrativos,
         horarios,
         actividades,
         addDocente,
         addMateria,
         addGrupo,
         addDirectivo,
+        addAdministrativo,
         addHorario,
         addActividad,
         updateDocente,
         updateMateria,
         updateGrupo,
         updateDirectivo,
+        updateAdministrativo,
         updateHorario,
         updateActividad,
         deleteDocente,
         deleteMateria,
         deleteGrupo,
         deleteDirectivo,
+        deleteAdministrativo,
         deleteHorario,
         deleteActividad,
         clearDocentes,
         clearMaterias,
         clearGrupos,
         clearDirectivos,
+        clearAdministrativos,
         clearHorarios,
         clearHorariosByEntity,
         getDocenteById,
         getMateriaById,
         getGrupoById,
         getDirectivoById,
+        getAdministrativoById,
         loadAllData,
       }}
     >

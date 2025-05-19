@@ -16,26 +16,32 @@ const ManagementScreen = () => {
     materias,
     grupos,
     directivos,
+    administrativos,
     addDocente,
     addMateria,
     addGrupo,
     addDirectivo,
+    addAdministrativo,
     updateDocente,
     updateMateria,
     updateGrupo,
     updateDirectivo,
+    updateAdministrativo,
     deleteDocente,
     deleteMateria,
     deleteGrupo,
     deleteDirectivo,
+    deleteAdministrativo,
     clearDocentes,
     clearMaterias,
     clearGrupos,
     clearDirectivos,
+    clearAdministrativos,
     setDocentes,
     setMaterias,
     setGrupos,
     setDirectivos,
+    setAdministrativos,
   } = useData()
 
   const [activeTab, setActiveTab] = useState("docentes")
@@ -54,12 +60,14 @@ const ManagementScreen = () => {
   const [materiaForm, setMateriaForm] = useState({ nombre: "", siglas: "" })
   const [grupoForm, setGrupoForm] = useState({ nombre: "", docenteId: "" })
   const [directivoForm, setDirectivoForm] = useState({ nombre: "", rol: "Director", generoFemenino: false })
+  const [administrativoForm, setAdministrativoForm] = useState({ nombre: "", celular: "", correo: "" })
 
   const resetForms = () => {
     setDocenteForm({ nombre: "", apellido: "", email: "", numeroEmpleado: "", materias: [] })
     setMateriaForm({ nombre: "", siglas: "" })
     setGrupoForm({ nombre: "", docenteId: "" })
     setDirectivoForm({ nombre: "", rol: "Director", generoFemenino: false })
+    setAdministrativoForm({ nombre: "", celular: "", correo: "" })
     setCurrentEditId(null)
     setIsEditing(false)
   }
@@ -103,6 +111,17 @@ const ManagementScreen = () => {
         updateDirectivo(currentEditId, directivoForm)
       } else {
         addDirectivo(directivoForm)
+      }
+    } else if (activeTab === "administrativos") {
+      if (!administrativoForm.nombre || !administrativoForm.celular || !administrativoForm.correo) {
+        Alert.alert("Error", "Por favor complete todos los campos")
+        return
+      }
+      
+      if (isEditing && currentEditId) {
+        updateAdministrativo(currentEditId, administrativoForm)
+      } else {
+        addAdministrativo(administrativoForm)
       }
     }
 
@@ -150,6 +169,15 @@ const ManagementScreen = () => {
           generoFemenino: directivo.generoFemenino
         })
       }
+    } else if (activeTab === "administrativos") {
+      const administrativo = administrativos.find(a => a.id === id)
+      if (administrativo) {
+        setAdministrativoForm({
+          nombre: administrativo.nombre,
+          celular: administrativo.celular,
+          correo: administrativo.correo
+        })
+      }
     }
     
     setModalVisible(true)
@@ -170,6 +198,8 @@ const ManagementScreen = () => {
             deleteGrupo(id)
           } else if (activeTab === "directivos") {
             deleteDirectivo(id)
+          } else if (activeTab === "administrativos") {
+            deleteAdministrativo(id)
           }
         },
       },
@@ -194,6 +224,8 @@ const ManagementScreen = () => {
               clearGrupos();
             } else if (activeTab === "directivos") {
               clearDirectivos();
+            } else if (activeTab === "administrativos") {
+              clearAdministrativos();
             }
           }
         }
@@ -669,6 +701,78 @@ const ManagementScreen = () => {
               setLoadingFile(false);
               return;
             }
+          } else if (activeTab === "administrativos") {
+            // Extraer información de administrativos del archivo
+            let administrativosInfo = [];
+            
+            // Buscar información de administrativos (ADMINISTRATIVO, SECRETARIO, etc.)
+            for (let i = 0; i < jsonData.length; i++) {
+              const row = jsonData[i];
+              for (let j = 0; j < row.length; j++) {
+                const cell = row[j];
+                if (typeof cell === 'string') {
+                  // Buscar palabras clave que indiquen un cargo administrativo
+                  if (cell.includes("ADMINISTRATIVO") || cell.includes("SECRETARIO") || 
+                      cell.includes("ASISTENTE") || cell.includes("COORDINADOR")) {
+                    // El nombre del administrativo podría estar en la fila anterior o en la misma fila
+                    let nombre = "";
+                    let celular = "";
+                    let correo = "";
+                    
+                    // Buscar el nombre en la misma fila o en filas cercanas
+                    for (let k = Math.max(0, i - 2); k <= i; k++) {
+                      const nameRow = jsonData[k];
+                      for (let l = 0; l < nameRow.length; l++) {
+                        const nameCell = nameRow[l];
+                        if (typeof nameCell === 'string' && 
+                            nameCell.includes("LIC.") || nameCell.includes("DR.") || 
+                            nameCell.includes("DRA.") || nameCell.includes("MTRA.") || 
+                            nameCell.includes("MTRO.")
+                        ) {
+                          nombre = nameCell;
+                          break;
+                        }
+                      }
+                      if (nombre) break;
+                    }
+                    
+                    // Buscar el celular y correo en la misma fila o en filas cercanas
+                    for (let k = Math.max(0, i - 2); k <= i; k++) {
+                      const contactRow = jsonData[k];
+                      for (let l = 0; l < contactRow.length; l++) {
+                        const contactCell = contactRow[l];
+                        if (typeof contactCell === 'string' && contactCell.includes("@")) {
+                          correo = contactCell;
+                        } else if (typeof contactCell === 'string' && contactCell.length === 10 && !isNaN(Number(contactCell))) {
+                          celular = contactCell;
+                        }
+                      }
+                      if (correo && celular) break;
+                    }
+                    
+                    if (nombre && celular && correo && !administrativosInfo.some(a => a.nombre === nombre)) {
+                      administrativosInfo.push({
+                        id: `excel_administrativo_${Date.now()}_${administrativosInfo.length}`,
+                        nombre: nombre,
+                        celular: celular,
+                        correo: correo
+                      });
+                    }
+                  }
+                }
+              }
+            }
+            
+            if (administrativosInfo.length > 0) {
+              parsedData = administrativosInfo;
+            } else {
+              Alert.alert(
+                "Información no encontrada", 
+                "No se pudo encontrar información de administrativos en el archivo"
+              );
+              setLoadingFile(false);
+              return;
+            }
           }
           
           // Agregar los datos analizados de esta hoja al conjunto total
@@ -717,7 +821,6 @@ const ManagementScreen = () => {
     }
   };
 
-  // Función para manejar la selección/deselección de elementos
   const toggleItemSelection = (id: string) => {
     setSelectedItems(prev => ({
       ...prev,
@@ -725,7 +828,6 @@ const ManagementScreen = () => {
     }));
   };
 
-  // Función para guardar los elementos seleccionados
   const saveSelectedItems = () => {
     const selectedData = excelData.filter(item => selectedItems[item.id]);
     
@@ -809,6 +911,16 @@ const ManagementScreen = () => {
         };
         addDirectivo(uniqueDirectivo);
       }
+    } else if (activeTab === "administrativos") {
+      // Guardar cada administrativo individualmente
+      for (const administrativo of selectedData) {
+        const uniqueAdministrativo = {
+          nombre: administrativo.nombre,
+          celular: administrativo.celular,
+          correo: administrativo.correo
+        };
+        addAdministrativo(uniqueAdministrativo);
+      }
     }
     
     // Cerrar el modal y limpiar los datos
@@ -825,6 +937,7 @@ const ManagementScreen = () => {
       if (activeTab === "materias") return materias;
       if (activeTab === "grupos") return grupos;
       if (activeTab === "directivos") return directivos;
+      if (activeTab === "administrativos") return administrativos;
       return [];
     }
 
@@ -859,6 +972,15 @@ const ManagementScreen = () => {
         (directivo) => 
           directivo.nombre.toLowerCase().includes(query) || 
           directivo.rol.toLowerCase().includes(query)
+      );
+    }
+    
+    if (activeTab === "administrativos") {
+      return administrativos.filter(
+        (administrativo) => 
+          administrativo.nombre.toLowerCase().includes(query) || 
+          administrativo.celular.toLowerCase().includes(query) ||
+          administrativo.correo.toLowerCase().includes(query)
       );
     }
     
@@ -1061,6 +1183,53 @@ const ManagementScreen = () => {
                 <TouchableOpacity 
                   style={[styles.cardDeleteButton, { backgroundColor: "#dc3545", borderRadius: 16, width: 32, height: 32, justifyContent: 'center', alignItems: 'center' }]} 
                   onPress={() => handleDeleteItem(directivo.id)}
+                >
+                  <Feather name="trash-2" size={16} color="#ffffff" />
+                </TouchableOpacity>
+              </View>
+            </View>
+          ))}
+        </ScrollView>
+      )
+    } else if (activeTab === "administrativos") {
+      if (data.length === 0) {
+        return (
+          <View style={styles.emptyState}>
+            <Text style={[styles.emptyStateText, { color: colors.text }]}>
+              {searchQuery ? "No se encontraron administrativos con esa búsqueda" : "No hay administrativos registrados"}
+            </Text>
+          </View>
+        );
+      }
+      
+      return (
+        <ScrollView style={styles.tabContent}>
+          {data.map((administrativo) => (
+            <View
+              key={administrativo.id}
+              style={[styles.itemCard, { backgroundColor: colors.card, borderColor: colors.border }]}
+            >
+              <View style={styles.itemInfo}>
+                <Text style={[styles.itemTitle, { color: colors.text }]}>{administrativo.nombre}</Text>
+                <Text style={[styles.itemSubtitle, { color: colors.secondary }]}>Celular: {administrativo.celular}</Text>
+                <Text style={[styles.itemSubtitle, { color: colors.secondary }]}>Correo: {administrativo.correo}</Text>
+              </View>
+              <View style={styles.itemActions}>
+                <TouchableOpacity 
+                  style={[styles.actionButton, { backgroundColor: "#25D366", marginRight: 5, borderRadius: 16, width: 32, height: 32, justifyContent: 'center', alignItems: 'center' }]} 
+                  onPress={() => Linking.openURL(`https://wa.me/${administrativo.celular}`)}
+                >
+                  <Feather name="message-circle" size={16} color="#ffffff" />
+                </TouchableOpacity>
+                <TouchableOpacity 
+                  style={[styles.editButton, { backgroundColor: colors.primary }]} 
+                  onPress={() => handleEditItem(administrativo.id)}
+                >
+                  <Feather name="edit-2" size={16} color="#ffffff" />
+                </TouchableOpacity>
+                <TouchableOpacity 
+                  style={[styles.cardDeleteButton, { backgroundColor: "#dc3545", borderRadius: 16, width: 32, height: 32, justifyContent: 'center', alignItems: 'center' }]} 
+                  onPress={() => handleDeleteItem(administrativo.id)}
                 >
                   <Feather name="trash-2" size={16} color="#ffffff" />
                 </TouchableOpacity>
@@ -1290,6 +1459,40 @@ const ManagementScreen = () => {
                 <Text style={{ color: colors.text }}>Femenino</Text>
               </TouchableOpacity>
             </View>
+          </>
+        )
+      case "administrativos":
+        return (
+          <>
+            <Text style={[styles.label, { color: colors.text }]}>Nombre Completo:</Text>
+            <TextInput
+              style={[styles.input, { backgroundColor: colors.card || '#f5f5f5', color: colors.text }]}
+              value={administrativoForm.nombre}
+              onChangeText={(text) => setAdministrativoForm({ ...administrativoForm, nombre: text })}
+              placeholder="Nombre completo"
+              placeholderTextColor={colors.placeholder || '#999'}
+            />
+            
+            <Text style={[styles.label, { color: colors.text }]}>Celular:</Text>
+            <TextInput
+              style={[styles.input, { backgroundColor: colors.card || '#f5f5f5', color: colors.text }]}
+              value={administrativoForm.celular}
+              onChangeText={(text) => setAdministrativoForm({ ...administrativoForm, celular: text })}
+              placeholder="Celular"
+              placeholderTextColor={colors.placeholder || '#999'}
+              keyboardType="phone-pad"
+            />
+            
+            <Text style={[styles.label, { color: colors.text }]}>Correo:</Text>
+            <TextInput
+              style={[styles.input, { backgroundColor: colors.card || '#f5f5f5', color: colors.text }]}
+              value={administrativoForm.correo}
+              onChangeText={(text) => setAdministrativoForm({ ...administrativoForm, correo: text })}
+              placeholder="Correo electrónico"
+              placeholderTextColor={colors.placeholder || '#999'}
+              keyboardType="email-address"
+              autoCapitalize="none"
+            />
           </>
         )
       default:
@@ -1774,6 +1977,20 @@ const ManagementScreen = () => {
               Directivos
             </Text>
           </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.tab, activeTab === "administrativos" && [styles.activeTab, { borderColor: colors.primary }]]}
+            onPress={() => setActiveTab("administrativos")}
+          >
+            <Text
+              style={[
+                styles.tabText,
+                activeTab === "administrativos" && [styles.activeTabText, { color: colors.primary }],
+                { color: activeTab === "administrativos" ? colors.primary : colors.text },
+              ]}
+            >
+              Administrativos
+            </Text>
+          </TouchableOpacity>
         </ScrollView>
       </View>
 
@@ -1806,6 +2023,7 @@ const ManagementScreen = () => {
             {activeTab === "materias" && "Materias"}
             {activeTab === "grupos" && "Grupos"}
             {activeTab === "directivos" && "Directivos"}
+            {activeTab === "administrativos" && "Administrativos"}
           </Text>
           <View style={styles.headerButtons}>
             <TouchableOpacity
@@ -1848,7 +2066,7 @@ const ManagementScreen = () => {
         <View style={[styles.centeredView, { backgroundColor: 'rgba(0, 0, 0, 0.5)' }]}>
           <View style={[styles.modalView, { backgroundColor: colors.card || '#ffffff', width: '90%', maxHeight: '80%' }]}>
             <Text style={[styles.modalTitle, { color: colors.text }]}>
-              {isEditing ? "Editar" : "Agregar"} {activeTab === "docentes" ? "Docente" : activeTab === "materias" ? "Materia" : activeTab === "grupos" ? "Grupo" : "Directivo"}
+              {isEditing ? "Editar" : "Agregar"} {activeTab === "docentes" ? "Docente" : activeTab === "materias" ? "Materia" : activeTab === "grupos" ? "Grupo" : activeTab === "directivos" ? "Directivo" : "Administrativo"}
             </Text>
             
             <ScrollView style={[styles.formContainer, { width: '100%', marginVertical: 10, maxHeight: 400 }]}>
@@ -1898,7 +2116,7 @@ const ManagementScreen = () => {
         <View style={[styles.centeredView, { backgroundColor: 'rgba(0, 0, 0, 0.5)' }]}>
           <View style={[styles.modalView, { backgroundColor: colors.card || '#ffffff' }]}>
             <Text style={[styles.modalTitle, { color: colors.text }]}>
-              {itemsFoundCount} {activeTab === "docentes" ? "Docentes" : activeTab === "materias" ? "Materias" : activeTab === "grupos" ? "Grupos" : "Directivos"} detectados
+              {itemsFoundCount} {activeTab === "docentes" ? "Docentes" : activeTab === "materias" ? "Materias" : activeTab === "grupos" ? "Grupos" : activeTab === "directivos" ? "Directivos" : "Administrativos"} detectados
             </Text>
             
             <ScrollView style={styles.excelDataList}>
@@ -1973,6 +2191,19 @@ const ManagementScreen = () => {
                         </Text>
                         <Text style={[styles.excelItemSubtitle, { color: colors.secondary }]}>
                           Rol: {item.rol}
+                        </Text>
+                      </>
+                    )}
+                    {activeTab === "administrativos" && (
+                      <>
+                        <Text style={[styles.excelItemTitle, { color: colors.text }]}>
+                          {item.nombre}
+                        </Text>
+                        <Text style={[styles.excelItemSubtitle, { color: colors.secondary }]}>
+                          Celular: {item.celular}
+                        </Text>
+                        <Text style={[styles.excelItemSubtitle, { color: colors.secondary }]}>
+                          Correo: {item.correo}
                         </Text>
                       </>
                     )}

@@ -11,13 +11,17 @@ import {
   StyleSheet,
   Alert,
   Platform,
-  AppState,
   Pressable,
+  AppState,
+  ScrollView,
+  Image,
+  ActivityIndicator
 } from "react-native"
 import DateTimePicker from '@react-native-community/datetimepicker'
 import { Calendar, LocaleConfig } from "react-native-calendars"
 import * as Notifications from 'expo-notifications';
 import { useTheme } from "../context/ThemeContext"
+import { useData } from "../context/DataContext"
 import { Feather } from "@expo/vector-icons"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
@@ -44,6 +48,7 @@ interface Task {
   status: TaskStatus
   urgency: UrgencyLevel
   deadline: string | null
+  administrativoId?: string // ID del administrativo responsable
 }
 
 const statusColors = {
@@ -87,8 +92,10 @@ LocaleConfig.defaultLocale = 'es';
 
 export default function ActivitiesScreen() {
   const { colors, theme } = useTheme()
+  const { administrativos } = useData()
   const [tasks, setTasks] = useState<Task[]>([])
   const [modalVisible, setModalVisible] = useState(false)
+  const [administrativoModalVisible, setAdministrativoModalVisible] = useState(false)
   const [editingTask, setEditingTask] = useState<Task | null>(null)
   const [selectedDate, setSelectedDate] = useState(format(new Date(), "yyyy-MM-dd"))
   const [markedDates, setMarkedDates] = useState({})
@@ -104,6 +111,7 @@ export default function ActivitiesScreen() {
   const [deadline, setDeadline] = useState<string | null>(null);
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showTimePicker, setShowTimePicker] = useState(false);
+  const [selectedAdministrativoId, setSelectedAdministrativoId] = useState<string>("");
 
   const onChangeDate = (event: any, selectedDate?: Date) => {
     setShowDatePicker(false);
@@ -343,6 +351,7 @@ export default function ActivitiesScreen() {
     setDescription("")
     setUrgency('media')
     setDeadline(null)
+    setSelectedAdministrativoId("")
     setEditingTask(null)
   }
 
@@ -352,6 +361,7 @@ export default function ActivitiesScreen() {
       setDescription(task.description)
       setUrgency(task.urgency)
       setDeadline(task.deadline)
+      setSelectedAdministrativoId(task.administrativoId || "")
       setEditingTask(task)
     } else {
       resetForm()
@@ -376,7 +386,7 @@ export default function ActivitiesScreen() {
       // Actualizar tarea existente
       updatedTasks = tasks.map((t) =>
         t.id === editingTask.id
-          ? { ...t, name, description, urgency, deadline }
+          ? { ...t, name, description, urgency, deadline, administrativoId: selectedAdministrativoId }
           : t
       )
     } else {
@@ -389,6 +399,7 @@ export default function ActivitiesScreen() {
         status: "pending",
         urgency,
         deadline,
+        administrativoId: selectedAdministrativoId,
       }
       updatedTasks = [...tasks, newTask]
       
@@ -436,7 +447,8 @@ export default function ActivitiesScreen() {
     <View style={[styles.card, { 
       backgroundColor: colors.card,
       borderLeftWidth: 6,
-      borderLeftColor: urgencyColors[item.urgency]
+      borderLeftColor: urgencyColors[item.urgency],
+      marginHorizontal: 12
     }]}>
       <TouchableOpacity onPress={() => openForm(item)} style={{ flex: 1 }}>
         <View style={styles.cardHeader}>
@@ -477,6 +489,18 @@ export default function ActivitiesScreen() {
                 hour: '2-digit',
                 minute: '2-digit'
               })}
+            </Text>
+          </View>
+        )}
+
+        {/* Mostrar el administrativo responsable */}
+        {item.administrativoId && (
+          <View style={styles.administrativoContainer}>
+            <Text style={[styles.administrativoLabel, { color: colors.text }]}>
+              Responsable:
+            </Text>
+            <Text style={[styles.administrativoText, { color: colors.text }]}>
+              {administrativos.find(a => a.id === item.administrativoId)?.nombre || "No asignado"}
             </Text>
           </View>
         )}
@@ -553,147 +577,227 @@ export default function ActivitiesScreen() {
       {/* Modal Form */}
       <Modal visible={modalVisible} animationType="slide" transparent>
         <View style={styles.modalOverlay}>
-          <View style={[styles.modalContent, { backgroundColor: colors.card }]}>
+          <View style={[styles.modalContent, { backgroundColor: colors.card, maxHeight: '85%' }]}>
             <Text style={[styles.modalTitle, { color: colors.text }]}>
               {editingTask ? "Editar Tarea" : "Nueva Tarea"}
             </Text>
-            <TextInput
-              style={[styles.input, { color: colors.text, borderColor: colors.border }]}
-              placeholder="Nombre de la tarea"
-              placeholderTextColor={theme === 'dark' ? '#e9ecef' : '#6c757d'}
-              value={name}
-              onChangeText={setName}
-            />
-            <TextInput
-              style={[styles.input, { 
-                color: colors.text, 
-                borderColor: colors.border,
-                minHeight: 100,
-                textAlignVertical: 'top'
-              }]}
-              placeholder="Descripción"
-              placeholderTextColor={theme === 'dark' ? '#e9ecef' : '#6c757d'}
-              value={description}
-              onChangeText={setDescription}
-              multiline
-            />
-            <Text style={[styles.sectionLabel, { color: colors.text }]}>Nivel de Urgencia</Text>
-            <View style={styles.urgencyContainer}>
-              {(['baja', 'media', 'alta'] as UrgencyLevel[]).map((level) => (
-                <TouchableOpacity
-                  key={level}
-                  style={[
-                    styles.urgencyButton,
-                    {
-                      backgroundColor: urgency === level ? 
-                        level === 'baja' ? '#4CAF50' :
-                        level === 'media' ? '#FFC107' : '#F44336' :
-                        colors.card,
-                      borderColor: colors.border,
-                    },
-                  ]}
-                  onPress={() => setUrgency(level)}
-                >
-                  <Text
+            <ScrollView 
+              showsVerticalScrollIndicator={false}
+              contentContainerStyle={styles.modalScrollContent}
+            >
+              <TextInput
+                style={[styles.input, { color: colors.text, borderColor: colors.border }]}
+                placeholder="Nombre de la tarea"
+                placeholderTextColor={theme === 'dark' ? '#e9ecef' : '#6c757d'}
+                value={name}
+                onChangeText={setName}
+              />
+              <TextInput
+                style={[styles.input, { 
+                  color: colors.text, 
+                  borderColor: colors.border,
+                  minHeight: 100,
+                  textAlignVertical: 'top'
+                }]}
+                placeholder="Descripción"
+                placeholderTextColor={theme === 'dark' ? '#e9ecef' : '#6c757d'}
+                value={description}
+                onChangeText={setDescription}
+                multiline
+              />
+              <Text style={[styles.sectionLabel, { color: colors.text }]}>Nivel de Urgencia</Text>
+              <View style={styles.urgencyContainer}>
+                {(['baja', 'media', 'alta'] as UrgencyLevel[]).map((level) => (
+                  <TouchableOpacity
+                    key={level}
                     style={[
-                      styles.urgencyButtonText,
-                      { 
-                        color: urgency === level ? '#fff' : colors.text,
-                        fontWeight: urgency === level ? 'bold' : 'normal'
+                      styles.urgencyButton,
+                      {
+                        backgroundColor: urgency === level ? 
+                          level === 'baja' ? '#4CAF50' :
+                          level === 'media' ? '#FFC107' : '#F44336' :
+                          colors.card,
+                        borderColor: colors.border,
                       },
                     ]}
+                    onPress={() => setUrgency(level)}
                   >
-                    {level.charAt(0).toUpperCase() + level.slice(1)}
+                    <Text
+                      style={[
+                        styles.urgencyButtonText,
+                        { 
+                          color: urgency === level ? '#fff' : colors.text,
+                          fontWeight: urgency === level ? 'bold' : 'normal'
+                        },
+                      ]}
+                    >
+                      {level.charAt(0).toUpperCase() + level.slice(1)}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+              <Text style={[styles.sectionLabel, { color: colors.text }]}>
+                Fecha Límite
+              </Text>
+              <View style={styles.inputContainer}>
+                <Pressable
+                  onPress={showDatePickerAsync}
+                  style={[styles.input, { borderColor: colors.border, backgroundColor: colors.card }]}
+                >
+                  <Text style={{ color: colors.text }}>
+                    {deadline
+                      ? new Date(deadline).toLocaleDateString('es-MX', {
+                          year: 'numeric',
+                          month: 'long',
+                          day: 'numeric'
+                        })
+                      : 'Selecciona fecha'}
+                  </Text>
+                </Pressable>
+              </View>
+
+              <Text style={[styles.sectionLabel, { color: colors.text, marginTop: 16 }]}>
+                Hora Límite
+              </Text>
+              <View style={styles.inputContainer}>
+                <Pressable
+                  onPress={showTimePickerAsync}
+                  style={[styles.input, { borderColor: colors.border, backgroundColor: colors.card }]}
+                >
+                  <Text style={{ color: colors.text }}>
+                    {deadline
+                      ? new Date(deadline).toLocaleTimeString('es-MX', {
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        })
+                      : 'Selecciona hora'}
+                  </Text>
+                </Pressable>
+              </View>
+
+              <Text style={[styles.sectionLabel, { color: colors.text, marginTop: 16 }]}>
+                Administrativo
+              </Text>
+              <View style={styles.inputContainer}>
+                <View style={[styles.pickerContainer, { borderColor: colors.border }]}>
+                  <Pressable
+                    style={[styles.pickerButton, { backgroundColor: colors.card }]}
+                    onPress={() => setAdministrativoModalVisible(true)}
+                  >
+                    <Text style={{ color: colors.text }}>
+                      {selectedAdministrativoId 
+                        ? administrativos.find(a => a.id === selectedAdministrativoId)?.nombre || "Seleccionar administrativo" 
+                        : "Seleccionar administrativo"}
+                    </Text>
+                    <Feather name="chevron-down" size={16} color={colors.text} />
+                  </Pressable>
+                </View>
+              </View>
+
+              {showDatePicker && (
+                <DateTimePicker
+                  value={deadline ? new Date(deadline) : new Date()}
+                  mode="date"
+                  display={Platform.OS === 'android' ? 'default' : 'spinner'}
+                  onChange={onChangeDate}
+                  locale="es-ES"
+                  is24Hour={true}
+                />
+              )}
+
+              {showTimePicker && (
+                <DateTimePicker
+                  value={deadline ? new Date(deadline) : new Date()}
+                  mode="time"
+                  display={Platform.OS === 'android' ? 'default' : 'spinner'}
+                  onChange={onChangeTime}
+                  locale="es-ES"
+                  is24Hour={true}
+                />
+              )}
+
+              <View style={styles.buttonRow}>
+                <TouchableOpacity
+                  style={[styles.cancelButton, { backgroundColor: colors.secondary }]}
+                  onPress={closeForm}
+                >
+                  <Text style={styles.buttonText}>Cancelar</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.saveButton, { backgroundColor: colors.primary }]}
+                  onPress={handleSave}
+                >
+                  <Text style={styles.buttonText}>Guardar</Text>
+                </TouchableOpacity>
+              </View>
+              {editingTask && (
+                <TouchableOpacity
+                  style={[styles.deleteButton, { backgroundColor: "#e74c3c" }]}
+                  onPress={() => {
+                    closeForm()
+                    handleDelete(editingTask.id)
+                  }}
+                >
+                  <Text style={styles.buttonText}>Eliminar Tarea</Text>
+                </TouchableOpacity>
+              )}
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Modal para selección de administrativo */}
+      <Modal visible={administrativoModalVisible} animationType="fade" transparent>
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalContent, { backgroundColor: colors.card, maxWidth: '80%' }]}>
+            <Text style={[styles.modalTitle, { color: colors.text }]}>
+              Seleccionar Administrativo
+            </Text>
+            <ScrollView style={{ maxHeight: 300 }}>
+              <TouchableOpacity
+                style={[styles.adminOption, { borderBottomColor: colors.border }]}
+                onPress={() => {
+                  setSelectedAdministrativoId("");
+                  setAdministrativoModalVisible(false);
+                }}
+              >
+                <Text style={[styles.adminOptionText, { color: colors.text }]}>Ninguno</Text>
+              </TouchableOpacity>
+              
+              {administrativos.map((admin) => (
+                <TouchableOpacity
+                  key={admin.id}
+                  style={[
+                    styles.adminOption, 
+                    { 
+                      borderBottomColor: colors.border,
+                      backgroundColor: selectedAdministrativoId === admin.id ? colors.primary + '20' : 'transparent'
+                    }
+                  ]}
+                  onPress={() => {
+                    setSelectedAdministrativoId(admin.id);
+                    setAdministrativoModalVisible(false);
+                  }}
+                >
+                  <Text style={[
+                    styles.adminOptionText, 
+                    { 
+                      color: colors.text,
+                      fontWeight: selectedAdministrativoId === admin.id ? 'bold' : 'normal'
+                    }
+                  ]}>
+                    {admin.nombre}
                   </Text>
                 </TouchableOpacity>
               ))}
-            </View>
-            <Text style={[styles.sectionLabel, { color: colors.text }]}>
-              Fecha Límite
-            </Text>
-            <View style={styles.inputContainer}>
-              <Pressable
-                onPress={showDatePickerAsync}
-                style={[styles.input, { borderColor: colors.border, backgroundColor: colors.card }]}
-              >
-                <Text style={{ color: colors.text }}>
-                  {deadline
-                    ? new Date(deadline).toLocaleDateString('es-MX', {
-                        year: 'numeric',
-                        month: 'long',
-                        day: 'numeric'
-                      })
-                    : 'Selecciona fecha'}
-                </Text>
-              </Pressable>
-            </View>
-
-            <Text style={[styles.sectionLabel, { color: colors.text, marginTop: 16 }]}>
-              Hora Límite
-            </Text>
-            <View style={styles.inputContainer}>
-              <Pressable
-                onPress={showTimePickerAsync}
-                style={[styles.input, { borderColor: colors.border, backgroundColor: colors.card }]}
-              >
-                <Text style={{ color: colors.text }}>
-                  {deadline
-                    ? new Date(deadline).toLocaleTimeString('es-MX', {
-                        hour: '2-digit',
-                        minute: '2-digit'
-                      })
-                    : 'Selecciona hora'}
-                </Text>
-              </Pressable>
-            </View>
-
-            {showDatePicker && (
-              <DateTimePicker
-                value={deadline ? new Date(deadline) : new Date()}
-                mode="date"
-                display={Platform.OS === 'android' ? 'default' : 'spinner'}
-                onChange={onChangeDate}
-                locale="es-ES"
-                is24Hour={true}
-              />
-            )}
-
-            {showTimePicker && (
-              <DateTimePicker
-                value={deadline ? new Date(deadline) : new Date()}
-                mode="time"
-                display={Platform.OS === 'android' ? 'default' : 'spinner'}
-                onChange={onChangeTime}
-                locale="es-ES"
-                is24Hour={true}
-              />
-            )}
-
-            <View style={styles.buttonRow}>
-              <TouchableOpacity
-                style={[styles.cancelButton, { backgroundColor: colors.secondary }]}
-                onPress={closeForm}
-              >
-                <Text style={styles.buttonText}>Cancelar</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.saveButton, { backgroundColor: colors.primary }]}
-                onPress={handleSave}
-              >
-                <Text style={styles.buttonText}>Guardar</Text>
-              </TouchableOpacity>
-            </View>
-            {editingTask && (
-              <TouchableOpacity
-                style={[styles.deleteButton, { backgroundColor: "#e74c3c" }]}
-                onPress={() => {
-                  closeForm()
-                  handleDelete(editingTask.id)
-                }}
-              >
-                <Text style={styles.buttonText}>Eliminar Tarea</Text>
-              </TouchableOpacity>
-            )}
+            </ScrollView>
+            
+            <TouchableOpacity
+              style={[styles.cancelButton, { backgroundColor: colors.secondary, marginTop: 16 }]}
+              onPress={() => setAdministrativoModalVisible(false)}
+            >
+              <Text style={styles.buttonText}>Cancelar</Text>
+            </TouchableOpacity>
           </View>
         </View>
       </Modal>
@@ -736,6 +840,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: 16,
     marginBottom: 12,
+    marginHorizontal: 12,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
@@ -830,17 +935,31 @@ const styles = StyleSheet.create({
     borderColor: 'transparent',
   },
   deadlineContainer: {
-    marginTop: 8,
-    marginBottom: 16,
+    marginTop: 6,
+    marginBottom: 8,
   },
   deadlineLabel: {
     fontSize: 12,
     fontWeight: 'bold',
-    marginBottom: 4,
+    marginBottom: 2,
   },
   deadlineText: {
     fontSize: 14,
-    marginBottom: 8,
+    marginBottom: 4,
+  },
+  administrativoContainer: {
+    marginBottom: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+  },
+  administrativoLabel: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    marginRight: 6,
+  },
+  administrativoText: {
+    fontSize: 14,
   },
   modalOverlay: {
     flex: 1,
@@ -852,6 +971,7 @@ const styles = StyleSheet.create({
     width: "90%",
     borderRadius: 12,
     padding: 20,
+    maxHeight: '85%',
   },
   modalTitle: {
     fontSize: 20,
@@ -899,5 +1019,32 @@ const styles = StyleSheet.create({
     height: 4,
     borderRadius: 2,
     marginTop: 2,
+  },
+  pickerContainer: {
+    borderWidth: 1,
+    borderRadius: 8,
+    padding: 10,
+    marginBottom: 12,
+    fontSize: 16,
+  },
+  pickerButton: {
+    padding: 10,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  modalScrollView: {
+    maxHeight: '80%',
+  },
+  modalScrollContent: {
+    paddingVertical: 20,
+  },
+  adminOption: {
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderBottomWidth: 1,
+  },
+  adminOptionText: {
+    fontSize: 16,
   },
 })
