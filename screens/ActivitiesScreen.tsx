@@ -255,43 +255,114 @@ export default function ActivitiesScreen() {
       marked: false,
       customStyles: {
         container: {
-          backgroundColor: today === selectedDate ? colors.primary : colors.todayBackground,
+          backgroundColor: today === selectedDate 
+            ? colors.primary 
+            : theme === 'light' 
+              ? 'rgba(33, 150, 243, 0.15)' // Azul claro tenue para modo claro
+              : 'rgba(25, 118, 210, 0.25)', // Azul oscuro tenue para modo oscuro
+          borderRadius: 8,
+          borderWidth: 1,
+          borderColor: theme === 'light' 
+            ? 'rgba(33, 150, 243, 0.3)' 
+            : 'rgba(59, 130, 246, 0.5)',
         },
         text: {
-          color: 'white',
+          color: today === selectedDate 
+            ? '#ffffff' 
+            : theme === 'light' 
+              ? '#1976d2' 
+              : '#90caf9',
+          fontWeight: '600',
         }
       }
     };
     
     // Marcar días con tareas
     taskList.forEach(task => {
-      if (task.date === today) return; // Ya está marcado como día actual
+      if (task.date === today) {
+        // Si hay una tarea en el día actual, agregar el punto pero mantener el estilo del día actual
+        newMarkedDates[today] = {
+          ...newMarkedDates[today],
+          marked: true,
+          dots: [
+            {
+              color: getTaskDotColor(task),
+              selectedDotColor: '#ffffff'
+            }
+          ]
+        };
+        return;
+      }
       
+      // Para otros días con tareas
       newMarkedDates[task.date] = {
         ...newMarkedDates[task.date],
         selected: task.date === selectedDate,
         marked: true,
         customStyles: {
           container: {
-            backgroundColor: task.date === selectedDate ? colors.primary : undefined,
+            backgroundColor: task.date === selectedDate 
+              ? colors.primary 
+              : 'transparent',
+            borderRadius: 8,
+            borderWidth: task.date === selectedDate ? 0 : 1,
+            borderColor: theme === 'light' 
+              ? 'rgba(108, 117, 125, 0.3)' 
+              : 'rgba(148, 163, 184, 0.3)',
           },
           text: {
-            color: task.date === selectedDate ? 'white' : undefined,
+            color: task.date === selectedDate 
+              ? '#ffffff' 
+              : colors.text,
+            fontWeight: task.date === selectedDate ? '600' : 'normal',
           },
           dot: {
             color: getTaskDotColor(task),
+            selectedDotColor: '#ffffff',
+            size: 5,
           }
         }
       };
     });
+    
+    // Asegurar que el día seleccionado siempre esté marcado, incluso si no tiene tareas
+    if (selectedDate !== today && !newMarkedDates[selectedDate]) {
+      newMarkedDates[selectedDate] = {
+        selected: true,
+        marked: false,
+        customStyles: {
+          container: {
+            backgroundColor: colors.primary,
+            borderRadius: 8,
+            borderWidth: 0,
+          },
+          text: {
+            color: '#ffffff',
+            fontWeight: '600',
+          }
+        }
+      };
+    }
     
     setMarkedDates(newMarkedDates);
   };
 
   // Obtener el color del punto para la tarea en el calendario
   const getTaskDotColor = (task: Task) => {
+    // Si la tarea está completada, usar el color de completado
     if (task.status === 'completed') return statusColors.completed;
-    return urgencyColors[task.urgency];
+    
+    // Para tareas no completadas, usar el color de urgencia con mayor opacidad para mejor visibilidad
+    const baseColor = urgencyColors[task.urgency];
+    
+    // Aumentar la opacidad/intensidad del color para mejor visibilidad
+    return theme === 'light' 
+      ? baseColor // En modo claro, mantener el color original
+      : task.urgency === 'baja' 
+        ? '#81c784' // Verde más brillante para modo oscuro
+        : task.urgency === 'media' 
+          ? '#ffb74d' // Amarillo más brillante para modo oscuro
+          : '#e57373'; // Rojo más brillante para modo oscuro
   };
 
   // Función para registrar el dispositivo para notificaciones push
@@ -341,7 +412,70 @@ export default function ActivitiesScreen() {
 
   const handleDayPress = useCallback((day: DateData) => {
     setSelectedDate(day.dateString);
-  }, []);
+    
+    // Actualizar inmediatamente el sombreado del día seleccionado
+    setMarkedDates(prevMarkedDates => {
+      const updatedMarkedDates = { ...prevMarkedDates };
+      
+      // Eliminar la selección de todos los días
+      Object.keys(updatedMarkedDates).forEach(date => {
+        if (updatedMarkedDates[date].customStyles) {
+          updatedMarkedDates[date] = {
+            ...updatedMarkedDates[date],
+            selected: false,
+            customStyles: {
+              ...updatedMarkedDates[date].customStyles,
+              container: {
+                ...updatedMarkedDates[date].customStyles.container,
+                backgroundColor: date === format(new Date(), "yyyy-MM-dd") 
+                  ? theme === 'light' 
+                    ? 'rgba(33, 150, 243, 0.15)' 
+                    : 'rgba(25, 118, 210, 0.25)'
+                  : 'transparent',
+              },
+              text: {
+                ...updatedMarkedDates[date].customStyles.text,
+                color: date === format(new Date(), "yyyy-MM-dd") 
+                  ? theme === 'light' ? '#1976d2' : '#90caf9'
+                  : colors.text,
+                fontWeight: 'normal',
+              }
+            }
+          };
+        }
+      });
+      
+      // Marcar el día seleccionado
+      const selectedDateObj = updatedMarkedDates[day.dateString] || {
+        marked: false,
+        customStyles: {
+          container: {},
+          text: {}
+        }
+      };
+      
+      updatedMarkedDates[day.dateString] = {
+        ...selectedDateObj,
+        selected: true,
+        customStyles: {
+          ...selectedDateObj.customStyles,
+          container: {
+            ...selectedDateObj.customStyles.container,
+            backgroundColor: colors.primary,
+            borderRadius: 8,
+            borderWidth: 0,
+          },
+          text: {
+            ...selectedDateObj.customStyles.text,
+            color: '#ffffff',
+            fontWeight: '600',
+          }
+        }
+      };
+      
+      return updatedMarkedDates;
+    });
+  }, [colors.primary, colors.text, theme]);
 
   const filteredTasks = tasks.filter((task) => task.date === selectedDate)
 
@@ -538,17 +672,33 @@ export default function ActivitiesScreen() {
           selectedDayBackgroundColor: colors.primary,
           selectedDayTextColor: "#fff",
           dayTextColor: colors.text,
-          textDisabledColor: colors.secondary,
+          textDisabledColor: theme === 'light' ? '#c0c0c0' : '#64748b',
           monthTextColor: colors.text,
-          todayBackgroundColor: colors.todayBackground,
-          todayTextColor: '#ffffff',
-          textDayFontWeight: '300',
+          todayBackgroundColor: 'transparent', // No usamos este valor, lo manejamos con customStyles
+          todayTextColor: theme === 'light' ? '#1976d2' : '#90caf9',
+          textDayFontWeight: '400',
           textMonthFontWeight: 'bold',
-          textDayHeaderFontWeight: '300',
+          textDayHeaderFontWeight: '500',
           textDayFontSize: 14,
           textMonthFontSize: 16,
           textDayHeaderFontSize: 14,
           arrowColor: colors.text,
+          dotColor: theme === 'light' ? colors.primary : '#90caf9',
+          dotStyle: {
+            width: 6,
+            height: 6,
+            borderRadius: 3,
+            marginTop: 2,
+          },
+          'stylesheet.day.single': {
+            dot: {
+              width: 6,
+              height: 6,
+              borderRadius: 3,
+              marginTop: 2,
+              opacity: 1,
+            },
+          },
         }}
       />
       <View style={styles.dayHeader}>
