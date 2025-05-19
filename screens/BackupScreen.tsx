@@ -270,8 +270,13 @@ const BackupScreen = () => {
         throw new Error('No se encontró la copia de seguridad')
       }
 
-      // Crear archivo temporal
-      const fileUri = `${FileSystem.cacheDirectory}cobaev_backup_${backupName.replace(/\s+/g, '_')}_${Date.now()}.json`
+      // Sanitizar el nombre del archivo reemplazando caracteres no válidos
+      const sanitizedName = backupName
+        .replace(/[\/\\:*?"<>|]/g, '_') // Reemplazar caracteres no válidos con guión bajo
+        .replace(/\s+/g, '_') // Reemplazar espacios con guión bajo
+
+      // Crear archivo temporal con nombre sanitizado
+      const fileUri = `${FileSystem.cacheDirectory}cobaev_backup_${sanitizedName}_${Date.now()}.json`
       await FileSystem.writeAsStringAsync(fileUri, backupJson, { encoding: FileSystem.EncodingType.UTF8 })
 
       // Compartir archivo
