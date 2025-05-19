@@ -1,440 +1,589 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Alert, ScrollView } from 'react-native';
-import { useTheme } from '../context/ThemeContext';
-import { useData } from '../context/DataContext';
-import * as FileSystem from 'expo-file-system';
-import * as Sharing from 'expo-sharing';
-import * as DocumentPicker from 'expo-document-picker';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { format, parseISO } from 'date-fns';
-import { es } from 'date-fns/locale';
-import * as BackgroundFetch from 'expo-background-fetch';
-import * as TaskManager from 'expo-task-manager';
+"use client"
 
-// Nombre de la tarea en segundo plano
-const BACKGROUND_BACKUP_TASK = 'background-backup-task';
+import React, { useState, useEffect, useRef } from 'react'
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  ScrollView,
+  Alert,
+  ActivityIndicator,
+  Platform,
+  AppState,
+  TextInput
+} from "react-native"
+import { useTheme } from "../context/ThemeContext"
+import { useData } from "../context/DataContext"
+import AsyncStorage from "@react-native-async-storage/async-storage"
+import * as FileSystem from 'expo-file-system'
+import * as DocumentPicker from 'expo-document-picker'
+import * as Sharing from 'expo-sharing'
+import { Feather } from "@expo/vector-icons"
+import { format } from "date-fns"
+import { es } from 'date-fns/locale'
 
-// Definir la tarea en segundo plano
-TaskManager.defineTask(BACKGROUND_BACKUP_TASK, async () => {
-  try {
-    const now = new Date();
-    console.log(`[${now.toISOString()}] Ejecutando backup automático...`);
-    
-    // Obtener todos los datos de AsyncStorage
-    const dataKeys = ['docentes', 'materias', 'grupos', 'directivos', 'horarios', 'tasks'];
-    const allData: Record<string, any> = {};
-    
-    for (const key of dataKeys) {
-      const jsonData = await AsyncStorage.getItem(key);
-      if (jsonData) {
-        allData[key] = JSON.parse(jsonData);
-      } else {
-        allData[key] = [];
-      }
-    }
-    
-    // Verificar si hay datos para respaldar
-    const hasData = Object.values(allData).some(arr => Array.isArray(arr) && arr.length > 0);
-    
-    if (!hasData) {
-      console.log('No hay datos para respaldar');
-      return BackgroundFetch.BackgroundFetchResult.NoData;
-    }
-    
-    // Crear directorio de respaldos si no existe
-    const backupDir = `${FileSystem.documentDirectory}backups/`;
-    const dirInfo = await FileSystem.getInfoAsync(backupDir);
-    if (!dirInfo.exists) {
-      await FileSystem.makeDirectoryAsync(backupDir, { intermediates: true });
-    }
-    
-    // Nombre del archivo con fecha y hora
-    const timestamp = format(now, 'yyyy-MM-dd-HH-mm-ss');
-    const fileName = `respaldo-completo-${timestamp}.json`;
-    const fileUri = `${backupDir}${fileName}`;
-    
-    // Crear el objeto de respaldo con formato correcto
-    const backupObject = {
-      timestamp: now.toISOString(),
-      data: allData
-    };
-    
-    // Guardar el archivo
-    await FileSystem.writeAsStringAsync(fileUri, JSON.stringify(backupObject, null, 2), {
-      encoding: FileSystem.EncodingType.UTF8,
-    });
-    
-    console.log(`Backup completo guardado: ${fileUri}`);
-    return BackgroundFetch.BackgroundFetchResult.NewData;
-  } catch (error) {
-    console.error('Error en backup automático:', error);
-    return BackgroundFetch.BackgroundFetchResult.Failed;
-  }
-});
+// Constantes para el respaldo automático
+const BACKUP_INTERVAL = 24 * 60 * 60 * 1000 // 24 horas en milisegundos
+const BACKUP_CHECK_INTERVAL = 60 * 60 * 1000 // 1 hora en milisegundos
 
 const BackupScreen = () => {
-  const { colors } = useTheme();
-  const {
-    docentes, materias, grupos, directivos, horarios, actividades,
-    loadAllData
-  } = useData();
-  
-  const [isLoading, setIsLoading] = useState(false);
-  const [backupStatus, setBackupStatus] = useState('');
-  const [lastBackup, setLastBackup] = useState<string | null>(null);
-  const [availableBackups, setAvailableBackups] = useState<string[]>([]);
-  const [tasks, setTasks] = useState<any[]>([]);
+  const { colors } = useTheme()
+  const { loadAllData } = useData()
+  const [backups, setBackups] = useState<{ id: string; name: string; date: string; size: string }[]>([])
+  const [loading, setLoading] = useState(false)
+  const [restoring, setRestoring] = useState(false)
+  const [backupName, setBackupName] = useState("")
+  const [lastAutoBackup, setLastAutoBackup] = useState<string | null>(null)
+  const appState = useRef(AppState.currentState)
 
-  // Cargar información de respaldos y tareas
+  // Verificar y realizar respaldo automático
   useEffect(() => {
-    loadBackupInfo();
-    loadTasks();
-    registerBackgroundTask();
-    
-    // Configurar intervalo para verificar respaldos cada minuto
-    const checkInterval = setInterval(() => {
-      loadBackupInfo();
-      loadTasks(); // Recargar tareas periódicamente
-    }, 60000);
-    
-    return () => {
-      clearInterval(checkInterval);
-    };
-  }, []);
-
-  // Cargar tareas desde AsyncStorage
-  const loadTasks = async () => {
-    try {
-      const tasksData = await AsyncStorage.getItem('tasks');
-      if (tasksData) {
-        setTasks(JSON.parse(tasksData));
-      } else {
-        setTasks([]);
-      }
-    } catch (error) {
-      console.error('Error al cargar tareas:', error);
-      setTasks([]);
-    }
-  };
-
-  // Registrar tarea en segundo plano
-  const registerBackgroundTask = async () => {
-    try {
-      await BackgroundFetch.registerTaskAsync(BACKGROUND_BACKUP_TASK, {
-        minimumInterval: 60 * 60, // 1 hora en segundos
-        stopOnTerminate: false,
-        startOnBoot: true,
-      });
-      console.log('Tarea de respaldo automático registrada');
-    } catch (error) {
-      console.error('Error al registrar tarea:', error);
-    }
-  };
-
-  // Cargar información de respaldos
-  const loadBackupInfo = async () => {
-    try {
-      const backupDir = `${FileSystem.documentDirectory}backups/`;
-      const dirInfo = await FileSystem.getInfoAsync(backupDir);
-      
-      if (dirInfo.exists) {
-        const files = await FileSystem.readDirectoryAsync(backupDir);
-        const backupFiles = files
-          .filter(file => (file.startsWith('respaldo-completo-') || file.startsWith('respaldo-actividades-')) && file.endsWith('.json'))
-          .sort()
-          .reverse();
+    const checkAutoBackup = async () => {
+      try {
+        const lastBackupTime = await AsyncStorage.getItem('lastAutoBackupTime')
+        const now = new Date()
         
-        setAvailableBackups(backupFiles);
-        
-        if (backupFiles.length > 0) {
-          const lastBackupFile = backupFiles[0];
-          const fileInfo = await FileSystem.getInfoAsync(`${backupDir}${lastBackupFile}`);
-          if (fileInfo.exists) {
-            const lastModified = new Date(fileInfo.modificationTime || 0);
-            setLastBackup(lastModified.toISOString());
-          }
-        }
-      }
-    } catch (error) {
-      console.error('Error al cargar información de respaldos:', error);
-    }
-  };
-
-  // Crear respaldo manual
-  const createBackup = async () => {
-    try {
-      setIsLoading(true);
-      setBackupStatus('Creando copia de seguridad completa...');
-      
-      // Recopilar todos los datos
-      const dataKeys = ['docentes', 'materias', 'grupos', 'directivos', 'horarios', 'tasks'];
-      const allData: Record<string, any> = {};
-      let totalItems = 0;
-      
-      for (const key of dataKeys) {
-        const jsonData = await AsyncStorage.getItem(key);
-        if (jsonData) {
-          const data = JSON.parse(jsonData);
-          allData[key] = data;
-          if (Array.isArray(data)) {
-            totalItems += data.length;
-          }
+        if (!lastBackupTime || (now.getTime() - new Date(lastBackupTime).getTime() > BACKUP_INTERVAL)) {
+          // Crear respaldo automático
+          await createBackup(true)
+          await AsyncStorage.setItem('lastAutoBackupTime', now.toISOString())
+          setLastAutoBackup(now.toISOString())
         } else {
-          allData[key] = [];
+          setLastAutoBackup(lastBackupTime)
         }
+      } catch (error) {
+        console.error('Error al verificar respaldo automático:', error)
       }
-      
-      if (totalItems === 0) {
-        setBackupStatus('No hay datos para respaldar');
-        setIsLoading(false);
-        return;
-      }
-      
-      // Crear directorio de respaldos si no existe
-      const backupDir = `${FileSystem.documentDirectory}backups/`;
-      const dirInfo = await FileSystem.getInfoAsync(backupDir);
-      if (!dirInfo.exists) {
-        await FileSystem.makeDirectoryAsync(backupDir, { intermediates: true });
-      }
-      
-      // Nombre del archivo con fecha y hora
-      const timestamp = format(new Date(), 'yyyy-MM-dd-HH-mm-ss');
-      const fileName = `respaldo-completo-${timestamp}.json`;
-      const fileUri = `${backupDir}${fileName}`;
-      
-      // Crear el objeto de respaldo con formato correcto
-      const backupObject = {
-        timestamp: new Date().toISOString(),
-        data: allData
-      };
-      
-      // Guardar el archivo
-      await FileSystem.writeAsStringAsync(fileUri, JSON.stringify(backupObject, null, 2), {
-        encoding: FileSystem.EncodingType.UTF8,
-      });
-      
-      // Actualizar lista de respaldos
-      await loadBackupInfo();
-      
-      // Compartir el archivo
-      await Sharing.shareAsync(fileUri, {
-        dialogTitle: 'Compartir copia de seguridad',
-        UTI: 'public.json',
-        mimeType: 'application/json',
-      });
-      
-      setBackupStatus(`Respaldo creado: ${totalItems} elementos guardados`);
-    } catch (error) {
-      console.error('Error al crear respaldo:', error);
-      Alert.alert('Error', 'No se pudo crear la copia de seguridad');
-      setBackupStatus('Error al crear el respaldo');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-// Restaurar respaldo
-const restoreBackup = async () => {
-  try {
-    setIsLoading(true);
-    setBackupStatus('Seleccionando archivo de respaldo...');
-
-    // Seleccionar archivo
-    const result = await DocumentPicker.getDocumentAsync({
-      type: 'application/json',
-      copyToCacheDirectory: true,
-    });
-
-    if (result.canceled) {
-      setBackupStatus('Restauración cancelada');
-      setIsLoading(false);
-      return;
     }
 
-    setBackupStatus('Leyendo archivo de respaldo...');
+    // Verificar al montar el componente
+    checkAutoBackup()
 
-    // Leer contenido del archivo
-    const fileUri = result.assets[0].uri;
-    const fileContent = await FileSystem.readAsStringAsync(fileUri, {
-      encoding: FileSystem.EncodingType.UTF8,
-    });
+    // Configurar verificación periódica
+    const interval = setInterval(checkAutoBackup, BACKUP_CHECK_INTERVAL)
 
-    const backupObject = JSON.parse(fileContent);
-    const backupData = backupObject.data || backupObject; // Ajusta según tu estructura
+    return () => clearInterval(interval)
+  }, [])
 
-    // Guardar cada tipo de dato en AsyncStorage
-    if (backupData.docentes) await AsyncStorage.setItem('docentes', JSON.stringify(backupData.docentes));
-    if (backupData.materias) await AsyncStorage.setItem('materias', JSON.stringify(backupData.materias));
-    if (backupData.grupos) await AsyncStorage.setItem('grupos', JSON.stringify(backupData.grupos));
-    if (backupData.directivos) await AsyncStorage.setItem('directivos', JSON.stringify(backupData.directivos));
-    if (backupData.horarios) await AsyncStorage.setItem('horarios', JSON.stringify(backupData.horarios));
-    if (backupData.actividades) await AsyncStorage.setItem('actividades', JSON.stringify(backupData.actividades));
-    if (backupData.tasks) await AsyncStorage.setItem('tasks', JSON.stringify(backupData.tasks));
+  // Cargar lista de respaldos y monitorear cambios de estado de la app
+  useEffect(() => {
+    loadBackups()
 
-    // Recargar todos los datos en el contexto
-    await loadAllData();
+    const subscription = AppState.addEventListener('change', nextAppState => {
+      if (appState.current.match(/inactive|background/) && nextAppState === 'active') {
+        loadBackups()
+      }
+      appState.current = nextAppState
+    })
 
-    Alert.alert(
-      'Restauración completada',
-      'Los datos han sido restaurados correctamente. La aplicación ha sido actualizada con los datos restaurados.',
-      [{ text: 'OK' }]
-    );
+    return () => {
+      subscription.remove()
+    }
+  }, [])
 
-    setIsLoading(false);
-  } catch (error) {
-    console.error('Error al restaurar respaldo:', error);
-    Alert.alert('Error', 'No se pudo restaurar el respaldo');
-    setBackupStatus('');
-    setIsLoading(false);
-  }
-};
-
-  // Formatear fecha legible
-  const formatBackupDate = (dateString: string) => {
+  const loadBackups = async () => {
     try {
-      return format(parseISO(dateString), "dd/MM/yyyy 'a las' HH:mm", { locale: es });
+      setLoading(true)
+      const backupsList = await AsyncStorage.getItem('backups')
+      if (backupsList) {
+        setBackups(JSON.parse(backupsList))
+      } else {
+        setBackups([])
+      }
     } catch (error) {
-      return 'Fecha desconocida';
+      console.error('Error al cargar backups:', error)
+      Alert.alert('Error', 'No se pudieron cargar las copias de seguridad')
+    } finally {
+      setLoading(false)
     }
-  };
+  }
+
+  const saveBackupsList = async (updatedBackups: { id: string; name: string; date: string; size: string }[]) => {
+    try {
+      await AsyncStorage.setItem('backups', JSON.stringify(updatedBackups))
+    } catch (error) {
+      console.error('Error al guardar lista de backups:', error)
+    }
+  }
+
+  const createBackup = async (isAutoBackup: boolean = false) => {
+    if (!isAutoBackup && !backupName.trim()) {
+      Alert.alert('Error', 'Por favor ingrese un nombre para la copia de seguridad')
+      return
+    }
+
+    try {
+      setLoading(true)
+
+      // Obtener todos los datos
+      const dataKeys = [
+        'docentes',
+        'materias',
+        'grupos',
+        'directivos',
+        'administrativos',
+        'horarios',
+        'actividades',
+        'tasks'
+      ]
+
+      const backupData: Record<string, any> = {
+        timestamp: new Date().toISOString(),
+        isAutoBackup,
+        data: {}
+      }
+
+      for (const key of dataKeys) {
+        const data = await AsyncStorage.getItem(key)
+        backupData.data[key] = data ? JSON.parse(data) : []
+      }
+
+      // Convertir a JSON
+      const backupJson = JSON.stringify(backupData)
+      const backupSize = (backupJson.length / 1024).toFixed(2) + ' KB'
+
+      // Guardar en AsyncStorage
+      const backupId = `backup_${Date.now()}`
+      await AsyncStorage.setItem(backupId, backupJson)
+
+      // Actualizar lista de backups
+      const newBackup = {
+        id: backupId,
+        name: isAutoBackup ? `Respaldo automático ${format(new Date(), 'dd/MM/yyyy HH:mm', { locale: es })}` : backupName,
+        date: format(new Date(), 'dd/MM/yyyy HH:mm', { locale: es }),
+        size: backupSize
+      }
+
+      const updatedBackups = [...backups, newBackup]
+      setBackups(updatedBackups)
+      await saveBackupsList(updatedBackups)
+
+      if (!isAutoBackup) {
+        Alert.alert('Éxito', 'Copia de seguridad creada correctamente')
+        setBackupName('')
+      }
+    } catch (error) {
+      console.error('Error al crear copia de seguridad:', error)
+      if (!isAutoBackup) {
+        Alert.alert('Error', 'No se pudo crear la copia de seguridad')
+      }
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const restoreBackup = async (backupId: string, backupName: string) => {
+    Alert.alert(
+      'Restaurar copia de seguridad',
+      `¿Está seguro de que desea restaurar la copia de seguridad "${backupName}"? Esto reemplazará todos los datos actuales.`,
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        {
+          text: 'Restaurar',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              setRestoring(true)
+
+              // Obtener datos de la copia de seguridad
+              const backupJson = await AsyncStorage.getItem(backupId)
+              if (!backupJson) {
+                throw new Error('No se encontró la copia de seguridad')
+              }
+
+              const backupData = JSON.parse(backupJson)
+
+              // Restaurar todos los datos
+              const dataToRestore = backupData.data || backupData
+              for (const [key, value] of Object.entries(dataToRestore)) {
+                await AsyncStorage.setItem(key, JSON.stringify(value))
+              }
+
+              // Registrar la hora de la última restauración
+              await AsyncStorage.setItem('lastRestoreTime', new Date().toISOString())
+
+              // Recargar los datos en el contexto
+              await loadAllData()
+
+              Alert.alert('Éxito', 'Copia de seguridad restaurada correctamente')
+            } catch (error) {
+              console.error('Error al restaurar copia de seguridad:', error)
+              Alert.alert('Error', 'No se pudo restaurar la copia de seguridad')
+            } finally {
+              setRestoring(false)
+            }
+          }
+        }
+      ]
+    )
+  }
+
+  const deleteBackup = async (backupId: string, backupName: string) => {
+    Alert.alert(
+      'Eliminar copia de seguridad',
+      `¿Está seguro de que desea eliminar la copia de seguridad "${backupName}"?`,
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        {
+          text: 'Eliminar',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              setLoading(true)
+
+              // Eliminar de AsyncStorage
+              await AsyncStorage.removeItem(backupId)
+
+              // Actualizar lista de backups
+              const updatedBackups = backups.filter(backup => backup.id !== backupId)
+              setBackups(updatedBackups)
+              await saveBackupsList(updatedBackups)
+
+              Alert.alert('Éxito', 'Copia de seguridad eliminada correctamente')
+            } catch (error) {
+              console.error('Error al eliminar copia de seguridad:', error)
+              Alert.alert('Error', 'No se pudo eliminar la copia de seguridad')
+            } finally {
+              setLoading(false)
+            }
+          }
+        }
+      ]
+    )
+  }
+
+  const exportBackup = async (backupId: string, backupName: string) => {
+    try {
+      setLoading(true)
+
+      // Verificar si el dispositivo puede compartir
+      const canShare = await Sharing.isAvailableAsync()
+      if (!canShare) {
+        Alert.alert('Error', 'La función de compartir no está disponible en este dispositivo')
+        return
+      }
+
+      // Obtener datos de la copia de seguridad
+      const backupJson = await AsyncStorage.getItem(backupId)
+      if (!backupJson) {
+        throw new Error('No se encontró la copia de seguridad')
+      }
+
+      // Crear archivo temporal
+      const fileUri = `${FileSystem.cacheDirectory}cobaev_backup_${backupName.replace(/\s+/g, '_')}_${Date.now()}.json`
+      await FileSystem.writeAsStringAsync(fileUri, backupJson, { encoding: FileSystem.EncodingType.UTF8 })
+
+      // Compartir archivo
+      await Sharing.shareAsync(fileUri, {
+        mimeType: 'application/json',
+        dialogTitle: `Copia de seguridad: ${backupName}`,
+        UTI: 'public.json'
+      })
+    } catch (error) {
+      console.error('Error al exportar copia de seguridad:', error)
+      Alert.alert('Error', 'No se pudo exportar la copia de seguridad')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const importBackup = async () => {
+    try {
+      setLoading(true)
+
+      // Seleccionar archivo
+      const result = await DocumentPicker.getDocumentAsync({
+        type: 'application/json',
+        copyToCacheDirectory: true
+      })
+
+      if (result.canceled) {
+        return
+      }
+
+      const asset = result.assets[0]
+      
+      // Leer contenido del archivo
+      const fileContent = await FileSystem.readAsStringAsync(asset.uri, { encoding: FileSystem.EncodingType.UTF8 })
+      
+      try {
+        // Validar que sea un JSON válido y tenga la estructura correcta
+        const backupData = JSON.parse(fileContent)
+        
+        if (!backupData.timestamp || (!backupData.data && !backupData.docentes)) {
+          throw new Error('El archivo no parece ser una copia de seguridad válida')
+        }
+
+        // Crear nombre para la copia de seguridad importada
+        const importName = asset.name.replace(/\.json$/, '') || 'Copia importada'
+        
+        // Guardar en AsyncStorage
+        const backupId = `backup_${Date.now()}`
+        await AsyncStorage.setItem(backupId, fileContent)
+
+        // Actualizar lista de backups
+        const backupSize = (fileContent.length / 1024).toFixed(2) + ' KB'
+        const newBackup = {
+          id: backupId,
+          name: importName,
+          date: format(new Date(), 'dd/MM/yyyy HH:mm', { locale: es }) + ' (Importada)',
+          size: backupSize
+        }
+
+        const updatedBackups = [...backups, newBackup]
+        setBackups(updatedBackups)
+        await saveBackupsList(updatedBackups)
+
+        Alert.alert('Éxito', 'Copia de seguridad importada correctamente')
+      } catch (error) {
+        console.error('Error al procesar el archivo:', error)
+        Alert.alert('Error', 'El archivo seleccionado no es una copia de seguridad válida')
+      }
+    } catch (error) {
+      console.error('Error al importar copia de seguridad:', error)
+      Alert.alert('Error', 'No se pudo importar la copia de seguridad')
+    } finally {
+      setLoading(false)
+    }
+  }
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <View style={styles.card}>
-        <Text style={[styles.sectionTitle, { color: colors.text }]}>Respaldo Actual</Text>
-        {lastBackup ? (
-          <Text style={[styles.lastBackup, { color: colors.text }]}>
-            Último respaldo: {formatBackupDate(lastBackup)}
+      <View style={[styles.header, { backgroundColor: colors.card }]}>
+        <Text style={[styles.headerTitle, { color: colors.text }]}>Copias de Seguridad</Text>
+        {lastAutoBackup && (
+          <Text style={[styles.lastAutoBackup, { color: colors.text + '80' }]}>
+            Último respaldo automático: {format(new Date(lastAutoBackup), 'dd/MM/yyyy HH:mm', { locale: es })}
           </Text>
-        ) : (
-          <Text style={[styles.noBackup, { color: colors.text }]}>No hay respaldos guardados</Text>
         )}
-        
-        <View style={styles.statsContainer}>
-          <Text style={{ color: colors.text }}>Elementos disponibles:</Text>
-          <Text style={{ color: colors.text }}>• Docentes: {docentes.length}</Text>
-          <Text style={{ color: colors.text }}>• Materias: {materias.length}</Text>
-          <Text style={{ color: colors.text }}>• Grupos: {grupos.length}</Text>
-          <Text style={{ color: colors.text }}>• Directivos: {directivos.length}</Text>
-          <Text style={{ color: colors.text }}>• Horarios: {horarios.length}</Text>
-          <Text style={{ color: colors.text }}>• Tareas: {tasks.length}</Text>
-        </View>
       </View>
-      
-      <View style={styles.buttonContainer}>
+
+      <View style={styles.createBackupContainer}>
+        <TextInput
+          style={[styles.input, { color: colors.text, borderColor: colors.border }]}
+          placeholder="Nombre de la copia de seguridad"
+          placeholderTextColor={colors.text + '80'}
+          value={backupName}
+          onChangeText={setBackupName}
+        />
         <TouchableOpacity
-          style={[styles.button, { backgroundColor: colors.primary }]}
-          onPress={createBackup}
-          disabled={isLoading}
+          style={[styles.createButton, { backgroundColor: colors.primary }]}
+          onPress={() => createBackup(false)}
+          disabled={loading}
         >
-          {isLoading ? (
-            <ActivityIndicator color="white" />
+          {loading ? (
+            <ActivityIndicator color="#fff" size="small" />
           ) : (
-            <Text style={styles.buttonText}>Guardar copia de seguridad</Text>
+            <Text style={styles.createButtonText}>Crear copia de seguridad</Text>
           )}
         </TouchableOpacity>
-        
-        <TouchableOpacity
-          style={[styles.button, { backgroundColor: colors.primary }]}
-          onPress={restoreBackup}
-          disabled={isLoading}
-        >
-          <Text style={styles.buttonText}>Recuperar copia de seguridad</Text>
-        </TouchableOpacity>
       </View>
-      
-      {backupStatus ? (
-        <Text style={[styles.status, { color: colors.text }]}>{backupStatus}</Text>
-      ) : null}
-      
-      {availableBackups.length > 0 && (
-        <View style={styles.backupList}>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>Respaldos disponibles:</Text>
-          <ScrollView style={styles.scrollView}>
-            {availableBackups.map((backup, index) => (
-              <View key={index} style={[styles.backupItem, { borderBottomColor: colors.border }]}>
-                <Text style={{ color: colors.text }}>{backup}</Text>
-              </View>
-            ))}
-          </ScrollView>
+
+      <TouchableOpacity
+        style={[styles.importButton, { backgroundColor: colors.card, borderColor: colors.border }]}
+        onPress={importBackup}
+        disabled={loading || restoring}
+      >
+        <Feather name="upload" size={20} color={colors.primary} />
+        <Text style={[styles.importButtonText, { color: colors.text }]}>Importar copia de seguridad</Text>
+      </TouchableOpacity>
+
+      <View style={styles.divider} />
+
+      <Text style={[styles.sectionTitle, { color: colors.text }]}>Copias de seguridad disponibles</Text>
+
+      {loading && !restoring ? (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator color={colors.primary} size="large" />
+          <Text style={[styles.loadingText, { color: colors.text }]}>Cargando copias de seguridad...</Text>
         </View>
+      ) : restoring ? (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator color={colors.primary} size="large" />
+          <Text style={[styles.loadingText, { color: colors.text }]}>Restaurando datos...</Text>
+        </View>
+      ) : backups.length === 0 ? (
+        <View style={styles.emptyContainer}>
+          <Feather name="archive" size={50} color={colors.text + '50'} />
+          <Text style={[styles.emptyText, { color: colors.text }]}>No hay copias de seguridad</Text>
+          <Text style={[styles.emptySubtext, { color: colors.text + '80' }]}>
+            Crea una copia de seguridad para proteger tus datos
+          </Text>
+        </View>
+      ) : (
+        <ScrollView style={styles.backupsList}>
+          {backups.map((backup) => (
+            <View
+              key={backup.id}
+              style={[styles.backupItem, { backgroundColor: colors.card, borderColor: colors.border }]}
+            >
+              <View style={styles.backupInfo}>
+                <Text style={[styles.backupName, { color: colors.text }]}>{backup.name}</Text>
+                <Text style={[styles.backupDate, { color: colors.text + '80' }]}>{backup.date}</Text>
+                <Text style={[styles.backupSize, { color: colors.text + '60' }]}>Tamaño: {backup.size}</Text>
+              </View>
+              <View style={styles.backupActions}>
+                <TouchableOpacity
+                  style={[styles.actionButton, { backgroundColor: colors.primary + '20' }]}
+                  onPress={() => restoreBackup(backup.id, backup.name)}
+                  disabled={restoring}
+                >
+                  <Feather name="refresh-cw" size={20} color={colors.primary} />
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.actionButton, { backgroundColor: colors.success + '20' }]}
+                  onPress={() => exportBackup(backup.id, backup.name)}
+                  disabled={loading || restoring}
+                >
+                  <Feather name="share" size={20} color={colors.success} />
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.actionButton, { backgroundColor: colors.error + '20' }]}
+                  onPress={() => deleteBackup(backup.id, backup.name)}
+                  disabled={loading || restoring}
+                >
+                  <Feather name="trash-2" size={20} color={colors.error} />
+                </TouchableOpacity>
+              </View>
+            </View>
+          ))}
+        </ScrollView>
       )}
     </View>
-  );
-};
+  )
+}
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 20,
   },
-  title: {
-    fontSize: 24,
+  header: {
+    padding: 16,
+    marginBottom: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#e0e0e0',
+  },
+  headerTitle: {
+    fontSize: 20,
     fontWeight: 'bold',
-    marginBottom: 20,
-    textAlign: 'center',
+    marginBottom: 4,
   },
-  card: {
-    backgroundColor: 'rgba(0,0,0,0.05)',
-    borderRadius: 10,
-    padding: 15,
-    marginBottom: 20,
+  lastAutoBackup: {
+    fontSize: 12,
+  },
+  createBackupContainer: {
+    flexDirection: 'row',
+    paddingHorizontal: 16,
+    marginBottom: 16,
+  },
+  input: {
+    flex: 1,
+    height: 48,
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    marginRight: 12,
+  },
+  createButton: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    height: 48,
+  },
+  createButtonText: {
+    color: '#fff',
+    fontWeight: 'bold',
+  },
+  importButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginHorizontal: 16,
+    padding: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    marginBottom: 16,
+  },
+  importButtonText: {
+    marginLeft: 8,
+    fontWeight: '500',
+  },
+  divider: {
+    height: 1,
+    backgroundColor: '#e0e0e0',
+    marginVertical: 16,
   },
   sectionTitle: {
     fontSize: 18,
-    fontWeight: '600',
-    marginBottom: 10,
+    fontWeight: 'bold',
+    marginHorizontal: 16,
+    marginBottom: 16,
   },
-  lastBackup: {
-    fontSize: 16,
-    color: '#4CAF50',
-  },
-  noBackup: {
-    fontSize: 16,
-    fontStyle: 'italic',
-  },
-  statsContainer: {
-    marginTop: 15,
-    paddingTop: 15,
-    borderTopWidth: 1,
-    borderTopColor: 'rgba(0,0,0,0.1)',
-  },
-  buttonContainer: {
-    marginVertical: 20,
-  },
-  button: {
-    padding: 15,
-    borderRadius: 8,
-    alignItems: 'center',
-    marginBottom: 15,
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-  },
-  buttonText: {
-    color: 'white',
-    fontWeight: '600',
-    fontSize: 16,
-  },
-  status: {
-    marginTop: 10,
-    textAlign: 'center',
-    fontStyle: 'italic',
-  },
-  backupList: {
-    marginTop: 20,
+  loadingContainer: {
     flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  scrollView: {
-    maxHeight: 200,
-    marginTop: 10,
+  loadingText: {
+    marginTop: 16,
+    fontSize: 16,
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingTop: 60,
+  },
+  emptyText: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginTop: 16,
+  },
+  emptySubtext: {
+    fontSize: 14,
+    textAlign: 'center',
+    marginTop: 8,
+    paddingHorizontal: 32,
+  },
+  backupsList: {
+    paddingHorizontal: 16,
   },
   backupItem: {
-    padding: 10,
-    borderBottomWidth: 1,
+    flexDirection: 'row',
+    borderRadius: 12,
+    borderWidth: 1,
+    padding: 16,
+    marginBottom: 12,
   },
-});
+  backupInfo: {
+    flex: 1,
+  },
+  backupName: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginBottom: 4,
+  },
+  backupDate: {
+    fontSize: 14,
+    marginBottom: 4,
+  },
+  backupSize: {
+    fontSize: 12,
+  },
+  backupActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  actionButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginLeft: 8,
+  },
+})
 
-export default BackupScreen;
+export default BackupScreen
