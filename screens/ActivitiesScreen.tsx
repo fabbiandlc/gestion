@@ -566,15 +566,44 @@ export default function ActivitiesScreen() {
   const handleStatusChange = (task: Task) => {
     const statusOrder: TaskStatus[] = ["pending", "in_progress", "completed"]
     const currentIndex = statusOrder.indexOf(task.status)
-    const nextIndex = (currentIndex + 1) % statusOrder.length
-    const newStatus = statusOrder[nextIndex]
+    const nextStatus = statusOrder[(currentIndex + 1) % statusOrder.length]
 
-    const updatedTasks = tasks.map((t) =>
-      t.id === task.id ? { ...t, status: newStatus } : t
+    const confirmationMessages = {
+      pending: "¿Deseas cambiar esta tarea a 'En Progreso'?",
+      in_progress: "¿Deseas marcar esta tarea como 'Completada'?",
+      completed: "¿Deseas reiniciar esta tarea a 'Pendiente'?"
+    }
+
+    Alert.alert(
+      "Cambiar Estado",
+      confirmationMessages[task.status],
+      [
+        { text: "Cancelar", style: "cancel" },
+        {
+          text: "Confirmar",
+          style: "default",
+          onPress: async () => {
+            const updatedTasks = tasks.map((t) =>
+              t.id === task.id ? { ...t, status: nextStatus } : t
+            )
+            setTasks(updatedTasks)
+            saveTasks(updatedTasks)
+            updateMarkedDates(updatedTasks)
+
+            // Mostrar notificación del cambio de estado
+            await Notifications.scheduleNotificationAsync({
+              content: {
+                title: "Estado de Tarea Actualizado",
+                body: `La tarea "${task.name}" ha sido cambiada a estado: ${statusLabels[nextStatus]}`,
+                data: { taskId: task.id },
+                sound: 'default',
+              },
+              trigger: { seconds: 1 },
+            });
+          }
+        }
+      ]
     )
-    setTasks(updatedTasks)
-    saveTasks(updatedTasks)
-    updateMarkedDates(updatedTasks)
   }
 
   const renderTask = ({ item }: { item: Task }) => (
