@@ -20,6 +20,7 @@ import {
 import DateTimePicker from '@react-native-community/datetimepicker'
 import { Calendar, LocaleConfig } from "react-native-calendars"
 import * as Notifications from 'expo-notifications';
+import { Linking } from 'react-native';
 import { useTheme } from "../context/ThemeContext"
 import { useData } from "../context/DataContext"
 import { Feather } from "@expo/vector-icons"
@@ -49,6 +50,12 @@ interface Task {
   urgency: UrgencyLevel
   deadline: string | null
   administrativoId?: string // ID del administrativo responsable
+}
+
+interface WhatsAppConfirmation {
+  show: boolean;
+  message: string;
+  phoneNumber: string;
 }
 
 const statusColors = {
@@ -96,6 +103,11 @@ export default function ActivitiesScreen() {
   const [tasks, setTasks] = useState<Task[]>([])
   const [modalVisible, setModalVisible] = useState(false)
   const [administrativoModalVisible, setAdministrativoModalVisible] = useState(false)
+  const [whatsappConfirmation, setWhatsappConfirmation] = useState<WhatsAppConfirmation>({
+    show: false,
+    message: '',
+    phoneNumber: ''
+  })
   const [editingTask, setEditingTask] = useState<Task | null>(null)
   const [selectedDate, setSelectedDate] = useState(format(new Date(), "yyyy-MM-dd"))
   const [markedDates, setMarkedDates] = useState({})
@@ -258,8 +270,8 @@ export default function ActivitiesScreen() {
           backgroundColor: today === selectedDate 
             ? colors.primary 
             : theme === 'light' 
-              ? 'rgba(33, 150, 243, 0.15)' // Azul claro tenue para modo claro
-              : 'rgba(25, 118, 210, 0.25)', // Azul oscuro tenue para modo oscuro
+              ? 'rgba(33, 150, 243, 0.15)' 
+              : 'rgba(25, 118, 210, 0.25)',
           borderRadius: 8,
           borderWidth: 1,
           borderColor: theme === 'light' 
@@ -508,7 +520,7 @@ export default function ActivitiesScreen() {
     resetForm()
   }
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!name.trim()) {
       Alert.alert("Error", "El nombre de la tarea es obligatorio")
       return
@@ -539,12 +551,59 @@ export default function ActivitiesScreen() {
       
       // Programar notificación para la nueva tarea
       schedulePushNotification(newTask);
+
+      // Preparar mensaje de WhatsApp si hay directivo seleccionado
+      if (selectedAdministrativoId) {
+        const directivo = administrativos.find(admin => admin.id === selectedAdministrativoId);
+        if (directivo?.celular) {
+          const message = `Nueva actividad asignada:\nNombre: ${name}\nFecha: ${selectedDate}\nUrgencia: ${urgency}\n${description ? `Descripción: ${description}` : ''}`;
+          const phoneNumber = directivo.celular.replace(/[\s-]/g, '');
+          
+          // Cerrar el modal de creación
+          setModalVisible(false);
+          
+          // Esperar 1 segundo antes de mostrar el modal de confirmación
+          setTimeout(() => {
+            setWhatsappConfirmation({
+              show: true,
+              message,
+              phoneNumber
+            });
+          }, 1000);
+        }
+      }
     }
 
     setTasks(updatedTasks)
     saveTasks(updatedTasks)
     updateMarkedDates(updatedTasks)
     closeForm()
+  }
+
+  const handleSendWhatsApp = async () => {
+    const { message, phoneNumber } = whatsappConfirmation;
+    const whatsappUrl = `whatsapp://send?phone=52${phoneNumber}&text=${encodeURIComponent(message)}`;
+    
+    try {
+      const canOpen = await Linking.canOpenURL(whatsappUrl);
+      if (canOpen) {
+        await Linking.openURL(whatsappUrl);
+      } else {
+        Alert.alert(
+          "Error",
+          "No se pudo abrir WhatsApp. Asegúrate de que está instalado en el dispositivo."
+        );
+      }
+    } catch (error) {
+      console.error('Error al abrir WhatsApp:', error);
+      Alert.alert(
+        "Error",
+        "Hubo un problema al intentar abrir WhatsApp."
+      );
+    }
+    
+    // Cerrar el modal de confirmación
+    setWhatsappConfirmation(prev => ({ ...prev, show: false }));
   }
 
   const handleDelete = (id: string) => {
@@ -980,6 +1039,39 @@ export default function ActivitiesScreen() {
           </View>
         </View>
       </Modal>
+
+      {/* Modal de confirmación de WhatsApp */}
+      <Modal
+        animationType="fade"
+        transparent={true}
+        visible={whatsappConfirmation.show}
+        onRequestClose={() => setWhatsappConfirmation(prev => ({ ...prev, show: false }))}
+      >
+        <View style={styles.centeredView}>
+          <View style={[styles.modalView, { backgroundColor: colors.card }]}>
+            <Text style={[styles.modalTitle, { color: colors.text }]}>
+              Enviar mensaje de WhatsApp
+            </Text>
+            <Text style={[styles.modalText, { color: colors.text }]}>
+              ¿Deseas enviar un mensaje de WhatsApp al directivo con los detalles de la actividad?
+            </Text>
+            <View style={styles.modalButtons}>
+              <TouchableOpacity
+                style={[styles.button, styles.buttonCancel]}
+                onPress={() => setWhatsappConfirmation(prev => ({ ...prev, show: false }))}
+              >
+                <Text style={styles.buttonText}>Cancelar</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.button, styles.buttonConfirm]}
+                onPress={handleSendWhatsApp}
+              >
+                <Text style={styles.buttonText}>Enviar</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   )
 }
@@ -1185,6 +1277,8 @@ const styles = StyleSheet.create({
   buttonText: {
     color: "white",
     fontWeight: "bold",
+    textAlign: 'center',
+    fontSize: 16
   },
   dayContainer: {
     width: 36,
@@ -1225,5 +1319,52 @@ const styles = StyleSheet.create({
   },
   adminOptionText: {
     fontSize: 16,
+  },
+  centeredView: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)'
+  },
+  modalView: {
+    margin: 20,
+    borderRadius: 10,
+    padding: 20,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
+    width: '80%'
+  },
+  modalText: {
+    marginBottom: 20,
+    textAlign: 'center',
+    fontSize: 16
+  },
+  modalButtons: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    width: '100%',
+    alignItems: 'center'
+  },
+  button: {
+    borderRadius: 8,
+    padding: 10,
+    elevation: 2,
+    minWidth: 100,
+    marginHorizontal: 10,
+    justifyContent: 'center',
+    alignItems: 'center'
+  },
+  buttonCancel: {
+    backgroundColor: '#dc3545'
+  },
+  buttonConfirm: {
+    backgroundColor: '#28a745'
   },
 })

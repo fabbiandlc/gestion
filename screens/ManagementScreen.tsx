@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, Modal, Alert, ActivityIndicator, Linking } from "react-native"
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, Modal, Alert, ActivityIndicator, Linking, StatusBar } from "react-native"
 import { useTheme } from "../context/ThemeContext"
 import { useData } from "../context/DataContext"
 import { Feather } from "@expo/vector-icons"
@@ -10,7 +10,7 @@ import * as FileSystem from 'expo-file-system'
 import * as XLSX from 'xlsx'
 
 const ManagementScreen = () => {
-  const { colors } = useTheme()
+  const { colors, theme } = useTheme()
   const {
     docentes,
     materias,
@@ -1919,6 +1919,11 @@ const ManagementScreen = () => {
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <StatusBar
+        backgroundColor={colors.card}
+        barStyle={theme === 'dark' ? 'light-content' : 'dark-content'}
+      />
+      
       <View style={styles.tabsContainer}>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.tabsScroll}>
           <TouchableOpacity
@@ -1988,7 +1993,7 @@ const ManagementScreen = () => {
                 { color: activeTab === "administrativos" ? colors.primary : colors.text },
               ]}
             >
-              Administrativos
+              Académicos
             </Text>
           </TouchableOpacity>
         </ScrollView>
@@ -2023,7 +2028,7 @@ const ManagementScreen = () => {
             {activeTab === "materias" && "Materias"}
             {activeTab === "grupos" && "Grupos"}
             {activeTab === "directivos" && "Directivos"}
-            {activeTab === "administrativos" && "Administrativos"}
+            {activeTab === "administrativos" && "Académicos"}
           </Text>
           <View style={styles.headerButtons}>
             <TouchableOpacity
@@ -2066,7 +2071,7 @@ const ManagementScreen = () => {
         <View style={[styles.centeredView, { backgroundColor: 'rgba(0, 0, 0, 0.5)' }]}>
           <View style={[styles.modalView, { backgroundColor: colors.card || '#ffffff', width: '90%', maxHeight: '80%' }]}>
             <Text style={[styles.modalTitle, { color: colors.text }]}>
-              {isEditing ? "Editar" : "Agregar"} {activeTab === "docentes" ? "Docente" : activeTab === "materias" ? "Materia" : activeTab === "grupos" ? "Grupo" : activeTab === "directivos" ? "Directivo" : "Administrativo"}
+              {isEditing ? "Editar" : "Agregar"} {activeTab === "docentes" ? "Docente" : activeTab === "materias" ? "Materia" : activeTab === "grupos" ? "Grupo" : activeTab === "directivos" ? "Directivo" : "Académico"}
             </Text>
             
             <ScrollView style={[styles.formContainer, { width: '100%', marginVertical: 10, maxHeight: 400 }]}>
@@ -2116,7 +2121,7 @@ const ManagementScreen = () => {
         <View style={[styles.centeredView, { backgroundColor: 'rgba(0, 0, 0, 0.5)' }]}>
           <View style={[styles.modalView, { backgroundColor: colors.card || '#ffffff' }]}>
             <Text style={[styles.modalTitle, { color: colors.text }]}>
-              {itemsFoundCount} {activeTab === "docentes" ? "Docentes" : activeTab === "materias" ? "Materias" : activeTab === "grupos" ? "Grupos" : activeTab === "directivos" ? "Directivos" : "Administrativos"} detectados
+              {itemsFoundCount} {activeTab === "docentes" ? "Docentes" : activeTab === "materias" ? "Materias" : activeTab === "grupos" ? "Grupos" : activeTab === "directivos" ? "Directivos" : "Académicos"} detectados
             </Text>
             
             <ScrollView style={styles.excelDataList}>
