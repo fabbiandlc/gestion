@@ -72,62 +72,142 @@ const ManagementScreen = () => {
     setIsEditing(false)
   }
 
-  const handleAddItem = () => {
-    if (activeTab === "docentes") {
-      if (!docenteForm.nombre || !docenteForm.apellido || !docenteForm.email || !docenteForm.numeroEmpleado) {
-        Alert.alert("Error", "Por favor complete todos los campos")
-        return
+  const handleAddItem = async () => {
+    try {
+      // Validación de campos requeridos según la pestaña activa
+      if (activeTab === "docentes") {
+        if (!docenteForm.nombre || !docenteForm.apellido || !docenteForm.email || !docenteForm.numeroEmpleado) {
+          Alert.alert("Error", "Por favor complete todos los campos");
+          return;
+        }
+        
+        if (isEditing && currentEditId) {
+          const result = await updateDocente(currentEditId, docenteForm);
+          if (result?.success) {
+            Alert.alert("Éxito", "Docente actualizado correctamente");
+            resetForms();
+            setModalVisible(false);
+          } else {
+            Alert.alert("Error", result?.error || "Error al actualizar el docente");
+          }
+        } else {
+          const result = await addDocente(docenteForm);
+          if (result?.success) {
+            Alert.alert("Éxito", "Docente agregado correctamente");
+            resetForms();
+            setModalVisible(false);
+          } else {
+            Alert.alert("Error", result?.error || "Error al agregar el docente");
+          }
+        }
+      } else if (activeTab === "materias") {
+        if (!materiaForm.nombre || !materiaForm.siglas) {
+          Alert.alert("Error", "Por favor complete todos los campos");
+          return;
+        }
+        
+        if (isEditing && currentEditId) {
+          const result = await updateMateria(currentEditId, materiaForm);
+          if (result?.success) {
+            Alert.alert("Éxito", "Materia actualizada correctamente");
+            resetForms();
+            setModalVisible(false);
+          } else {
+            Alert.alert("Error", result?.error || "Error al actualizar la materia");
+          }
+        } else {
+          const result = await addMateria(materiaForm);
+          if (result?.success) {
+            Alert.alert("Éxito", "Materia agregada correctamente");
+            resetForms();
+            setModalVisible(false);
+          } else {
+            Alert.alert("Error", result?.error || "Error al agregar la materia");
+          }
+        }
+      } else if (activeTab === "grupos") {
+        if (isEditing && currentEditId) {
+          const result = await updateGrupo(currentEditId, grupoForm);
+          if (result?.success) {
+            Alert.alert("Éxito", "Grupo actualizado correctamente");
+            resetForms();
+            setModalVisible(false);
+          } else {
+            Alert.alert("Error", result?.error || "Error al actualizar el grupo");
+          }
+        } else {
+          const result = await addGrupo(grupoForm);
+          if (result?.success) {
+            Alert.alert("Éxito", "Grupo agregado correctamente");
+            resetForms();
+            setModalVisible(false);
+          } else {
+            Alert.alert("Error", result?.error || "Error al agregar el grupo");
+          }
+        }
+      } else if (activeTab === "directivos") {
+        if (!directivoForm.nombre || !directivoForm.rol) {
+          Alert.alert("Error", "Por favor complete todos los campos");
+          return;
+        }
+        
+        if (isEditing && currentEditId) {
+          const result = await updateDirectivo(currentEditId, directivoForm);
+          if (result?.success) {
+            Alert.alert("Éxito", "Directivo actualizado correctamente");
+            resetForms();
+            setModalVisible(false);
+          } else {
+            Alert.alert("Error", result?.error || "Error al actualizar el directivo");
+          }
+        } else {
+          const result = await addDirectivo(directivoForm);
+          if (result?.success) {
+            Alert.alert("Éxito", "Directivo agregado correctamente");
+            resetForms();
+            setModalVisible(false);
+          } else {
+            Alert.alert("Error", result?.error || "Error al agregar el directivo");
+          }
+        }
+      } else if (activeTab === "administrativos") {
+        if (!administrativoForm.nombre || !administrativoForm.celular || !administrativoForm.correo) {
+          Alert.alert("Error", "Por favor complete todos los campos");
+          return;
+        }
+        
+        // Validar formato de correo electrónico
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(administrativoForm.correo)) {
+          Alert.alert("Error", "Por favor ingrese un correo electrónico válido");
+          return;
+        }
+        
+        if (isEditing && currentEditId) {
+          const result = await updateAdministrativo(currentEditId, administrativoForm);
+          if (result?.success) {
+            Alert.alert("Éxito", "Administrativo actualizado correctamente");
+            resetForms();
+            setModalVisible(false);
+          } else {
+            Alert.alert("Error", result?.error || "Error al actualizar el administrativo");
+          }
+        } else {
+          const result = await addAdministrativo(administrativoForm);
+          if (result?.success) {
+            Alert.alert("Éxito", "Administrativo agregado correctamente");
+            resetForms();
+            setModalVisible(false);
+          } else {
+            Alert.alert("Error", result?.error || "Error al agregar el administrativo");
+          }
+        }
       }
-      
-      if (isEditing && currentEditId) {
-        updateDocente(currentEditId, docenteForm)
-      } else {
-        addDocente(docenteForm)
-      }
-    } else if (activeTab === "materias") {
-      if (!materiaForm.nombre || !materiaForm.siglas) {
-        Alert.alert("Error", "Por favor complete todos los campos")
-        return
-      }
-      
-      if (isEditing && currentEditId) {
-        updateMateria(currentEditId, materiaForm)
-      } else {
-        addMateria(materiaForm)
-      }
-    } else if (activeTab === "grupos") {
-      if (isEditing && currentEditId) {
-        updateGrupo(currentEditId, grupoForm)
-      } else {
-        addGrupo(grupoForm)
-      }
-    } else if (activeTab === "directivos") {
-      if (!directivoForm.nombre || !directivoForm.rol) {
-        Alert.alert("Error", "Por favor complete todos los campos")
-        return
-      }
-      
-      if (isEditing && currentEditId) {
-        updateDirectivo(currentEditId, directivoForm)
-      } else {
-        addDirectivo(directivoForm)
-      }
-    } else if (activeTab === "administrativos") {
-      if (!administrativoForm.nombre || !administrativoForm.celular || !administrativoForm.correo) {
-        Alert.alert("Error", "Por favor complete todos los campos")
-        return
-      }
-      
-      if (isEditing && currentEditId) {
-        updateAdministrativo(currentEditId, administrativoForm)
-      } else {
-        addAdministrativo(administrativoForm)
-      }
+    } catch (error) {
+      console.error("Error en handleAddItem:", error);
+      Alert.alert("Error", "Ocurrió un error inesperado. Por favor, intente nuevamente.");
     }
-
-    resetForms()
-    setModalVisible(false)
-  }
+  };
 
   const handleEditItem = (id: string) => {
     setIsEditing(true)
@@ -184,29 +264,54 @@ const ManagementScreen = () => {
   }
 
   const handleDeleteItem = (id: string) => {
-    Alert.alert("Confirmar eliminación", "¿Está seguro de que desea eliminar este elemento?", [
-      { text: "Cancelar", style: "cancel" },
-      {
-        text: "Eliminar",
-        style: "destructive",
-        onPress: () => {
-          if (activeTab === "docentes") {
-            deleteDocente(id)
-          } else if (activeTab === "materias") {
-            deleteMateria(id)
-          } else if (activeTab === "grupos") {
-            deleteGrupo(id)
-          } else if (activeTab === "directivos") {
-            deleteDirectivo(id)
-          } else if (activeTab === "administrativos") {
-            deleteAdministrativo(id)
-          }
-        },
-      },
-    ])
-  }
+    // Determinar el tipo de elemento para el mensaje
+    const itemType = 
+      activeTab === "docentes" ? "el docente" : 
+      activeTab === "materias" ? "la materia" : 
+      activeTab === "grupos" ? "el grupo" : 
+      activeTab === "directivos" ? "el directivo" : 
+      "el administrativo";
 
-  const handleDeleteAllActiveTab = () => {
+    Alert.alert(
+      "Confirmar eliminación",
+      `¿Está seguro de que desea eliminar ${itemType}?`,
+      [
+        { text: "Cancelar", style: "cancel" },
+        {
+          text: "Eliminar",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              let result;
+              
+              if (activeTab === "docentes") {
+                result = await deleteDocente(id);
+              } else if (activeTab === "materias") {
+                result = await deleteMateria(id);
+              } else if (activeTab === "grupos") {
+                result = await deleteGrupo(id);
+              } else if (activeTab === "directivos") {
+                result = await deleteDirectivo(id);
+              } else if (activeTab === "administrativos") {
+                result = await deleteAdministrativo(id);
+              }
+              
+              if (result?.success) {
+                Alert.alert("Éxito", `Se ha eliminado ${itemType} correctamente`);
+              } else {
+                throw new Error(result?.error || `Error al eliminar ${itemType}`);
+              }
+            } catch (error) {
+              console.error(`Error al eliminar ${itemType}:`, error);
+              Alert.alert("Error", `Ocurrió un error al eliminar ${itemType}. Por favor, intente nuevamente.`);
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  const handleDeleteAllActiveTab = async () => {
     Alert.alert(
       "Confirmar",
       `¿Seguro que deseas eliminar todos los ${activeTab}?`,
@@ -215,17 +320,30 @@ const ManagementScreen = () => {
         {
           text: "Eliminar",
           style: "destructive",
-          onPress: () => {
-            if (activeTab === "docentes") {
-              clearDocentes();
-            } else if (activeTab === "materias") {
-              clearMaterias();
-            } else if (activeTab === "grupos") {
-              clearGrupos();
-            } else if (activeTab === "directivos") {
-              clearDirectivos();
-            } else if (activeTab === "administrativos") {
-              clearAdministrativos();
+          onPress: async () => {
+            try {
+              let result;
+              
+              if (activeTab === "docentes") {
+                result = await clearDocentes();
+              } else if (activeTab === "materias") {
+                result = await clearMaterias();
+              } else if (activeTab === "grupos") {
+                result = await clearGrupos();
+              } else if (activeTab === "directivos") {
+                result = await clearDirectivos();
+              } else if (activeTab === "administrativos") {
+                result = await clearAdministrativos();
+              }
+              
+              if (result?.success) {
+                Alert.alert("Éxito", `Se han eliminado todos los ${activeTab} correctamente`);
+              } else {
+                throw new Error(result?.error || `Error al eliminar los ${activeTab}`);
+              }
+            } catch (error) {
+              console.error(`Error al eliminar los ${activeTab}:`, error);
+              Alert.alert("Error", `Ocurrió un error al eliminar los ${activeTab}. Por favor, intente nuevamente.`);
             }
           }
         }

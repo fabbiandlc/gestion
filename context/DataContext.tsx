@@ -71,29 +71,29 @@ interface DataContextType {
   addDocente: (docente: Omit<Docente, "id">) => void
   addMateria: (materia: Omit<Materia, "id">) => void
   addGrupo: (grupo: Omit<Grupo, "id">) => void
-  addDirectivo: (directivo: Omit<Directivo, "id">) => void
-  addAdministrativo: (administrativo: Omit<Administrativo, "id">) => void
+  addDirectivo: (directivo: Omit<Directivo, "id">) => Promise<{ success: boolean, error?: string }>
+  addAdministrativo: (administrativo: Omit<Administrativo, "id">) => Promise<{ success: boolean, error?: string }>
   addHorario: (horario: Omit<Horario, "id">) => void
   addActividad: (actividad: Omit<Actividad, "id">) => void
   updateDocente: (id: string, docente: Partial<Docente>) => void
   updateMateria: (id: string, materia: Partial<Materia>) => void
   updateGrupo: (id: string, grupo: Partial<Grupo>) => void
-  updateDirectivo: (id: string, directivo: Partial<Directivo>) => void
-  updateAdministrativo: (id: string, administrativo: Partial<Administrativo>) => void
+  updateDirectivo: (id: string, directivo: Partial<Directivo>) => Promise<{ success: boolean, error?: string }>
+  updateAdministrativo: (id: string, administrativo: Partial<Administrativo>) => Promise<{ success: boolean, error?: string }>
   updateHorario: (id: string, horario: Partial<Horario>) => void
   updateActividad: (id: string, actividad: Partial<Actividad>) => void
   deleteDocente: (id: string) => void
   deleteMateria: (id: string) => void
   deleteGrupo: (id: string) => void
-  deleteDirectivo: (id: string) => void
-  deleteAdministrativo: (id: string) => void
+  deleteDirectivo: (id: string) => Promise<{ success: boolean, error?: string }>
+  deleteAdministrativo: (id: string) => Promise<{ success: boolean, error?: string }>
   deleteHorario: (id: string) => void
   deleteActividad: (id: string) => void
   clearDocentes: () => void
   clearMaterias: () => void
   clearGrupos: () => void
-  clearDirectivos: () => void
-  clearAdministrativos: () => void
+  clearDirectivos: () => Promise<{ success: boolean, error?: string }>
+  clearAdministrativos: () => Promise<{ success: boolean, error?: string }>
   clearHorarios: () => void
   clearHorariosByEntity: (entityId: string, isDocente: boolean) => void
   getDocenteById: (id: string) => Docente | undefined
@@ -134,49 +134,91 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       console.log("Recargando todos los datos desde AsyncStorage...");
       
-      const docentesData = await AsyncStorage.getItem("docentes")
-      const materiasData = await AsyncStorage.getItem("materias")
-      const gruposData = await AsyncStorage.getItem("grupos")
-      const directivosData = await AsyncStorage.getItem("directivos")
-      const administrativosData = await AsyncStorage.getItem("administrativos")
-      const horariosData = await AsyncStorage.getItem("horarios")
-      const actividadesData = await AsyncStorage.getItem("actividades")
+      const [
+        docentesData, 
+        materiasData, 
+        gruposData, 
+        directivosData, 
+        administrativosData, 
+        horariosData, 
+        actividadesData
+      ] = await Promise.all([
+        AsyncStorage.getItem("docentes"),
+        AsyncStorage.getItem("materias"),
+        AsyncStorage.getItem("grupos"),
+        AsyncStorage.getItem("directivos"),
+        AsyncStorage.getItem("administrativos"),
+        AsyncStorage.getItem("horarios"),
+        AsyncStorage.getItem("actividades")
+      ]);
 
+      // Actualizar los estados con los datos cargados
+      const updates = [];
+      
       if (docentesData) {
         console.log("Cargando docentes:", JSON.parse(docentesData).length);
-        setDocentes(JSON.parse(docentesData));
+        updates.push(new Promise(resolve => {
+          setDocentes(JSON.parse(docentesData));
+          resolve(true);
+        }));
       }
+      
       if (materiasData) {
         console.log("Cargando materias:", JSON.parse(materiasData).length);
-        setMaterias(JSON.parse(materiasData));
+        updates.push(new Promise(resolve => {
+          setMaterias(JSON.parse(materiasData));
+          resolve(true);
+        }));
       }
+      
       if (gruposData) {
         console.log("Cargando grupos:", JSON.parse(gruposData).length);
-        setGrupos(JSON.parse(gruposData));
+        updates.push(new Promise(resolve => {
+          setGrupos(JSON.parse(gruposData));
+          resolve(true);
+        }));
       }
+      
       if (directivosData) {
         console.log("Cargando directivos:", JSON.parse(directivosData).length);
-        setDirectivos(JSON.parse(directivosData));
+        updates.push(new Promise(resolve => {
+          setDirectivos(JSON.parse(directivosData));
+          resolve(true);
+        }));
+      } else {
+        console.log("No se encontraron datos de directivos en AsyncStorage");
       }
+      
       if (administrativosData) {
         console.log("Cargando administrativos:", JSON.parse(administrativosData).length);
-        setAdministrativos(JSON.parse(administrativosData));
+        updates.push(new Promise(resolve => {
+          setAdministrativos(JSON.parse(administrativosData));
+          resolve(true);
+        }));
+      } else {
+        console.log("No se encontraron datos de administrativos en AsyncStorage");
       }
+      
       if (horariosData) {
         console.log("Cargando horarios:", JSON.parse(horariosData).length);
-        setHorarios(JSON.parse(horariosData));
+        updates.push(new Promise(resolve => {
+          setHorarios(JSON.parse(horariosData));
+          resolve(true);
+        }));
       }
+      
       if (actividadesData) {
         console.log("Cargando actividades:", JSON.parse(actividadesData).length);
-        setActividades(JSON.parse(actividadesData));
+        updates.push(new Promise(resolve => {
+          setActividades(JSON.parse(actividadesData));
+          resolve(true);
+        }));
       }
       
-      // Cargar también las tareas (tasks)
-      const tasksData = await AsyncStorage.getItem("tasks");
-      if (tasksData) {
-        console.log("Cargando tasks:", JSON.parse(tasksData).length);
-      }
+      // Esperar a que se actualicen todos los estados
+      await Promise.all(updates);
       
+      console.log("Datos cargados correctamente");
       return true;
     } catch (e) {
       console.error("Error al cargar datos:", e);
@@ -330,15 +372,47 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setGrupos(prev => [...prev, newGrupo])
   }
 
-  const addDirectivo = (directivo: Omit<Directivo, "id">) => {
-    const newDirectivo = { ...directivo, id: `directivo_${Date.now()}_${Math.random().toString(36).substr(2, 9)}` }
-    setDirectivos(prev => [...prev, newDirectivo])
-  }
+  const addDirectivo = async (directivo: Omit<Directivo, "id">) => {
+    try {
+      const newDirectivo = { 
+        ...directivo, 
+        id: `directivo_${Date.now()}_${Math.random().toString(36).substr(2, 9)}` 
+      };
+      
+      const updatedDirectivos = [...directivos, newDirectivo];
+      setDirectivos(updatedDirectivos);
+      
+      // Guardar en AsyncStorage
+      await AsyncStorage.setItem('directivos', JSON.stringify(updatedDirectivos));
+      console.log('Directivo guardado en AsyncStorage:', newDirectivo);
+      
+      return { success: true };
+    } catch (error) {
+      console.error('Error al agregar directivo:', error);
+      return { success: false, error: 'Error al agregar directivo' };
+    }
+  };
 
-  const addAdministrativo = (administrativo: Omit<Administrativo, "id">) => {
-    const newAdministrativo = { ...administrativo, id: `administrativo_${Date.now()}_${Math.random().toString(36).substr(2, 9)}` }
-    setAdministrativos(prev => [...prev, newAdministrativo])
-  }
+  const addAdministrativo = async (administrativo: Omit<Administrativo, "id">) => {
+    try {
+      const newAdministrativo = { 
+        ...administrativo, 
+        id: `admin_${Date.now()}_${Math.random().toString(36).substr(2, 9)}` 
+      };
+      
+      const updatedAdministrativos = [...administrativos, newAdministrativo];
+      setAdministrativos(updatedAdministrativos);
+      
+      // Guardar en AsyncStorage
+      await AsyncStorage.setItem('administrativos', JSON.stringify(updatedAdministrativos));
+      console.log('Administrativo guardado en AsyncStorage:', newAdministrativo);
+      
+      return { success: true };
+    } catch (error) {
+      console.error('Error al agregar administrativo:', error);
+      return { success: false, error: 'Error al agregar administrativo' };
+    }
+  };
 
   const addHorario = (horario: Omit<Horario, "id">) => {
     const newHorario = { ...horario, id: `horario_${Date.now()}_${Math.random().toString(36).substr(2, 9)}` }
@@ -363,13 +437,43 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setGrupos(grupos.map((g) => (g.id === id ? { ...g, ...grupo } : g)))
   }
 
-  const updateDirectivo = (id: string, directivo: Partial<Directivo>) => {
-    setDirectivos(directivos.map((d) => (d.id === id ? { ...d, ...directivo } : d)))
-  }
+  const updateDirectivo = async (id: string, updates: Partial<Omit<Directivo, "id">>) => {
+    try {
+      const updatedDirectivos = directivos.map(d => 
+        d.id === id ? { ...d, ...updates } : d
+      );
+      
+      setDirectivos(updatedDirectivos);
+      
+      // Guardar en AsyncStorage
+      await AsyncStorage.setItem('directivos', JSON.stringify(updatedDirectivos));
+      console.log('Directivo actualizado en AsyncStorage:', id, updates);
+      
+      return { success: true };
+    } catch (error) {
+      console.error('Error al actualizar directivo:', error);
+      return { success: false, error: 'Error al actualizar directivo' };
+    }
+  };
 
-  const updateAdministrativo = (id: string, administrativo: Partial<Administrativo>) => {
-    setAdministrativos(administrativos.map((a) => (a.id === id ? { ...a, ...administrativo } : a)))
-  }
+  const updateAdministrativo = async (id: string, updates: Partial<Omit<Administrativo, "id">>) => {
+    try {
+      const updatedAdministrativos = administrativos.map(a => 
+        a.id === id ? { ...a, ...updates } : a
+      );
+      
+      setAdministrativos(updatedAdministrativos);
+      
+      // Guardar en AsyncStorage
+      await AsyncStorage.setItem('administrativos', JSON.stringify(updatedAdministrativos));
+      console.log('Administrativo actualizado en AsyncStorage:', id, updates);
+      
+      return { success: true };
+    } catch (error) {
+      console.error('Error al actualizar administrativo:', error);
+      return { success: false, error: 'Error al actualizar administrativo' };
+    }
+  };
 
   const updateHorario = (id: string, horario: Partial<Horario>) => {
     setHorarios(horarios.map((h) => (h.id === id ? { ...h, ...horario } : h)))
@@ -398,13 +502,37 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setGrupos(grupos.filter((g) => g.id !== id))
   }
 
-  const deleteDirectivo = (id: string) => {
-    setDirectivos(directivos.filter((d) => d.id !== id))
-  }
+  const deleteDirectivo = async (id: string) => {
+    try {
+      const updatedDirectivos = directivos.filter(d => d.id !== id);
+      setDirectivos(updatedDirectivos);
+      
+      // Guardar en AsyncStorage
+      await AsyncStorage.setItem('directivos', JSON.stringify(updatedDirectivos));
+      console.log('Directivo eliminado de AsyncStorage:', id);
+      
+      return { success: true };
+    } catch (error) {
+      console.error('Error al eliminar directivo:', error);
+      return { success: false, error: 'Error al eliminar directivo' };
+    }
+  };
 
-  const deleteAdministrativo = (id: string) => {
-    setAdministrativos(administrativos.filter((a) => a.id !== id))
-  }
+  const deleteAdministrativo = async (id: string) => {
+    try {
+      const updatedAdministrativos = administrativos.filter(a => a.id !== id);
+      setAdministrativos(updatedAdministrativos);
+      
+      // Guardar en AsyncStorage
+      await AsyncStorage.setItem('administrativos', JSON.stringify(updatedAdministrativos));
+      console.log('Administrativo eliminado de AsyncStorage:', id);
+      
+      return { success: true };
+    } catch (error) {
+      console.error('Error al eliminar administrativo:', error);
+      return { success: false, error: 'Error al eliminar administrativo' };
+    }
+  };
 
   const deleteHorario = (id: string) => {
     setHorarios(horarios.filter((h) => h.id !== id))
@@ -429,8 +557,28 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
   
   const clearMaterias = () => setMaterias([]);
-  const clearDirectivos = () => setDirectivos([]);
-  const clearAdministrativos = () => setAdministrativos([]);
+  const clearDirectivos = async () => {
+    try {
+      setDirectivos([]);
+      await AsyncStorage.removeItem('directivos');
+      return { success: true };
+    } catch (error) {
+      console.error('Error al limpiar directivos:', error);
+      return { success: false, error: 'Error al limpiar directivos' };
+    }
+  };
+
+  const clearAdministrativos = async () => {
+    try {
+      setAdministrativos([]);
+      await AsyncStorage.removeItem('administrativos');
+      return { success: true };
+    } catch (error) {
+      console.error('Error al limpiar administrativos:', error);
+      return { success: false, error: 'Error al limpiar administrativos' };
+    }
+  };
+
   const clearHorarios = () => setHorarios([]);
   
   // Función para eliminar todos los horarios de una entidad específica
