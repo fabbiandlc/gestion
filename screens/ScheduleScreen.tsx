@@ -73,12 +73,75 @@ const ScheduleScreen = () => {
     }
   };
 
+  const checkScheduleConflict = (dia: string, horaInicio: string, horaFin: string, entityId: string, isDocente: boolean, excludeHorarioId?: string) => {
+    const inicio = convertirHoraAMinutos(horaInicio);
+    const fin = convertirHoraAMinutos(horaFin);
+
+    return horarios.some(horario => {
+      // Skip the current horario when updating
+      if (excludeHorarioId && horario.id === excludeHorarioId) return false;
+
+      // Check if this is a conflict for the same entity (docente or grupo)
+      const isSameEntity = isDocente 
+        ? horario.docenteId === entityId 
+        : horario.salonId === entityId;
+
+      if (horario.dia === dia && isSameEntity) {
+        const horarioInicio = convertirHoraAMinutos(horario.horaInicio);
+        const horarioFin = convertirHoraAMinutos(horario.horaFin);
+        
+        // Check for time overlap
+        if ((inicio >= horarioInicio && inicio < horarioFin) || 
+            (fin > horarioInicio && fin <= horarioFin) ||
+            (inicio <= horarioInicio && fin >= horarioFin)) {
+          return true;
+        }
+      }
+      return false;
+    });
+  };
+
+  const getConflictDetails = (dia: string, horaInicio: string, horaFin: string, entityId: string, isDocente: boolean) => {
+    const conflicts: {docente?: string, materia: string, grupo: string, horario: string}[] = [];
+    const inicio = convertirHoraAMinutos(horaInicio);
+    const fin = convertirHoraAMinutos(horaFin);
+
+    horarios.forEach(horario => {
+      const horarioInicio = convertirHoraAMinutos(horario.horaInicio);
+      const horarioFin = convertirHoraAMinutos(horario.horaFin);
+      
+      // Check if this is a conflict for the same entity
+      const isSameEntity = isDocente 
+        ? horario.docenteId === entityId 
+        : horario.salonId === entityId;
+
+      if (horario.dia === dia && isSameEntity) {
+        // Check for time overlap
+        if ((inicio >= horarioInicio && inicio < horarioFin) || 
+            (fin > horarioInicio && fin <= horarioFin) ||
+            (inicio <= horarioInicio && fin >= horarioFin)) {
+          
+          const materia = materias.find(m => m.id === horario.materiaId);
+          const grupo = grupos.find(g => g.id === horario.salonId);
+          const docente = docentes.find(d => d.id === horario.docenteId);
+          
+          conflicts.push({
+            docente: docente ? `${docente.nombre} ${docente.apellido}` : undefined,
+            materia: materia ? materia.nombre : 'Materia desconocida',
+            grupo: grupo ? grupo.nombre : 'Grupo desconocido',
+            horario: `${horario.horaInicio} - ${horario.horaFin}`
+          });
+        }
+      }
+    });
+
+    return conflicts;
+  };
+
   const handleCellPress = (dia: string, bloque: { horaInicio: string; horaFin: string; esReceso: boolean }) => {
     if (bloque.esReceso || !selectedEntity) {
       return;
     }
-
-    console.log("Intentando crear horario con materia:", selectedMateria);
 
     if (currentTab === "docentes") {
       if (!selectedMateria) {
@@ -86,11 +149,32 @@ const ScheduleScreen = () => {
         return;
       }
       
-      // Mostrar modal para seleccionar grupo
+      // Check for conflicts for docentes
+      const hasConflict = checkScheduleConflict(
+        dia, 
+        bloque.horaInicio, 
+        bloque.horaFin, 
+        selectedEntity, 
+        true
+      );
+
+      if (hasConflict) {
+        const conflicts = getConflictDetails(dia, bloque.horaInicio, bloque.horaFin, selectedEntity, true);
+        let conflictMessage = 'Conflicto de horario con:\n\n';
+        
+        conflicts.forEach(conflict => {
+          conflictMessage += `• ${conflict.materia} con ${conflict.grupo} (${conflict.horario})\n`;
+        });
+        
+        Alert.alert("Conflicto de horario", conflictMessage);
+        return;
+      }
+      
+      // Show group selection modal if no conflicts
       setCurrentCellInfo({ dia, bloque });
       setShowGrupoModal(true);
     } else {
-      // Para grupos, se maneja diferente
+      // For grupos
       const horarioExistente = horarios.find(
         (h) =>
           h.dia === dia &&
@@ -100,14 +184,35 @@ const ScheduleScreen = () => {
       );
 
       if (horarioExistente) {
-        // Actualizar horario existente
+        // Updating existing schedule
         console.log("Actualizando horario existente con materia:", selectedMateria);
         updateHorario(horarioExistente.id, {
           ...horarioExistente,
           materiaId: selectedMateria || horarioExistente.materiaId,
         });
       } else if (selectedMateria) {
-        // Crear nuevo horario
+        // Check for conflicts for grupos
+        const hasConflict = checkScheduleConflict(
+          dia, 
+          bloque.horaInicio, 
+          bloque.horaFin, 
+          selectedEntity, 
+          false
+        );
+
+        if (hasConflict) {
+          const conflicts = getConflictDetails(dia, bloque.horaInicio, bloque.horaFin, selectedEntity, false);
+          let conflictMessage = 'Conflicto de horario con:\n\n';
+          
+          conflicts.forEach(conflict => {
+            conflictMessage += `• ${conflict.materia} con ${conflict.docente || 'docente desconocido'} (${conflict.horario})\n`;
+          });
+          
+          Alert.alert("Conflicto de horario", conflictMessage);
+          return;
+        }
+
+        // Create new schedule if no conflicts
         console.log("Creando nuevo horario con materia:", selectedMateria);
         addHorario({
           dia,
@@ -134,7 +239,33 @@ const ScheduleScreen = () => {
     }
     
     const { dia, bloque } = currentCellInfo;
-    console.log("Creando horario para grupo:", grupoId, "con materia:", selectedMateria);
+    
+    // Check for conflicts for docentes
+    const hasDocenteConflict = checkScheduleConflict(dia, bloque.horaInicio, bloque.horaFin, selectedEntity, true);
+    
+    // Check for conflicts for grupos
+    const hasGrupoConflict = checkScheduleConflict(dia, bloque.horaInicio, bloque.horaFin, grupoId, false);
+    
+    if (hasDocenteConflict || hasGrupoConflict) {
+      let conflictMessage = 'No se puede asignar el horario debido a los siguientes conflictos:\n\n';
+      
+      if (hasDocenteConflict) {
+        const docenteConflicts = getConflictDetails(dia, bloque.horaInicio, bloque.horaFin, selectedEntity, true);
+        docenteConflicts.forEach(conflict => {
+          conflictMessage += `• El docente ya tiene clase de ${conflict.materia} con ${conflict.grupo} (${conflict.horario})\n`;
+        });
+      }
+      
+      if (hasGrupoConflict) {
+        const grupoConflicts = getConflictDetails(dia, bloque.horaInicio, bloque.horaFin, grupoId, false);
+        grupoConflicts.forEach(conflict => {
+          conflictMessage += `• El grupo ya tiene clase de ${conflict.materia} con ${conflict.docente || 'docente desconocido'} (${conflict.horario})\n`;
+        });
+      }
+      
+      Alert.alert("Conflicto de horario", conflictMessage);
+      return;
+    }
     
     // Buscar si ya existe un horario para esta celda
     const horarioExistente = horarios.find(
