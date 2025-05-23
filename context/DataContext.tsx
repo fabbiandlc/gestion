@@ -60,6 +60,15 @@ export interface Actividad {
   color: string
 }
 
+export interface Entrega {
+  id: string;
+  docenteId: string;
+  materiaId: string;
+  tipo: 'planeacion' | 'calificacion';
+  parcial: 'primer' | 'segundo' | 'tercer';
+  entregado: boolean;
+}
+
 interface DataContextType {
   docentes: Docente[]
   materias: Materia[]
@@ -68,6 +77,7 @@ interface DataContextType {
   administrativos: Administrativo[]
   horarios: Horario[]
   actividades: Actividad[]
+  entregas: Entrega[]
   addDocente: (docente: Omit<Docente, "id">) => void
   addMateria: (materia: Omit<Materia, "id">) => void
   addGrupo: (grupo: Omit<Grupo, "id">) => void
@@ -75,6 +85,10 @@ interface DataContextType {
   addAdministrativo: (administrativo: Omit<Administrativo, "id">) => Promise<{ success: boolean, error?: string }>
   addHorario: (horario: Omit<Horario, "id">) => void
   addActividad: (actividad: Omit<Actividad, "id">) => void
+  addEntrega: (entrega: Omit<Entrega, 'id'>) => Promise<{ success: boolean; error?: string }>;
+  updateEntrega: (docenteId: string, materiaId: string, tipo: 'planeacion' | 'calificacion', 
+    parcial: 'primer' | 'segundo' | 'tercer', entregado: boolean) => Promise<{ success: boolean; error?: string }>;
+  clearEntregasByDocente: (docenteId: string) => Promise<{ success: boolean; error?: string }>;
   updateDocente: (id: string, docente: Partial<Docente>) => void
   updateMateria: (id: string, materia: Partial<Materia>) => void
   updateGrupo: (id: string, grupo: Partial<Grupo>) => void
@@ -128,6 +142,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [administrativos, setAdministrativos] = useState<Administrativo[]>([])
   const [horarios, setHorarios] = useState<Horario[]>([])
   const [actividades, setActividades] = useState<Actividad[]>([])
+  const [entregas, setEntregas] = useState<Entrega[]>([]);
 
   // Función para cargar todos los datos desde AsyncStorage
   const loadAllData = async () => {
@@ -141,7 +156,8 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         directivosData, 
         administrativosData, 
         horariosData, 
-        actividadesData
+        actividadesData,
+        entregasData
       ] = await Promise.all([
         AsyncStorage.getItem("docentes"),
         AsyncStorage.getItem("materias"),
@@ -149,7 +165,8 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         AsyncStorage.getItem("directivos"),
         AsyncStorage.getItem("administrativos"),
         AsyncStorage.getItem("horarios"),
-        AsyncStorage.getItem("actividades")
+        AsyncStorage.getItem("actividades"),
+        AsyncStorage.getItem("entregas")
       ]);
 
       // Actualizar los estados con los datos cargados
@@ -211,6 +228,14 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         console.log("Cargando actividades:", JSON.parse(actividadesData).length);
         updates.push(new Promise(resolve => {
           setActividades(JSON.parse(actividadesData));
+          resolve(true);
+        }));
+      }
+      
+      if (entregasData) {
+        console.log("Cargando entregas:", JSON.parse(entregasData).length);
+        updates.push(new Promise(resolve => {
+          setEntregas(JSON.parse(entregasData));
           resolve(true);
         }));
       }
@@ -351,6 +376,19 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     saveActividades()
   }, [actividades])
 
+  // Guardar entregas cuando cambien
+  useEffect(() => {
+    const saveEntregas = async () => {
+      try {
+        console.log("Guardando entregas:", entregas) // Para debug
+        await AsyncStorage.setItem("entregas", JSON.stringify(entregas))
+      } catch (e) {
+        console.error("Error al guardar entregas:", e)
+      }
+    }
+    saveEntregas()
+  }, [entregas])
+
   // Funciones para agregar datos
 
   const addDocente = (docente: Omit<Docente, "id">) => {
@@ -424,6 +462,19 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setActividades([...actividades, newActividad])
   }
 
+  const addEntrega = async (entrega: Omit<Entrega, 'id'>) => {
+    try {
+      const newEntrega: Entrega = {
+        ...entrega,
+        id: `entrega_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      };
+      setEntregas(prev => [...prev, newEntrega]);
+      return { success: true };
+    } catch (error) {
+      return { success: false, error: 'Error al agregar entrega' };
+    }
+  };
+
   // Funciones para actualizar datos
   const updateDocente = (id: string, docente: Partial<Docente>) => {
     setDocentes(docentes.map((d) => (d.id === id ? { ...d, ...docente } : d)))
@@ -482,6 +533,51 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const updateActividad = (id: string, actividad: Partial<Actividad>) => {
     setActividades(actividades.map((a) => (a.id === id ? { ...a, ...actividad } : a)))
   }
+
+  const updateEntrega = async (
+    docenteId: string, 
+    materiaId: string, 
+    tipo: 'planeacion' | 'calificacion', 
+    parcial: 'primer' | 'segundo' | 'tercer', 
+    entregado: boolean
+  ) => {
+    try {
+      setEntregas(prev => {
+        const existing = prev.find(
+          e => e.docenteId === docenteId && 
+               e.materiaId === materiaId && 
+               e.tipo === tipo && 
+               e.parcial === parcial
+        );
+        
+        if (existing) {
+          return prev.map(e =>
+            e.docenteId === docenteId && 
+            e.materiaId === materiaId && 
+            e.tipo === tipo && 
+            e.parcial === parcial
+              ? { ...e, entregado }
+              : e
+          );
+        } else {
+          return [
+            ...prev,
+            {
+              id: `entrega_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+              docenteId,
+              materiaId,
+              tipo,
+              parcial,
+              entregado,
+            },
+          ];
+        }
+      });
+      return { success: true };
+    } catch (error) {
+      return { success: false, error: 'Error al actualizar entrega' };
+    }
+  };
 
   // Funciones para eliminar datos
   const deleteDocente = (id: string) => {
@@ -601,6 +697,15 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setHorarios(horariosRestantes);
   };
 
+  const clearEntregasByDocente = async (docenteId: string) => {
+    try {
+      setEntregas(prev => prev.filter(e => e.docenteId !== docenteId));
+      return { success: true };
+    } catch (error) {
+      return { success: false, error: 'Error al vaciar entregas' };
+    }
+  };
+
   // Funciones para obtener datos por ID
   const getDocenteById = (id: string) => {
     return docentes.find((d) => d.id === id)
@@ -632,6 +737,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         administrativos,
         horarios,
         actividades,
+        entregas,
         addDocente,
         addMateria,
         addGrupo,
@@ -639,6 +745,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         addAdministrativo,
         addHorario,
         addActividad,
+        addEntrega,
         updateDocente,
         updateMateria,
         updateGrupo,
@@ -646,6 +753,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         updateAdministrativo,
         updateHorario,
         updateActividad,
+        updateEntrega,
         deleteDocente,
         deleteMateria,
         deleteGrupo,
@@ -660,6 +768,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         clearAdministrativos,
         clearHorarios,
         clearHorariosByEntity,
+        clearEntregasByDocente,
         getDocenteById,
         getMateriaById,
         getGrupoById,
