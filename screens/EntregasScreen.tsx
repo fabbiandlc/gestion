@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { 
   View, 
   Text, 
@@ -8,18 +8,23 @@ import {
   Modal, 
   Alert, 
   StatusBar,
-  TextInput
+  TextInput,
+  Platform,
+  PermissionsAndroid
 } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
 import { useData } from '../context/DataContext';
 import { Feather } from '@expo/vector-icons';
+import { captureRef } from 'react-native-view-shot';
+import * as Print from 'expo-print';
+import * as Sharing from 'expo-sharing';
 
 const EntregasScreen = () => {
   const { colors, theme } = useTheme();
   const { docentes, entregas, updateEntrega, clearEntregasByDocente } = useData();
   const [modalVisible, setModalVisible] = useState(false);
-  const [selectedDocente, setSelectedDocente] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const printRef = useRef<View>(null);
 
   // Filter docentes based on search query
   const filteredDocentes = docentes.filter(docente => 
@@ -78,6 +83,265 @@ const EntregasScreen = () => {
       }
     } catch (error) {
       Alert.alert('Error', 'Ocurrió un error al actualizar entrega');
+    }
+  };
+
+  const handleGeneratePDF = async () => {
+    try {
+      if (printRef.current) {
+        const uri = await captureRef(printRef, {
+          format: 'jpg',
+          quality: 0.8,
+        });
+        
+        const currentDate = new Date().toLocaleDateString('es-MX', {
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric'
+        });
+        
+        const html = `
+          <!DOCTYPE html>
+          <html>
+            <head>
+              <meta charset="UTF-8">
+              <meta name="viewport" content="width=device-width, initial-scale=1.0">
+              <title>Reporte de Entregas</title>
+              <style>
+                @page {
+                  size: portrait;
+                  margin: 10mm;
+                }
+                body { 
+                  font-family: Arial, sans-serif;
+                  margin: 0;
+                  padding: 0 5px;
+                  color: #333;
+                  line-height: 1.4;
+                  zoom: 0.85; /* Escala el contenido para que quepa mejor */
+                }
+                .header {
+                  text-align: center;
+                  margin-bottom: 10px;
+                  padding-bottom: 5px;
+                  border-bottom: 2px solid #e0e0e0;
+                }
+                .school-info {
+                  text-align: center;
+                  margin-bottom: 5px;
+                }
+                .school-name {
+                  font-size: 14px;
+                  font-weight: bold;
+                  margin: 3px 0;
+                  color: #1a365d;
+                }
+                .school-details {
+                  font-size: 11px;
+                  color: #4a5568;
+                  margin: 1px 0;
+                }
+                .report-title {
+                  font-size: 16px;
+                  font-weight: bold;
+                  color: #2d3748;
+                  margin: 5px 0 3px;
+                }
+                .report-subtitle {
+                  font-size: 13px;
+                  color: #4a5568;
+                  margin-bottom: 3px;
+                }
+                table {
+                  width: 100%;
+                  border-collapse: collapse;
+                  margin: 0 auto;
+                  font-size: 9px;
+                  page-break-inside: auto;
+                }
+                th {
+                  background-color: #2c5282;
+                  color: white;
+                  padding: 6px 3px;
+                  text-align: center;
+                  font-weight: 600;
+                  border: 1px solid #e2e8f0;
+                  font-size: 8px;
+                }
+                td {
+                  padding: 4px 2px;
+                  border: 1px solid #e2e8f0;
+                  text-align: center;
+                  vertical-align: middle;
+                  font-size: 9px;
+                }
+                .teacher-name {
+                  font-weight: 500;
+                  text-align: left;
+                  padding-left: 8px;
+                  background-color: #f0f4f8;
+                }
+                .subject-name {
+                  text-align: left;
+                  padding-left: 12px;
+                }
+                .parcial-header {
+                  background-color: #2c5282;
+                  color: white;
+                  font-weight: 600;
+                }
+                .parcial-cell {
+                  min-width: 80px;
+                }
+                .status-icon {
+                  display: inline-block;
+                  padding: 3px 6px;
+                  border-radius: 3px;
+                  font-weight: 500;
+                  font-size: 11px;
+                }
+                .status-yes {
+                  background-color: #e6fffa;
+                  color: #2c7a7b;
+                }
+                .status-no {
+                  background-color: #fff5f5;
+                  color: #c53030;
+                }
+                .footer {
+                  margin-top: 15px;
+                  text-align: right;
+                  font-size: 10px;
+                  color: #718096;
+                  border-top: 1px solid #e2e8f0;
+                  padding-top: 8px;
+                }
+                tr:nth-child(even) {
+                  background-color: #f8fafc;
+                }
+                tr:hover {
+                  background-color: #f1f5f9;
+                }
+              </style>
+            </head>
+            <body>
+              <div class="header">
+                <div class="school-info">
+                  <p class="school-name">COLEGIO DE BACHILLERES DEL ESTADO DE VERACRUZ</p>
+                  <p class="school-details">ORGANISMO PUBLICO DESCENTRALIZADO</p>
+                  <p class="school-details">PLANTEL 18 - COATZACOALCOS</p>
+                </div>
+                <h1 class="report-title">Control de Entregas</h1>
+                <p class="report-subtitle">Resumen de Parciales - ${currentDate}</p>
+              </div>
+              
+              <table>
+                <thead>
+                  <tr>
+                    <th rowspan="2" style="width: 20%;">Docente</th>
+                    <th rowspan="2" style="width: 30%;">Materia</th>
+                    <th colspan="2" class="parcial-header">1er Parcial</th>
+                    <th colspan="2" class="parcial-header">2do Parcial</th>
+                    <th colspan="2" class="parcial-header">3er Parcial</th>
+                  </tr>
+                  <tr>
+                    <th>Planeación</th>
+                    <th>Calificaciones</th>
+                    <th>Planeación</th>
+                    <th>Calificaciones</th>
+                    <th>Planeación</th>
+                    <th>Calificaciones</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${docentes.map((docente, docenteIndex) => 
+                    docente.materias.map((materia, materiaIndex) => {
+                      const getStatus = (parcial: string, tipo: string) => {
+                        const entrega = entregas.find(e => 
+                          e.docenteId === docente.id && 
+                          e.materiaId === materia.id && 
+                          e.tipo === tipo && 
+                          e.parcial === parcial
+                        );
+                        return {
+                          entregado: entrega?.entregado || false,
+                        };
+                      };
+                      
+                      const renderStatusCell = (parcial: string, tipo: string) => {
+                        const { entregado } = getStatus(parcial, tipo);
+                        const displayText = entregado ? '✓' : '✗';
+                        const statusClass = entregado ? 'status-yes' : 'status-no';
+                        
+                        return `
+                          <td class="parcial-cell">
+                            <span class="status-icon ${statusClass}">
+                              ${displayText}
+                            </span>
+                          </td>
+                        `;
+                      };
+                      
+                      return `
+                        <tr>
+                          ${materiaIndex === 0 ? 
+                            `<td rowspan="${docente.materias.length}" class="teacher-name">
+                              ${docente.nombre} ${docente.apellido}
+                            </td>` : ''
+                          }
+                          <td class="subject-name">${materia.nombre}</td>
+                          ${['planeacion', 'calificacion'].map(tipo => 
+                            renderStatusCell('primer', tipo)
+                          ).join('')}
+                          ${['planeacion', 'calificacion'].map(tipo => 
+                            renderStatusCell('segundo', tipo)
+                          ).join('')}
+                          ${['planeacion', 'calificacion'].map(tipo => 
+                            renderStatusCell('tercer', tipo)
+                          ).join('')}
+                        </tr>
+                      `;
+                    }).join('')
+                  ).join('')}
+                </tbody>
+              </table>
+              
+              <div class="footer">
+                Generado el ${currentDate} - Sistema de Gestión Escolar
+              </div>
+            </body>
+          </html>
+        `;
+
+        const { uri: pdfUri } = await Print.printToFileAsync({
+          html,
+          width: 595,  // Ancho de A4 en puntos (21cm)
+          height: 842, // Alto de A4 en puntos (29.7cm)
+          orientation: 'portrait',
+        });
+
+        if (await Sharing.isAvailableAsync()) {
+          await Sharing.shareAsync(pdfUri, {
+            mimeType: 'application/pdf',
+            dialogTitle: 'Compartir Reporte',
+            UTI: 'com.adobe.pdf',
+          });
+        } else {
+          Alert.alert('Éxito', 'El reporte se ha generado correctamente');
+        }
+      }
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      Alert.alert('Error', 'Ocurrió un error al generar el reporte');
+    }
+  };
+
+  const getParcialName = (parcial: string) => {
+    switch (parcial) {
+      case 'primer': return 'Primer';
+      case 'segundo': return 'Segundo';
+      case 'tercer': return 'Tercer';
+      default: return '';
     }
   };
 
@@ -149,19 +413,42 @@ const EntregasScreen = () => {
       padding: 15,
     },
     headerContainer: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
       marginBottom: 15,
+      flexWrap: 'wrap',
+      gap: 10,
     },
     searchContainer: {
+      flex: 1,
       flexDirection: 'row',
       alignItems: 'center',
       padding: 10,
       borderRadius: 8,
-      marginBottom: 15,
+      minWidth: 200,
     },
     searchInput: {
       flex: 1,
       marginLeft: 10,
       fontSize: 16,
+      minWidth: 100,
+    },
+    pdfButton: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: colors.primary,
+      paddingVertical: 10,
+      paddingHorizontal: 12,
+      borderRadius: 5,
+      minWidth: 120,
+      justifyContent: 'center',
+    },
+    pdfButtonText: {
+      color: '#fff',
+      marginLeft: 5,
+      fontWeight: '600',
+      fontSize: 14,
     },
     headerTitle: {
       fontSize: 24,
@@ -209,36 +496,44 @@ const EntregasScreen = () => {
     },
     modalContent: {
       width: '90%',
-      maxHeight: '80%',
-      borderRadius: 10,
+      maxWidth: 400,
+      borderRadius: 12,
       padding: 20,
       shadowColor: '#000',
       shadowOffset: { width: 0, height: 2 },
       shadowOpacity: 0.25,
-      shadowRadius: 3.84,
+      shadowRadius: 4,
       elevation: 5,
     },
     modalTitle: {
-      fontSize: 18,
+      fontSize: 20,
       fontWeight: 'bold',
-      marginBottom: 15,
+      marginBottom: 8,
       textAlign: 'center',
+      color: colors.text,
+    },
+    modalSubtitle: {
+      fontSize: 16,
+      marginBottom: 16,
+      textAlign: 'center',
+      color: colors.text,
     },
     modalButtons: {
       flexDirection: 'row',
       justifyContent: 'space-between',
-      marginTop: 15,
+      marginTop: 24,
+      gap: 10,
     },
     modalButton: {
-      padding: 10,
-      borderRadius: 5,
       flex: 1,
-      marginHorizontal: 5,
+      padding: 12,
+      borderRadius: 6,
       alignItems: 'center',
+      justifyContent: 'center',
     },
     modalButtonText: {
-      color: '#ffffff',
-      fontWeight: 'bold',
+      fontWeight: '600',
+      fontSize: 16,
     },
     tableContainer: {
       marginBottom: 20,
@@ -301,8 +596,10 @@ const EntregasScreen = () => {
     },
   });
 
+  const [selectedDocente, setSelectedDocente] = useState<string | null>(null);
+
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
+    <View style={[styles.container, { backgroundColor: colors.background }]} ref={printRef}>
       <StatusBar
         backgroundColor={colors.card}
         barStyle={theme === 'dark' ? 'light-content' : 'dark-content'}
@@ -319,6 +616,13 @@ const EntregasScreen = () => {
               onChangeText={setSearchQuery}
             />
           </View>
+          <TouchableOpacity
+            style={styles.pdfButton}
+            onPress={handleGeneratePDF}
+          >
+            <Feather name="file-text" size={18} color="#fff" />
+            <Text style={styles.pdfButtonText}>Generar PDF</Text>
+          </TouchableOpacity>
         </View>
         
         <ScrollView>
