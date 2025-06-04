@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { 
   View, 
   Text, 
@@ -7,24 +7,149 @@ import {
   ScrollView, 
   Modal, 
   Alert, 
-  StatusBar,
   TextInput,
   Platform,
-  PermissionsAndroid
+  PermissionsAndroid,
+  RefreshControl,
+  StatusBar,
 } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
 import { useData } from '../context/DataContext';
-import { Feather } from '@expo/vector-icons';
+import { Feather, Ionicons } from '@expo/vector-icons';
 import { captureRef } from 'react-native-view-shot';
 import * as Print from 'expo-print';
 import * as Sharing from 'expo-sharing';
+import * as FileSystem from 'expo-file-system';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+// Claves para AsyncStorage y rutas para FileSystem
+const STORAGE_KEYS = {
+  ENTREGAS: '@entregas_data',
+  DOCENTES: '@docentes_data'
+};
+
+// Directorio para almacenar datos de entregas
+const ENTREGAS_DIR = FileSystem.documentDirectory + 'entregas/';
 
 const EntregasScreen = () => {
   const { colors, theme } = useTheme();
   const { docentes, entregas, updateEntrega, clearEntregasByDocente } = useData();
   const [modalVisible, setModalVisible] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [refreshing, setRefreshing] = useState(false);
+  const [selectedDocente, setSelectedDocente] = useState<string | null>(null);
   const printRef = useRef<View>(null);
+
+  // Cargar datos al iniciar
+  useEffect(() => {
+    loadLocalData();
+  }, []);
+
+  // Guardar datos cuando cambien
+  useEffect(() => {
+    if (entregas.length > 0) {
+      saveLocalData();
+    }
+  }, [entregas]);
+
+  // Función para asegurar que existe el directorio de entregas
+  const ensureDirectoryExists = async () => {
+    const dirInfo = await FileSystem.getInfoAsync(ENTREGAS_DIR);
+    if (!dirInfo.exists) {
+      await FileSystem.makeDirectoryAsync(ENTREGAS_DIR, { intermediates: true });
+    }
+  };
+
+  const loadLocalData = async () => {
+    try {
+      setRefreshing(true);
+      
+      // Asegurar que existe el directorio
+      await ensureDirectoryExists();
+      
+      // Cargar entregas por docente
+      const docentesIds = docentes.map(d => d.id);
+      let allEntregas = [];
+      
+      for (const docenteId of docentesIds) {
+        try {
+          const filePath = `${ENTREGAS_DIR}${docenteId}.json`;
+          const fileInfo = await FileSystem.getInfoAsync(filePath);
+          
+          if (fileInfo.exists) {
+            const fileContent = await FileSystem.readAsStringAsync(filePath);
+            const parsedEntregas = JSON.parse(fileContent);
+            allEntregas = [...allEntregas, ...parsedEntregas];
+          }
+        } catch (error) {
+          console.log(`Error al cargar entregas para docente ${docenteId}:`, error);
+          // Continuar con el siguiente docente
+        }
+      }
+      
+      // Actualizar el contexto con los datos locales
+      if (allEntregas.length > 0) {
+        allEntregas.forEach((entrega: any) => {
+          updateEntrega(entrega);
+        });
+      }
+      
+    } catch (error) {
+      console.error('Error al cargar datos locales:', error);
+      Alert.alert('Error', 'No se pudieron cargar los datos guardados');
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
+  const saveLocalData = async () => {
+    try {
+      // Asegurar que existe el directorio
+      await ensureDirectoryExists();
+      
+      // Agrupar entregas por docente
+      const entregasByDocente = {};
+      
+      entregas.forEach(entrega => {
+        if (!entregasByDocente[entrega.docenteId]) {
+          entregasByDocente[entrega.docenteId] = [];
+        }
+        entregasByDocente[entrega.docenteId].push(entrega);
+      });
+      
+      // Guardar entregas por docente en archivos separados
+      const savePromises = Object.keys(entregasByDocente).map(docenteId => {
+        const filePath = `${ENTREGAS_DIR}${docenteId}.json`;
+        return FileSystem.writeAsStringAsync(
+          filePath,
+          JSON.stringify(entregasByDocente[docenteId])
+        );
+      });
+      
+      await Promise.all(savePromises);
+      
+      // Guardar una referencia en AsyncStorage para compatibilidad con BackupScreen
+      // Solo guardamos los IDs de los archivos, no los datos completos
+      try {
+        const entregasIndex = Object.keys(entregasByDocente).map(docenteId => ({
+          docenteId,
+          filePath: `${ENTREGAS_DIR}${docenteId}.json`
+        }));
+        await AsyncStorage.setItem('entregas_index', JSON.stringify(entregasIndex));
+      } catch (error) {
+        console.log('Advertencia: No se pudo guardar índice de entregas:', error);
+      }
+      
+    } catch (error) {
+      console.error('Error al guardar datos locales:', error);
+      Alert.alert('Error', 'No se pudieron guardar los datos localmente');
+    }
+  };
+
+  // Función para manejar la actualización manual
+  const onRefresh = async () => {
+    await loadLocalData();
+  };
 
   // Filter docentes based on search query
   const filteredDocentes = docentes.filter(docente => 
@@ -109,22 +234,24 @@ const EntregasScreen = () => {
               <title>Reporte de Entregas</title>
               <style>
                 @page {
-                  size: portrait;
-                  margin: 10mm;
+                  size: letter;
+                  margin: 10mm 15mm;
                 }
                 body { 
                   font-family: Arial, sans-serif;
                   margin: 0;
-                  padding: 0 5px;
-                  color: #333;
+                  padding: 0;
+                  color: #000;
                   line-height: 1.4;
-                  zoom: 0.85; /* Escala el contenido para que quepa mejor */
+                  max-width: 100%;
+                  text-align: center;
                 }
                 .header {
                   text-align: center;
                   margin-bottom: 10px;
                   padding-bottom: 5px;
-                  border-bottom: 2px solid #e0e0e0;
+                  border-bottom: 2px solid #000;
+                  width: 100%;
                 }
                 .school-info {
                   text-align: center;
@@ -134,93 +261,92 @@ const EntregasScreen = () => {
                   font-size: 14px;
                   font-weight: bold;
                   margin: 3px 0;
-                  color: #1a365d;
+                  color: #000;
                 }
                 .school-details {
                   font-size: 11px;
-                  color: #4a5568;
+                  color: #000;
                   margin: 1px 0;
                 }
                 .report-title {
                   font-size: 16px;
                   font-weight: bold;
-                  color: #2d3748;
+                  color: #000;
                   margin: 5px 0 3px;
                 }
                 .report-subtitle {
                   font-size: 13px;
-                  color: #4a5568;
+                  color: #000;
                   margin-bottom: 3px;
                 }
                 table {
                   width: 100%;
                   border-collapse: collapse;
-                  margin: 0 auto;
-                  font-size: 9px;
+                  margin-left: auto;
+                  margin-right: auto;
+                  font-size: 8px;
                   page-break-inside: auto;
+                  table-layout: fixed;
                 }
                 th {
-                  background-color: #2c5282;
-                  color: white;
-                  padding: 6px 3px;
+                  background-color: #f0f0f0;
+                  color: #000;
+                  padding: 5px 2px;
                   text-align: center;
                   font-weight: 600;
-                  border: 1px solid #e2e8f0;
+                  border: 1px solid #000;
                   font-size: 8px;
                 }
                 td {
                   padding: 4px 2px;
-                  border: 1px solid #e2e8f0;
+                  border: 1px solid #000;
                   text-align: center;
                   vertical-align: middle;
-                  font-size: 9px;
+                  font-size: 8px;
                 }
                 .teacher-name {
                   font-weight: 500;
                   text-align: left;
-                  padding-left: 8px;
-                  background-color: #f0f4f8;
+                  padding-left: 5px;
+                  background-color: #f0f0f0;
+                  width: 18%;
                 }
                 .subject-name {
                   text-align: left;
-                  padding-left: 12px;
+                  padding-left: 5px;
+                  width: 22%;
+                  white-space: nowrap;
+                  overflow: hidden;
+                  text-overflow: ellipsis;
                 }
                 .parcial-header {
-                  background-color: #2c5282;
-                  color: white;
+                  background-color: #f0f0f0;
+                  color: #000;
                   font-weight: 600;
                 }
                 .parcial-cell {
-                  min-width: 80px;
+                  min-width: 30px;
+                  width: 10%;
                 }
                 .status-icon {
                   display: inline-block;
-                  padding: 3px 6px;
-                  border-radius: 3px;
-                  font-weight: 500;
-                  font-size: 11px;
-                }
-                .status-yes {
-                  background-color: #e6fffa;
-                  color: #2c7a7b;
-                }
-                .status-no {
-                  background-color: #fff5f5;
-                  color: #c53030;
+                  font-weight: bold;
+                  font-size: 10px;
+                  color: #000;
                 }
                 .footer {
                   margin-top: 15px;
                   text-align: right;
                   font-size: 10px;
-                  color: #718096;
-                  border-top: 1px solid #e2e8f0;
+                  color: #000;
+                  border-top: 1px solid #000;
                   padding-top: 8px;
+                  width: 90%;
+                  margin-left: auto;
+                  margin-right: auto;
                 }
                 tr:nth-child(even) {
-                  background-color: #f8fafc;
-                }
-                tr:hover {
-                  background-color: #f1f5f9;
+                  background-color: #f8f8f8;
                 }
               </style>
             </head>
@@ -238,8 +364,8 @@ const EntregasScreen = () => {
               <table>
                 <thead>
                   <tr>
-                    <th rowspan="2" style="width: 20%;">Docente</th>
-                    <th rowspan="2" style="width: 30%;">Materia</th>
+                    <th rowspan="2" style="width: 18%;">Docente</th>
+                    <th rowspan="2" style="width: 22%;">Materia</th>
                     <th colspan="2" class="parcial-header">1er Parcial</th>
                     <th colspan="2" class="parcial-header">2do Parcial</th>
                     <th colspan="2" class="parcial-header">3er Parcial</th>
@@ -270,12 +396,12 @@ const EntregasScreen = () => {
                       
                       const renderStatusCell = (parcial: string, tipo: string) => {
                         const { entregado } = getStatus(parcial, tipo);
-                        const displayText = entregado ? '✓' : '✗';
-                        const statusClass = entregado ? 'status-yes' : 'status-no';
+                        // Solo mostrar palomita si está entregado, dejar vacío si no
+                        const displayText = entregado ? '✓' : '';
                         
                         return `
                           <td class="parcial-cell">
-                            <span class="status-icon ${statusClass}">
+                            <span class="status-icon">
                               ${displayText}
                             </span>
                           </td>
@@ -315,8 +441,8 @@ const EntregasScreen = () => {
 
         const { uri: pdfUri } = await Print.printToFileAsync({
           html,
-          width: 595,  // Ancho de A4 en puntos (21cm)
-          height: 842, // Alto de A4 en puntos (29.7cm)
+          width: 612,  // Ancho de carta en puntos (8.5 pulgadas)
+          height: 792, // Alto de carta en puntos (11 pulgadas)
           orientation: 'portrait',
         });
 
@@ -596,15 +722,22 @@ const EntregasScreen = () => {
     },
   });
 
-  const [selectedDocente, setSelectedDocente] = useState<string | null>(null);
-
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]} ref={printRef}>
       <StatusBar
         backgroundColor={colors.card}
         barStyle={theme === 'dark' ? 'light-content' : 'dark-content'}
       />
-      <View style={styles.contentContainer}>
+      <ScrollView
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={[colors.primary]}
+            tintColor={colors.primary}
+          />
+        }
+      >
         <View style={styles.headerContainer}>
           <View style={[styles.searchContainer, { backgroundColor: colors.card, borderColor: colors.border }]}>
             <Feather name="search" size={20} color={colors.primary} />
@@ -617,7 +750,7 @@ const EntregasScreen = () => {
             />
           </View>
           <TouchableOpacity
-            style={styles.pdfButton}
+            style={[styles.pdfButton, { backgroundColor: colors.primary }]}
             onPress={handleGeneratePDF}
           >
             <Feather name="file-text" size={18} color="#fff" />
@@ -625,56 +758,54 @@ const EntregasScreen = () => {
           </TouchableOpacity>
         </View>
         
-        <ScrollView>
-          {filteredDocentes.length === 0 ? (
-            <View style={styles.emptyState}>
-              <Text style={styles.emptyStateText}>
-                {searchQuery ? 'No se encontraron docentes' : 'No hay docentes registrados'}
-              </Text>
-            </View>
-          ) : (
-            filteredDocentes.map((docente) => (
-              <View
-                key={docente.id}
-                style={[styles.docenteCard, { backgroundColor: colors.card, borderColor: colors.border }]}
-              >
-                <View style={styles.docenteInfo}>
-                  <Text style={[styles.docenteName, { color: colors.text }]}>
-                    {docente.nombre} {docente.apellido}
+        {filteredDocentes.length === 0 ? (
+          <View style={styles.emptyState}>
+            <Text style={styles.emptyStateText}>
+              {searchQuery ? 'No se encontraron docentes' : 'No hay docentes registrados'}
+            </Text>
+          </View>
+        ) : (
+          filteredDocentes.map((docente) => (
+            <View
+              key={docente.id}
+              style={[styles.docenteCard, { backgroundColor: colors.card, borderColor: colors.border }]}
+            >
+              <View style={styles.docenteInfo}>
+                <Text style={[styles.docenteName, { color: colors.text }]}>
+                  {docente.nombre} {docente.apellido}
+                </Text>
+                {docente.materias.map((materia, index) => (
+                  <Text
+                    key={materia.id || index}
+                    style={[styles.materiaItem, { color: colors.text }]}
+                    numberOfLines={1}
+                  >
+                    • {materia.nombre}
                   </Text>
-                  {docente.materias.map((materia, index) => (
-                    <Text
-                      key={materia.id || index}
-                      style={[styles.materiaItem, { color: colors.text }]}
-                      numberOfLines={1}
-                    >
-                      • {materia.nombre}
-                    </Text>
-                  ))}
-                </View>
-                <View style={styles.actionButtons}>
-                  <TouchableOpacity
-                    style={[styles.actionButton, { backgroundColor: colors.primary }]}
-                    onPress={() => handleOpenModal(docente.id)}
-                    accessibilityLabel="Registrar entregas"
-                    accessibilityHint="Abre un formulario para registrar planeaciones y calificaciones"
-                  >
-                    <Feather name="edit-2" size={20} color="#ffffff" />
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={[styles.actionButton, { backgroundColor: colors.error || '#e53935' }]}
-                    onPress={() => handleVaciar(docente.id)}
-                    accessibilityLabel="Vaciar entregas"
-                    accessibilityHint="Elimina todas las entregas registradas para este docente"
-                  >
-                    <Feather name="trash-2" size={20} color="#ffffff" />
-                  </TouchableOpacity>
-                </View>
+                ))}
               </View>
-            ))
-          )}
-        </ScrollView>
-      </View>
+              <View style={styles.actionButtons}>
+                <TouchableOpacity
+                  style={[styles.actionButton, { backgroundColor: colors.primary }]}
+                  onPress={() => handleOpenModal(docente.id)}
+                  accessibilityLabel="Registrar entregas"
+                  accessibilityHint="Abre un formulario para registrar planeaciones y calificaciones"
+                >
+                  <Feather name="edit-2" size={20} color="#ffffff" />
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.actionButton, { backgroundColor: colors.error || '#e53935' }]}
+                  onPress={() => handleVaciar(docente.id)}
+                  accessibilityLabel="Vaciar entregas"
+                  accessibilityHint="Elimina todas las entregas registradas para este docente"
+                >
+                  <Feather name="trash-2" size={20} color="#ffffff" />
+                </TouchableOpacity>
+              </View>
+            </View>
+          ))
+        )}
+      </ScrollView>
 
       <Modal
         animationType="slide"
