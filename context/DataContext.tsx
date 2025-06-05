@@ -69,7 +69,7 @@ export interface Entrega {
   entregado: boolean;
 }
 
-interface DataContextType {
+export type DataContextType = {
   docentes: Docente[];
   materias: Materia[];
   grupos: Grupo[];
@@ -78,16 +78,32 @@ interface DataContextType {
   horarios: Horario[];
   actividades: Actividad[];
   entregas: Entrega[];
-  addDocente: (docente: Omit<Docente, "id">) => void;
-  addMateria: (materia: Omit<Materia, "id">) => void;
-  addGrupo: (grupo: Omit<Grupo, "id">) => void;
+  addDocente: (docente: Docente) => void;
+  updateDocente: (id: string, docente: Docente) => void;
+  deleteDocente: (id: string) => void;
+  clearDocentes: () => void;
+  addMateria: (materia: Materia) => void;
+  updateMateria: (id: string, materia: Materia) => void;
+  deleteMateria: (id: string) => void;
+  clearMaterias: () => void;
+  addGrupo: (grupo: Grupo) => void;
+  updateGrupo: (id: string, grupo: Grupo) => void;
+  deleteGrupo: (id: string) => void;
+  clearGrupos: () => void;
+  addHorario: (horario: Horario) => void;
+  updateHorario: (id: string, horario: Horario) => void;
+  deleteHorario: (id: string) => void;
+  clearHorariosByEntity: (
+    entityId: string,
+    entityType: "docente" | "grupo"
+  ) => void;
+  updateHorarios: (horarios: Horario[]) => void;
   addDirectivo: (
     directivo: Omit<Directivo, "id">
   ) => Promise<{ success: boolean; error?: string }>;
   addAdministrativo: (
     administrativo: Omit<Administrativo, "id">
   ) => Promise<{ success: boolean; error?: string }>;
-  addHorario: (horario: Omit<Horario, "id">) => void;
   addActividad: (actividad: Omit<Actividad, "id">) => void;
   addEntrega: (
     entrega: Omit<Entrega, "id">
@@ -102,44 +118,13 @@ interface DataContextType {
   clearEntregasByDocente: (
     docenteId: string
   ) => Promise<{ success: boolean; error?: string }>;
-  updateDocente: (id: string, docente: Partial<Docente>) => void;
-  updateMateria: (id: string, materia: Partial<Materia>) => void;
-  updateGrupo: (id: string, grupo: Partial<Grupo>) => void;
-  updateDirectivo: (
-    id: string,
-    directivo: Partial<Directivo>
-  ) => Promise<{ success: boolean; error?: string }>;
-  updateAdministrativo: (
-    id: string,
-    administrativo: Partial<Administrativo>
-  ) => Promise<{ success: boolean; error?: string }>;
-  updateHorario: (id: string, horario: Partial<Horario>) => void;
-  updateActividad: (id: string, actividad: Partial<Actividad>) => void;
-  deleteDocente: (id: string) => void;
-  deleteMateria: (id: string) => void;
-  deleteGrupo: (id: string) => void;
-  deleteDirectivo: (
-    id: string
-  ) => Promise<{ success: boolean; error?: string }>;
-  deleteAdministrativo: (
-    id: string
-  ) => Promise<{ success: boolean; error?: string }>;
-  deleteHorario: (id: string) => void;
-  deleteActividad: (id: string) => void;
-  clearDocentes: () => void;
-  clearMaterias: () => void;
-  clearGrupos: () => void;
-  clearDirectivos: () => Promise<{ success: boolean; error?: string }>;
-  clearAdministrativos: () => Promise<{ success: boolean; error?: string }>;
-  clearHorarios: () => void;
-  clearHorariosByEntity: (entityId: string, isDocente: boolean) => void;
   getDocenteById: (id: string) => Docente | undefined;
   getMateriaById: (id: string) => Materia | undefined;
   getGrupoById: (id: string) => Grupo | undefined;
   getDirectivoById: (id: string) => Directivo | undefined;
   getAdministrativoById: (id: string) => Administrativo | undefined;
   loadAllData: () => Promise<boolean>;
-}
+};
 
 const DataContext = createContext<DataContextType | undefined>(undefined);
 
@@ -453,7 +438,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({
 
   // Funciones para agregar datos
 
-  const addDocente = (docente: Omit<Docente, "id">) => {
+  const addDocente = (docente: Docente) => {
     const newDocente = {
       ...docente,
       id: `docente_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
@@ -462,7 +447,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({
     setDocentes((prev) => [...prev, newDocente]);
   };
 
-  const addMateria = (materia: Omit<Materia, "id">) => {
+  const addMateria = (materia: Materia) => {
     const newMateria = {
       ...materia,
       id: `materia_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
@@ -470,7 +455,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({
     setMaterias((prev) => [...prev, newMateria]);
   };
 
-  const addGrupo = (grupo: Omit<Grupo, "id">) => {
+  const addGrupo = (grupo: Grupo) => {
     const newGrupo = {
       ...grupo,
       id: `grupo_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
@@ -533,7 +518,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   };
 
-  const addHorario = (horario: Omit<Horario, "id">) => {
+  const addHorario = (horario: Horario) => {
     const newHorario = {
       ...horario,
       id: `horario_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
@@ -563,15 +548,15 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({
   };
 
   // Funciones para actualizar datos
-  const updateDocente = (id: string, docente: Partial<Docente>) => {
+  const updateDocente = (id: string, docente: Docente) => {
     setDocentes(docentes.map((d) => (d.id === id ? { ...d, ...docente } : d)));
   };
 
-  const updateMateria = (id: string, materia: Partial<Materia>) => {
+  const updateMateria = (id: string, materia: Materia) => {
     setMaterias(materias.map((m) => (m.id === id ? { ...m, ...materia } : m)));
   };
 
-  const updateGrupo = (id: string, grupo: Partial<Grupo>) => {
+  const updateGrupo = (id: string, grupo: Grupo) => {
     setGrupos(grupos.map((g) => (g.id === id ? { ...g, ...grupo } : g)));
   };
 
@@ -625,7 +610,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   };
 
-  const updateHorario = (id: string, horario: Partial<Horario>) => {
+  const updateHorario = (id: string, horario: Horario) => {
     setHorarios(horarios.map((h) => (h.id === id ? { ...h, ...horario } : h)));
   };
 
@@ -864,6 +849,15 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({
     return administrativos.find((a) => a.id === id);
   };
 
+  const updateHorarios = async (newHorarios: Horario[]) => {
+    try {
+      await AsyncStorage.setItem("horarios", JSON.stringify(newHorarios));
+      setHorarios(newHorarios);
+    } catch (error) {
+      console.error("Error al actualizar horarios:", error);
+    }
+  };
+
   return (
     <DataContext.Provider
       value={{
@@ -876,35 +870,27 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({
         actividades,
         entregas,
         addDocente,
+        updateDocente,
+        deleteDocente,
+        clearDocentes,
         addMateria,
+        updateMateria,
+        deleteMateria,
+        clearMaterias,
         addGrupo,
+        updateGrupo,
+        deleteGrupo,
+        clearGrupos,
+        addHorario,
+        updateHorario,
+        deleteHorario,
+        clearHorariosByEntity,
+        updateHorarios,
         addDirectivo,
         addAdministrativo,
-        addHorario,
         addActividad,
         addEntrega,
-        updateDocente,
-        updateMateria,
-        updateGrupo,
-        updateDirectivo,
-        updateAdministrativo,
-        updateHorario,
-        updateActividad,
         updateEntrega,
-        deleteDocente,
-        deleteMateria,
-        deleteGrupo,
-        deleteDirectivo,
-        deleteAdministrativo,
-        deleteHorario,
-        deleteActividad,
-        clearDocentes,
-        clearMaterias,
-        clearGrupos,
-        clearDirectivos,
-        clearAdministrativos,
-        clearHorarios,
-        clearHorariosByEntity,
         clearEntregasByDocente,
         getDocenteById,
         getMateriaById,

@@ -21,6 +21,7 @@ import {
 import { Feather } from "@expo/vector-icons";
 import * as Print from "expo-print";
 import * as Sharing from "expo-sharing";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const ScheduleScreen = () => {
   const { colors, theme } = useTheme();
@@ -34,6 +35,8 @@ const ScheduleScreen = () => {
     updateHorario,
     deleteHorario,
     clearHorariosByEntity,
+    setHorarios,
+    updateHorarios,
   } = useData();
 
   const [currentTab, setCurrentTab] = useState("docentes");
@@ -41,10 +44,37 @@ const ScheduleScreen = () => {
   const [selectedMateria, setSelectedMateria] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [showGrupoModal, setShowGrupoModal] = useState(false);
+  const [showAutoScheduleModal, setShowAutoScheduleModal] = useState(false);
   const [currentCellInfo, setCurrentCellInfo] = useState<{
     dia: string;
     bloque: { horaInicio: string; horaFin: string; esReceso: boolean };
   } | null>(null);
+
+  // Estado para la configuración de generación automática
+  const [autoScheduleConfig, setAutoScheduleConfig] = useState({
+    docenteId: "",
+    grupos: [] as string[],
+    horasPorMateria: {} as { [key: string]: number },
+    materias: [] as string[],
+  });
+
+  // Estado para controlar qué card de docente está expandida
+  const [expandedDocenteId, setExpandedDocenteId] = useState<string | null>(
+    null
+  );
+  // Estado para la configuración de cada docente
+  const [autoScheduleConfigs, setAutoScheduleConfigs] = useState<{
+    [docenteId: string]: {
+      grupos: string[];
+      horasPorMateria: { [materiaId: string]: number };
+      materias: string[];
+    };
+  }>({});
+
+  // Estado para los turnos de los grupos
+  const [gruposTurnos, setGruposTurnos] = useState<{
+    [grupoId: string]: "matutino" | "vespertino";
+  }>({});
 
   useEffect(() => {
     console.log("Materia seleccionada:", selectedMateria);
@@ -103,38 +133,23 @@ const ScheduleScreen = () => {
   const checkScheduleConflict = (
     dia: string,
     horaInicio: string,
-    horaFin: string,
-    entityId: string,
-    isDocente: boolean,
-    excludeHorarioId?: string
-  ) => {
-    const inicio = convertirHoraAMinutos(horaInicio);
-    const fin = convertirHoraAMinutos(horaFin);
+    materiaId: string,
+    grupoId: string,
+    docenteId: string
+  ): boolean => {
+    // Verificar si ya existe un horario para el mismo día y hora
+    const conflictoExistente = horarios.some(
+      (h) =>
+        h.dia === dia &&
+        h.horaInicio === horaInicio &&
+        (h.docenteId === docenteId || h.salonId === grupoId)
+    );
 
-    return horarios.some((horario) => {
-      // Skip the current horario when updating
-      if (excludeHorarioId && horario.id === excludeHorarioId) return false;
+    if (conflictoExistente) {
+      return true;
+    }
 
-      // Check if this is a conflict for the same entity (docente or grupo)
-      const isSameEntity = isDocente
-        ? horario.docenteId === entityId
-        : horario.salonId === entityId;
-
-      if (horario.dia === dia && isSameEntity) {
-        const horarioInicio = convertirHoraAMinutos(horario.horaInicio);
-        const horarioFin = convertirHoraAMinutos(horario.horaFin);
-
-        // Check for time overlap
-        if (
-          (inicio >= horarioInicio && inicio < horarioFin) ||
-          (fin > horarioInicio && fin <= horarioFin) ||
-          (inicio <= horarioInicio && fin >= horarioFin)
-        ) {
-          return true;
-        }
-      }
-      return false;
-    });
+    return false;
   };
 
   const getConflictDetails = (
@@ -209,9 +224,9 @@ const ScheduleScreen = () => {
       const hasConflict = checkScheduleConflict(
         dia,
         bloque.horaInicio,
-        bloque.horaFin,
+        selectedMateria,
         selectedEntity,
-        true
+        selectedEntity
       );
 
       if (hasConflict) {
@@ -260,9 +275,9 @@ const ScheduleScreen = () => {
         const hasConflict = checkScheduleConflict(
           dia,
           bloque.horaInicio,
-          bloque.horaFin,
+          selectedMateria,
           selectedEntity,
-          false
+          selectedEntity
         );
 
         if (hasConflict) {
@@ -288,6 +303,7 @@ const ScheduleScreen = () => {
         // Create new schedule if no conflicts
         console.log("Creando nuevo horario con materia:", selectedMateria);
         addHorario({
+          id: Date.now().toString() + Math.random().toString(36).substr(2, 9), // Añadir ID
           dia,
           horaInicio: bloque.horaInicio,
           horaFin: bloque.horaFin,
@@ -320,9 +336,9 @@ const ScheduleScreen = () => {
     const hasDocenteConflict = checkScheduleConflict(
       dia,
       bloque.horaInicio,
-      bloque.horaFin,
+      selectedMateria,
       selectedEntity,
-      true
+      selectedEntity
     );
 
     // Check for conflicts for grupos
@@ -331,7 +347,7 @@ const ScheduleScreen = () => {
       bloque.horaInicio,
       bloque.horaFin,
       grupoId,
-      false
+      selectedEntity
     );
 
     if (hasDocenteConflict || hasGrupoConflict) {
@@ -391,6 +407,7 @@ const ScheduleScreen = () => {
     } else {
       // Crear nuevo horario
       addHorario({
+        id: Date.now().toString() + Math.random().toString(36).substr(2, 9), // Añadir ID
         dia,
         horaInicio: bloque.horaInicio,
         horaFin: bloque.horaFin,
@@ -766,6 +783,19 @@ const ScheduleScreen = () => {
                 if (horario) {
                   if (currentTab === "docentes") {
                     const grupo = grupos.find((g) => g.id === horario.salonId);
+                    // Agregar log para depuración
+                    if (!grupo) {
+                      console.log("Grupo no encontrado:", {
+                        buscandoId: horario.salonId,
+                        tipoId: typeof horario.salonId,
+                        gruposDisponibles: grupos.map((g) => ({
+                          id: g.id,
+                          tipo: typeof g.id,
+                          nombre: g.nombre,
+                        })),
+                      });
+                    }
+                    // Mostrar el grupo en la celda del docente, con fallback
                     content = (
                       <Text style={[styles.cellText, { color: colors.text }]}>
                         {grupo ? grupo.nombre : "Grupo no encontrado"}
@@ -1411,8 +1441,20 @@ const ScheduleScreen = () => {
 
                           if (currentTab === "docentes") {
                             const grupo = grupos.find(
-                              (g) => g.id === horario.salonId
+                              (g) => String(g.id) === String(horario.salonId)
                             );
+                            // Agregar log para depuración
+                            if (!grupo) {
+                              console.log("Grupo no encontrado:", {
+                                buscandoId: horario.salonId,
+                                tipoId: typeof horario.salonId,
+                                gruposDisponibles: grupos.map((g) => ({
+                                  id: g.id,
+                                  tipo: typeof g.id,
+                                  nombre: g.nombre,
+                                })),
+                              });
+                            }
                             // Mostrar el grupo en la celda del docente, con fallback
                             return `<td class="group-cell">${
                               grupo ? grupo.nombre : "Grupo no encontrado"
@@ -1501,8 +1543,20 @@ const ScheduleScreen = () => {
 
                           if (currentTab === "docentes") {
                             const grupo = grupos.find(
-                              (g) => g.id === horario.salonId
+                              (g) => String(g.id) === String(horario.salonId)
                             );
+                            // Agregar log para depuración
+                            if (!grupo) {
+                              console.log("Grupo no encontrado:", {
+                                buscandoId: horario.salonId,
+                                tipoId: typeof horario.salonId,
+                                gruposDisponibles: grupos.map((g) => ({
+                                  id: g.id,
+                                  tipo: typeof g.id,
+                                  nombre: g.nombre,
+                                })),
+                              });
+                            }
                             // Mostrar el grupo en la celda del docente, con fallback
                             return `<td class="group-cell">${
                               grupo ? grupo.nombre : "Grupo no encontrado"
@@ -1580,6 +1634,690 @@ const ScheduleScreen = () => {
     }
   };
 
+  // Función para inicializar la configuración de un docente
+  const initDocenteConfig = (docenteId: string, materiasDocente: string[]) => {
+    setAutoScheduleConfigs((prev) => ({
+      ...prev,
+      [docenteId]: prev[docenteId] || {
+        grupos: [],
+        horasPorMateria: {},
+        materias: materiasDocente,
+      },
+    }));
+  };
+
+  // Función para obtener los bloques horarios según el turno
+  const getBloquesPorTurno = (turno: "matutino" | "vespertino") => {
+    if (turno === "matutino") {
+      return bloquesHorarios.filter(
+        (bloque) =>
+          convertirHoraAMinutos(bloque.horaInicio) >=
+            convertirHoraAMinutos("07:00") &&
+          convertirHoraAMinutos(bloque.horaFin) <=
+            convertirHoraAMinutos("13:20")
+      );
+    } else {
+      // Para el turno vespertino, incluir todos los bloques desde las 13:30
+      return bloquesHorarios.filter(
+        (bloque) =>
+          convertirHoraAMinutos(bloque.horaInicio) >=
+          convertirHoraAMinutos("13:30")
+      );
+    }
+  };
+
+  // Renderizado de la pestaña de generación automática
+  const renderAutoScheduleTab = () => {
+    return (
+      <View style={{ flex: 1 }}>
+        <ScrollView style={{ flex: 1 }}>
+          {docentes.map((docente) => {
+            const isExpanded = expandedDocenteId === docente.id;
+            const config = autoScheduleConfigs[docente.id] || {
+              grupos: [],
+              horasPorMateria: {},
+              materias: docente.materias.map((m) => m.id),
+            };
+            return (
+              <View
+                key={docente.id}
+                style={[
+                  styles.autoScheduleCard,
+                  { borderColor: colors.border },
+                ]}
+              >
+                <TouchableOpacity
+                  style={styles.autoScheduleCardHeader}
+                  onPress={() => {
+                    setExpandedDocenteId(isExpanded ? null : docente.id);
+                    if (!autoScheduleConfigs[docente.id]) {
+                      initDocenteConfig(
+                        docente.id,
+                        docente.materias.map((m) => m.id)
+                      );
+                    }
+                  }}
+                >
+                  <Text
+                    style={[
+                      styles.autoScheduleCardTitle,
+                      { color: colors.text },
+                    ]}
+                  >
+                    {docente.nombre} {docente.apellido}
+                  </Text>
+                  <Feather
+                    name={isExpanded ? "chevron-up" : "chevron-down"}
+                    size={20}
+                    color={colors.text}
+                  />
+                </TouchableOpacity>
+                {isExpanded && (
+                  <View
+                    style={[
+                      styles.autoScheduleCardContent,
+                      { borderTopColor: colors.border },
+                    ]}
+                  >
+                    {/* Sección de Materias */}
+                    <View style={styles.autoScheduleSection}>
+                      <Text
+                        style={[
+                          styles.autoScheduleSectionTitle,
+                          { color: colors.text },
+                        ]}
+                      >
+                        Materias
+                      </Text>
+                      {docente.materias.map((materia) => (
+                        <View
+                          key={materia.id}
+                          style={styles.autoScheduleMateriaItem}
+                        >
+                          <TouchableOpacity
+                            style={[
+                              styles.autoScheduleCheckbox,
+                              {
+                                borderColor: colors.primary,
+                                backgroundColor: config.materias.includes(
+                                  materia.id
+                                )
+                                  ? colors.primary
+                                  : "transparent",
+                              },
+                            ]}
+                            onPress={() => {
+                              setAutoScheduleConfigs((prev) => ({
+                                ...prev,
+                                [docente.id]: {
+                                  ...config,
+                                  materias: config.materias.includes(materia.id)
+                                    ? config.materias.filter(
+                                        (id) => id !== materia.id
+                                      )
+                                    : [...config.materias, materia.id],
+                                },
+                              }));
+                            }}
+                          >
+                            {config.materias.includes(materia.id) && (
+                              <Feather name="check" size={16} color="#fff" />
+                            )}
+                          </TouchableOpacity>
+                          <Text
+                            style={[
+                              styles.autoScheduleMateriaText,
+                              { color: colors.text },
+                            ]}
+                          >
+                            {materia.nombre}
+                          </Text>
+                        </View>
+                      ))}
+                    </View>
+
+                    {/* Sección de Grupos */}
+                    <View style={styles.autoScheduleSection}>
+                      <Text
+                        style={[
+                          styles.autoScheduleSectionTitle,
+                          { color: colors.text },
+                        ]}
+                      >
+                        Grupos
+                      </Text>
+                      <ScrollView
+                        horizontal
+                        showsHorizontalScrollIndicator={false}
+                        style={{ marginBottom: 8 }}
+                      >
+                        <View style={styles.autoScheduleGruposContainer}>
+                          {grupos.map((grupo) => (
+                            <View
+                              key={grupo.id}
+                              style={styles.grupoTurnoContainer}
+                            >
+                              <TouchableOpacity
+                                style={[
+                                  styles.autoScheduleGrupoItem,
+                                  {
+                                    backgroundColor: config.grupos.includes(
+                                      grupo.id
+                                    )
+                                      ? colors.primary + "20"
+                                      : "transparent",
+                                    borderColor: config.grupos.includes(
+                                      grupo.id
+                                    )
+                                      ? colors.primary
+                                      : colors.border,
+                                  },
+                                ]}
+                                onPress={() => {
+                                  setAutoScheduleConfigs((prev) => ({
+                                    ...prev,
+                                    [docente.id]: {
+                                      ...config,
+                                      grupos: config.grupos.includes(grupo.id)
+                                        ? config.grupos.filter(
+                                            (id) => id !== grupo.id
+                                          )
+                                        : [...config.grupos, grupo.id],
+                                    },
+                                  }));
+                                }}
+                              >
+                                <Text
+                                  style={[
+                                    styles.autoScheduleGrupoText,
+                                    {
+                                      color: config.grupos.includes(grupo.id)
+                                        ? colors.primary
+                                        : colors.text,
+                                    },
+                                  ]}
+                                >
+                                  {grupo.nombre}
+                                </Text>
+                              </TouchableOpacity>
+                              {config.grupos.includes(grupo.id) && (
+                                <View style={styles.turnoSelector}>
+                                  <TouchableOpacity
+                                    style={[
+                                      styles.turnoButton,
+                                      {
+                                        backgroundColor:
+                                          gruposTurnos[grupo.id] === "matutino"
+                                            ? colors.primary
+                                            : "transparent",
+                                        borderColor: colors.primary,
+                                      },
+                                    ]}
+                                    onPress={() =>
+                                      setGruposTurnos((prev) => ({
+                                        ...prev,
+                                        [grupo.id]: "matutino",
+                                      }))
+                                    }
+                                  >
+                                    <Text
+                                      style={[
+                                        styles.turnoButtonText,
+                                        {
+                                          color:
+                                            gruposTurnos[grupo.id] ===
+                                            "matutino"
+                                              ? "#fff"
+                                              : colors.primary,
+                                        },
+                                      ]}
+                                    >
+                                      Matutino
+                                    </Text>
+                                  </TouchableOpacity>
+                                  <TouchableOpacity
+                                    style={[
+                                      styles.turnoButton,
+                                      {
+                                        backgroundColor:
+                                          gruposTurnos[grupo.id] ===
+                                          "vespertino"
+                                            ? colors.primary
+                                            : "transparent",
+                                        borderColor: colors.primary,
+                                      },
+                                    ]}
+                                    onPress={() =>
+                                      setGruposTurnos((prev) => ({
+                                        ...prev,
+                                        [grupo.id]: "vespertino",
+                                      }))
+                                    }
+                                  >
+                                    <Text
+                                      style={[
+                                        styles.turnoButtonText,
+                                        {
+                                          color:
+                                            gruposTurnos[grupo.id] ===
+                                            "vespertino"
+                                              ? "#fff"
+                                              : colors.primary,
+                                        },
+                                      ]}
+                                    >
+                                      Vespertino
+                                    </Text>
+                                  </TouchableOpacity>
+                                </View>
+                              )}
+                            </View>
+                          ))}
+                        </View>
+                      </ScrollView>
+                    </View>
+
+                    {/* Sección de Horas por Materia */}
+                    <View style={styles.autoScheduleSection}>
+                      <Text
+                        style={[
+                          styles.autoScheduleSectionTitle,
+                          { color: colors.text },
+                        ]}
+                      >
+                        Horas por materia
+                      </Text>
+                      {config.materias.map((materiaId) => {
+                        const materia = materias.find(
+                          (m) => m.id === materiaId
+                        );
+                        if (!materia) return null;
+                        return (
+                          <View
+                            key={materiaId}
+                            style={styles.autoScheduleHorasContainer}
+                          >
+                            <Text
+                              style={[
+                                styles.autoScheduleHorasLabel,
+                                { color: colors.text },
+                              ]}
+                            >
+                              {materia.nombre}
+                            </Text>
+                            <TextInput
+                              style={[
+                                styles.autoScheduleHorasInput,
+                                {
+                                  backgroundColor: colors.card,
+                                  color: colors.text,
+                                  borderColor: colors.border,
+                                },
+                              ]}
+                              keyboardType="number-pad"
+                              value={String(
+                                config.horasPorMateria[materiaId] || ""
+                              )}
+                              onChangeText={(text) => {
+                                const horas = parseInt(text) || 0;
+                                setAutoScheduleConfigs((prev) => ({
+                                  ...prev,
+                                  [docente.id]: {
+                                    ...config,
+                                    horasPorMateria: {
+                                      ...config.horasPorMateria,
+                                      [materiaId]: horas,
+                                    },
+                                  },
+                                }));
+                              }}
+                              placeholder="Horas"
+                              placeholderTextColor={colors.text + "80"}
+                            />
+                          </View>
+                        );
+                      })}
+                    </View>
+                  </View>
+                )}
+              </View>
+            );
+          })}
+        </ScrollView>
+        {/* Botón para generar horarios de todos los docentes */}
+        <TouchableOpacity
+          style={[
+            styles.generateButton,
+            { backgroundColor: colors.primary, margin: 16 },
+          ]}
+          onPress={generateAutoScheduleForAll}
+        >
+          <Text style={styles.generateButtonText}>
+            Generar horarios de todos
+          </Text>
+        </TouchableOpacity>
+      </View>
+    );
+  };
+
+  // Función para generar horarios para todos los docentes
+  const generateAutoScheduleForAll = async () => {
+    let totalHorariosGenerados = 0;
+    let mensajesAdvertencia: string[] = [];
+    let nuevosHorarios: Horario[] = [];
+    try {
+      const diasOrdenados = [
+        "Lunes",
+        "Martes",
+        "Miércoles",
+        "Jueves",
+        "Viernes",
+      ];
+
+      // Función auxiliar para verificar disponibilidad de un bloque
+      const isBloqueDisponible = (
+        dia: string,
+        bloque: { horaInicio: string; horaFin: string },
+        docenteId: string,
+        grupoId: string
+      ) => {
+        // Verificar si el docente ya tiene clase en ese horario
+        const docenteOcupado = horarios.some(
+          (h) =>
+            h.dia === dia &&
+            h.horaInicio === bloque.horaInicio &&
+            h.docenteId === docenteId
+        );
+
+        // Verificar si el grupo ya tiene clase en ese horario
+        const grupoOcupado = horarios.some(
+          (h) =>
+            h.dia === dia &&
+            h.horaInicio === bloque.horaInicio &&
+            h.salonId === grupoId
+        );
+
+        return !docenteOcupado && !grupoOcupado;
+      };
+
+      // Función para encontrar el mejor bloque disponible
+      const encontrarMejorBloque = (
+        docenteId: string,
+        grupoId: string,
+        disponibilidad: { [key: string]: { [key: string]: boolean } },
+        horariosAsignados: Horario[],
+        intentos: number = 0
+      ) => {
+        const turno = gruposTurnos[grupoId] || "matutino";
+        const bloquesDisponibles = getBloquesPorTurno(turno);
+
+        // Función para verificar si un bloque es continuo con otros horarios del grupo
+        const esBloqueContinuo = (
+          dia: string,
+          bloque: { horaInicio: string; horaFin: string }
+        ) => {
+          const horariosGrupoEnDia = horariosAsignados.filter(
+            (h) => h.salonId === grupoId && h.dia === dia
+          );
+
+          if (horariosGrupoEnDia.length === 0) return true;
+
+          // Ordenar horarios por hora de inicio
+          const horariosOrdenados = [...horariosGrupoEnDia].sort(
+            (a, b) =>
+              convertirHoraAMinutos(a.horaInicio) -
+              convertirHoraAMinutos(b.horaInicio)
+          );
+
+          // Verificar si el bloque es continuo con algún horario existente
+          return horariosOrdenados.some((h) => {
+            const horaFinHorario = convertirHoraAMinutos(h.horaFin);
+            const horaInicioBloque = convertirHoraAMinutos(bloque.horaInicio);
+            const horaFinBloque = convertirHoraAMinutos(bloque.horaFin);
+            const horaInicioHorario = convertirHoraAMinutos(h.horaInicio);
+
+            // Es continuo si termina justo cuando empieza otro o empieza justo cuando termina otro
+            return (
+              horaFinHorario === horaInicioBloque ||
+              horaInicioHorario === horaFinBloque
+            );
+          });
+        };
+
+        // Función para calcular la puntuación de un bloque
+        const calcularPuntuacionBloque = (
+          dia: string,
+          bloque: { horaInicio: string; horaFin: string }
+        ) => {
+          let puntuacion = 0;
+
+          // Priorizar bloques continuos
+          if (esBloqueContinuo(dia, bloque)) {
+            puntuacion += 10;
+          }
+
+          // Priorizar bloques en la mañana para turno matutino
+          if (
+            turno === "matutino" &&
+            convertirHoraAMinutos(bloque.horaInicio) <
+              convertirHoraAMinutos("10:00")
+          ) {
+            puntuacion += 5;
+          }
+
+          // Priorizar bloques en la tarde para turno vespertino
+          if (
+            turno === "vespertino" &&
+            convertirHoraAMinutos(bloque.horaInicio) >=
+              convertirHoraAMinutos("16:00")
+          ) {
+            puntuacion += 5;
+          }
+
+          return puntuacion;
+        };
+
+        // Si ya intentamos demasiadas veces, intentar con cualquier bloque disponible
+        if (intentos > 3) {
+          let mejorPuntuacion = -1;
+          let mejorBloque = null;
+
+          for (const bloque of bloquesDisponibles) {
+            if (bloque.esReceso) continue;
+            for (const dia of diasOrdenados) {
+              if (
+                disponibilidad[dia][bloque.horaInicio] &&
+                isBloqueDisponible(dia, bloque, docenteId, grupoId)
+              ) {
+                const puntuacion = calcularPuntuacionBloque(dia, bloque);
+                if (puntuacion > mejorPuntuacion) {
+                  mejorPuntuacion = puntuacion;
+                  mejorBloque = { dia, bloque };
+                }
+              }
+            }
+          }
+          return mejorBloque;
+        }
+
+        // Primero buscar si el grupo ya tiene alguna hora asignada
+        const horariosGrupo = horariosAsignados.filter(
+          (h) => h.salonId === grupoId
+        );
+
+        if (horariosGrupo.length > 0) {
+          // Intentar mantener la misma hora en diferentes días
+          const horaPreferida = horariosGrupo[0].horaInicio;
+          const bloquePreferido = bloquesDisponibles.find(
+            (b) => b.horaInicio === horaPreferida
+          );
+
+          if (bloquePreferido && !bloquePreferido.esReceso) {
+            let mejorPuntuacion = -1;
+            let mejorDia = null;
+
+            for (const dia of diasOrdenados) {
+              if (
+                disponibilidad[dia][horaPreferida] &&
+                isBloqueDisponible(dia, bloquePreferido, docenteId, grupoId)
+              ) {
+                const puntuacion = calcularPuntuacionBloque(
+                  dia,
+                  bloquePreferido
+                );
+                if (puntuacion > mejorPuntuacion) {
+                  mejorPuntuacion = puntuacion;
+                  mejorDia = dia;
+                }
+              }
+            }
+
+            if (mejorDia) {
+              return { dia: mejorDia, bloque: bloquePreferido };
+            }
+          }
+        }
+
+        // Si no se pudo mantener la misma hora, buscar el mejor bloque disponible
+        let mejorPuntuacion = -1;
+        let mejorBloque = null;
+
+        for (const bloque of bloquesDisponibles) {
+          if (bloque.esReceso) continue;
+
+          for (const dia of diasOrdenados) {
+            if (
+              disponibilidad[dia][bloque.horaInicio] &&
+              isBloqueDisponible(dia, bloque, docenteId, grupoId)
+            ) {
+              const puntuacion = calcularPuntuacionBloque(dia, bloque);
+              if (puntuacion > mejorPuntuacion) {
+                mejorPuntuacion = puntuacion;
+                mejorBloque = { dia, bloque };
+              }
+            }
+          }
+        }
+
+        if (mejorBloque) {
+          return mejorBloque;
+        }
+
+        // Si no se encontró un bloque, intentar de nuevo con una estrategia diferente
+        return encontrarMejorBloque(
+          docenteId,
+          grupoId,
+          disponibilidad,
+          horariosAsignados,
+          intentos + 1
+        );
+      };
+
+      for (const docente of docentes) {
+        const config = autoScheduleConfigs[docente.id];
+        if (!config) continue;
+
+        // Crear mapa de disponibilidad inicial
+        const disponibilidad = diasOrdenados.reduce((acc, dia) => {
+          acc[dia] = bloquesHorarios.reduce((bloqueAcc, bloque) => {
+            if (bloque.esReceso) {
+              bloqueAcc[bloque.horaInicio] = false;
+            } else {
+              bloqueAcc[bloque.horaInicio] = true;
+            }
+            return bloqueAcc;
+          }, {} as { [key: string]: boolean });
+          return acc;
+        }, {} as { [key: string]: { [key: string]: boolean } });
+
+        // Para cada materia del docente
+        for (const materiaId of config.materias) {
+          const horasNecesarias = config.horasPorMateria[materiaId] || 0;
+          let horasAsignadas = 0;
+          let grupoIndex = 0;
+          let intentosPorGrupo = new Map<string, number>();
+
+          // Intentar asignar todas las horas necesarias
+          while (horasAsignadas < horasNecesarias) {
+            const grupoId = config.grupos[grupoIndex % config.grupos.length];
+            const intentos = intentosPorGrupo.get(grupoId) || 0;
+
+            // Si ya intentamos demasiadas veces con este grupo, pasar al siguiente
+            if (intentos > 5) {
+              grupoIndex++;
+              continue;
+            }
+
+            // Encontrar el mejor bloque disponible
+            const mejorBloque = encontrarMejorBloque(
+              docente.id,
+              grupoId,
+              disponibilidad,
+              nuevosHorarios,
+              intentos
+            );
+
+            if (mejorBloque) {
+              // Asignar la clase
+              nuevosHorarios.push({
+                id:
+                  Date.now().toString() +
+                  Math.random().toString(36).substr(2, 9),
+                docenteId: docente.id,
+                materiaId,
+                dia: mejorBloque.dia,
+                horaInicio: mejorBloque.bloque.horaInicio,
+                horaFin: mejorBloque.bloque.horaFin,
+                salonId: grupoId,
+              });
+
+              // Marcar el bloque como ocupado
+              disponibilidad[mejorBloque.dia][mejorBloque.bloque.horaInicio] =
+                false;
+              horasAsignadas++;
+              grupoIndex++;
+              intentosPorGrupo.set(grupoId, 0); // Resetear intentos si tuvo éxito
+            } else {
+              intentosPorGrupo.set(grupoId, intentos + 1);
+              grupoIndex++;
+            }
+          }
+
+          if (horasAsignadas < horasNecesarias) {
+            const materia = materias.find((m) => m.id === materiaId);
+            mensajesAdvertencia.push(
+              `No se pudieron asignar todas las horas para ${
+                materia?.nombre || "la materia"
+              } del docente ${docente.nombre} ${
+                docente.apellido
+              }. Horas asignadas: ${horasAsignadas} de ${horasNecesarias}`
+            );
+          }
+        }
+      }
+
+      // Guardar los nuevos horarios
+      if (nuevosHorarios.length > 0) {
+        const updatedHorarios = [...horarios, ...nuevosHorarios];
+        await AsyncStorage.setItem("horarios", JSON.stringify(updatedHorarios));
+        updateHorarios(updatedHorarios);
+        totalHorariosGenerados = nuevosHorarios.length;
+      }
+
+      let mensaje = `Se generaron ${totalHorariosGenerados} nuevos horarios para todos los docentes seleccionados.`;
+      if (mensajesAdvertencia.length > 0) {
+        mensaje += "\n\nAdvertencias:\n" + mensajesAdvertencia.join("\n");
+      }
+      Alert.alert("Resultado", mensaje);
+    } catch (error) {
+      console.error("Error al generar horarios automáticamente:", error);
+      Alert.alert(
+        "Error",
+        "Ocurrió un error al generar los horarios automáticamente"
+      );
+    }
+  };
+
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={styles.tabsContainer}>
@@ -1631,10 +2369,35 @@ const ScheduleScreen = () => {
             Grupos
           </Text>
         </TouchableOpacity>
+        <TouchableOpacity
+          style={[
+            styles.tab,
+            currentTab === "auto" && [
+              styles.activeTab,
+              { borderColor: colors.primary },
+            ],
+          ]}
+          onPress={() => {
+            setCurrentTab("auto");
+            setSelectedEntity(null);
+            setSearchQuery("");
+          }}
+        >
+          <Text
+            style={[
+              styles.tabText,
+              { color: currentTab === "auto" ? colors.primary : colors.text },
+            ]}
+          >
+            Generación Automática
+          </Text>
+        </TouchableOpacity>
       </View>
 
       <View style={styles.contentContainer}>
-        {!selectedEntity ? (
+        {currentTab === "auto" ? (
+          renderAutoScheduleTab()
+        ) : !selectedEntity ? (
           renderEntityList()
         ) : (
           <View style={styles.scheduleContainer}>
@@ -1652,10 +2415,6 @@ const ScheduleScreen = () => {
                 <Text style={[styles.scheduleTitle, { color: colors.text }]}>
                   Horario de {currentTab === "docentes" ? "Docente" : "Grupo"}
                 </Text>
-              </View>
-
-              <View style={styles.scheduleHeaderRight}>
-                {/* Removed the 'Generar Horarios' button */}
               </View>
             </View>
 
@@ -1976,9 +2735,130 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   cellDocText: {
-    fontSize: 7,
-    fontStyle: "italic",
+    fontSize: 10,
     textAlign: "center",
+  },
+  autoScheduleCard: {
+    width: "100%",
+    marginBottom: 15,
+    borderRadius: 12,
+    borderWidth: 1,
+    padding: 15,
+    elevation: 3,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.15,
+    shadowRadius: 6,
+  },
+  autoScheduleCardHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingBottom: 12,
+    borderBottomWidth: 1,
+  },
+  autoScheduleCardTitle: {
+    fontSize: 16,
+    fontWeight: "bold",
+    flex: 1,
+  },
+  autoScheduleCardContent: {
+    marginTop: 15,
+  },
+  autoScheduleSection: {
+    marginBottom: 20,
+  },
+  autoScheduleSectionTitle: {
+    fontSize: 14,
+    fontWeight: "600",
+    marginBottom: 10,
+  },
+  autoScheduleMateriaItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 8,
+    paddingVertical: 4,
+  },
+  autoScheduleCheckbox: {
+    width: 24,
+    height: 24,
+    borderRadius: 6,
+    borderWidth: 2,
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 10,
+  },
+  autoScheduleMateriaText: {
+    fontSize: 14,
+    flex: 1,
+  },
+  autoScheduleGruposContainer: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+    marginTop: 8,
+  },
+  autoScheduleGrupoItem: {
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 20,
+    borderWidth: 1,
+    minWidth: 80,
+    alignItems: "center",
+  },
+  autoScheduleGrupoText: {
+    fontSize: 13,
+    fontWeight: "500",
+  },
+  autoScheduleHorasContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 12,
+    paddingVertical: 4,
+  },
+  autoScheduleHorasLabel: {
+    fontSize: 14,
+    flex: 1,
+  },
+  autoScheduleHorasInput: {
+    width: 80,
+    padding: 8,
+    borderRadius: 8,
+    borderWidth: 1,
+    textAlign: "center",
+    fontSize: 14,
+  },
+  generateButton: {
+    padding: 10,
+    borderRadius: 5,
+    alignItems: "center",
+    alignSelf: "flex-end",
+  },
+  generateButtonText: {
+    color: "#ffffff",
+    fontSize: 12,
+    fontWeight: "bold",
+  },
+  grupoTurnoContainer: {
+    marginRight: 10,
+    marginBottom: 10,
+  },
+  turnoSelector: {
+    flexDirection: "row",
+    marginTop: 5,
+    gap: 5,
+  },
+  turnoButton: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 4,
+    borderWidth: 1,
+    minWidth: 80,
+    alignItems: "center",
+  },
+  turnoButtonText: {
+    fontSize: 12,
+    fontWeight: "500",
   },
 });
 
