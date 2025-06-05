@@ -75,7 +75,7 @@ const ManagementScreen = () => {
     apellido: "",
     email: "",
     numeroEmpleado: "",
-    materias: [],
+    materias: [] as { id: string; nombre: string; siglas: string }[],
   });
   const [materiaForm, setMateriaForm] = useState({ nombre: "", siglas: "" });
   const [grupoForm, setGrupoForm] = useState({ nombre: "", docenteId: "" });
@@ -425,28 +425,54 @@ const ManagementScreen = () => {
           onPress: async () => {
             try {
               let result;
-
               if (activeTab === "docentes") {
-                result = await clearDocentes();
-              } else if (activeTab === "materias") {
-                result = await clearMaterias();
-              } else if (activeTab === "grupos") {
-                result = await clearGrupos();
-              } else if (activeTab === "directivos") {
-                result = await clearDirectivos();
-              } else if (activeTab === "administrativos") {
-                result = await clearAdministrativos();
-              }
-
-              if (result?.success) {
+                clearDocentes();
                 Alert.alert(
                   "Éxito",
                   `Se han eliminado todos los ${activeTab} correctamente`
                 );
-              } else {
-                throw new Error(
-                  result?.error || `Error al eliminar los ${activeTab}`
+              } else if (activeTab === "materias") {
+                result = await clearMaterias();
+                if (result?.success) {
+                  Alert.alert(
+                    "Éxito",
+                    `Se han eliminado todos los ${activeTab} correctamente`
+                  );
+                } else {
+                  throw new Error(
+                    result?.error || `Error al eliminar los ${activeTab}`
+                  );
+                }
+              } else if (activeTab === "grupos") {
+                clearGrupos();
+                Alert.alert(
+                  "Éxito",
+                  `Se han eliminado todos los ${activeTab} correctamente`
                 );
+              } else if (activeTab === "directivos") {
+                result = await clearDirectivos();
+                if (result?.success) {
+                  Alert.alert(
+                    "Éxito",
+                    `Se han eliminado todos los ${activeTab} correctamente`
+                  );
+                } else {
+                  throw new Error(
+                    result?.error || `Error al eliminar los ${activeTab}`
+                  );
+                }
+              } else if (activeTab === "administrativos") {
+                result = await clearAdministrativos();
+                if (result?.success) {
+                  Alert.alert(
+                    "Éxito",
+                    `Se han eliminado todos los ${activeTab} correctamente`
+                  );
+                } else {
+                  throw new Error(
+                    result?.error || `Error al eliminar los ${activeTab}`
+                  );
+                }
               }
             } catch (error) {
               console.error(`Error al eliminar los ${activeTab}:`, error);
@@ -1918,25 +1944,50 @@ const ManagementScreen = () => {
                     marginBottom: 8,
                   }}
                 >
-                  <TextInput
-                    value={mat.nombre}
-                    onChangeText={(text) => {
-                      const newMaterias = [...docenteForm.materias];
-                      newMaterias[idx].nombre = text;
-                      setDocenteForm({ ...docenteForm, materias: newMaterias });
-                    }}
-                    placeholder="Nombre de la materia"
-                    placeholderTextColor={colors.placeholder || "#999"}
-                    style={[
-                      styles.input,
-                      {
-                        backgroundColor: colors.card || "#f5f5f5",
-                        color: colors.text,
-                        flex: 1,
-                        marginRight: 8,
-                      },
-                    ]}
-                  />
+                  <View style={{ flex: 1, flexDirection: "row", gap: 8 }}>
+                    <TextInput
+                      value={mat.nombre}
+                      onChangeText={(text) => {
+                        const newMaterias = [...docenteForm.materias];
+                        newMaterias[idx].nombre = text;
+                        setDocenteForm({
+                          ...docenteForm,
+                          materias: newMaterias,
+                        });
+                      }}
+                      placeholder="Nombre de la materia"
+                      placeholderTextColor={colors.placeholder || "#999"}
+                      style={[
+                        styles.input,
+                        {
+                          backgroundColor: colors.card || "#f5f5f5",
+                          color: colors.text,
+                          flex: 2,
+                        },
+                      ]}
+                    />
+                    <TextInput
+                      value={mat.siglas}
+                      onChangeText={(text) => {
+                        const newMaterias = [...docenteForm.materias];
+                        newMaterias[idx].siglas = text;
+                        setDocenteForm({
+                          ...docenteForm,
+                          materias: newMaterias,
+                        });
+                      }}
+                      placeholder="Siglas"
+                      placeholderTextColor={colors.placeholder || "#999"}
+                      style={[
+                        styles.input,
+                        {
+                          backgroundColor: colors.card || "#f5f5f5",
+                          color: colors.text,
+                          flex: 1,
+                        },
+                      ]}
+                    />
+                  </View>
                   <TouchableOpacity
                     onPress={() => {
                       const newMaterias = docenteForm.materias.filter(
