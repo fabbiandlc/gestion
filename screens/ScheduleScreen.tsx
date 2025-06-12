@@ -303,7 +303,6 @@ const ScheduleScreen = () => {
         // Create new schedule if no conflicts
         console.log("Creando nuevo horario con materia:", selectedMateria);
         addHorario({
-          id: Date.now().toString() + Math.random().toString(36).substr(2, 9), // Añadir ID
           dia,
           horaInicio: bloque.horaInicio,
           horaFin: bloque.horaFin,
@@ -407,7 +406,6 @@ const ScheduleScreen = () => {
     } else {
       // Crear nuevo horario
       addHorario({
-        id: Date.now().toString() + Math.random().toString(36).substr(2, 9), // Añadir ID
         dia,
         horaInicio: bloque.horaInicio,
         horaFin: bloque.horaFin,
