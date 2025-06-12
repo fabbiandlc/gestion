@@ -1040,7 +1040,7 @@ const ScheduleScreen = () => {
     );
   };
 
-  const convertirAPdf = async (entidad: { id: string }) => {
+  const convertirAPdfDocente = async (entidad: { id: string }) => {
     try {
       // Verificar datos disponibles
       if (!Array.isArray(grupos) || grupos.length === 0) {
@@ -1074,55 +1074,43 @@ const ScheduleScreen = () => {
           : "Subdirector Académico"
         : "Subdirector Académico";
 
-      let titulo = "";
-      let numeroEmpleado = "";
-      let totalHoras = "";
-      let asignaturas: string[] = [];
-      let gruposDocente: string[] = [];
-
-      if (currentTab === "docentes") {
-        const docente = docentes?.find(
-          (d) => String(d.id) === String(entidad.id)
-        );
-        if (docente) {
-          titulo = `${docente.nombre} ${docente.apellido}`;
-          numeroEmpleado = docente.numeroEmpleado || "No asignado";
-
-          // Calcular total de horas
-          const horariosDocente = horarios.filter(
-            (h: Horario) => h.docenteId === entidad.id
-          );
-          totalHoras = `${horariosDocente.length} HRS`;
-
-          // Obtener asignaturas únicas
-          const materiasIds = [
-            ...new Set(horariosDocente.map((h: Horario) => h.materiaId)),
-          ];
-          asignaturas = materiasIds.map((id) => {
-            const materia = materias.find((m) => m.id === id);
-            return materia ? materia.nombre : "Materia no encontrada";
-          });
-
-          // Obtener grupos únicos del docente
-          const gruposIds = [
-            ...new Set(horariosDocente.map((h: Horario) => h.salonId)),
-          ];
-          gruposDocente = gruposIds.map((id) => {
-            const grupo = grupos.find((g) => g.id === id);
-            return grupo ? grupo.nombre : "Grupo no encontrado";
-          });
-        }
-      } else {
-        const grupo = grupos?.find((g) => String(g.id) === String(entidad.id));
-        titulo = grupo ? grupo.nombre : `ID ${entidad.id} (No encontrado)`;
+      const docente = docentes?.find(
+        (d) => String(d.id) === String(entidad.id)
+      );
+      if (!docente) {
+        Alert.alert("Error", "No se encontró el docente");
+        return;
       }
 
+      const titulo = `${docente.nombre} ${docente.apellido}`;
+      const numeroEmpleado = docente.numeroEmpleado || "No asignado";
+
+      // Calcular total de horas
+      const horariosDocente = horarios.filter(
+        (h: Horario) => h.docenteId === entidad.id
+      );
+      const totalHoras = `${horariosDocente.length} HRS`;
+
+      // Obtener asignaturas únicas
+      const materiasIds = [
+        ...new Set(horariosDocente.map((h: Horario) => h.materiaId)),
+      ];
+      const asignaturas = materiasIds.map((id) => {
+        const materia = materias.find((m) => m.id === id);
+        return materia ? materia.nombre : "Materia no encontrada";
+      });
+
+      // Obtener grupos únicos del docente
+      const gruposIds = [
+        ...new Set(horariosDocente.map((h: Horario) => h.salonId)),
+      ];
+      const gruposDocente = gruposIds.map((id) => {
+        const grupo = grupos.find((g) => g.id === id);
+        return grupo ? grupo.nombre : "Grupo no encontrado";
+      });
+
       const horariosEntidad = horarios
-        .filter((h: Horario) =>
-          currentTab === "docentes"
-            ? String(h.docenteId) === String(entidad.id)
-            : String(h.salonId) === String(entidad.id)
-        )
+        .filter((h: Horario) => String(h.docenteId) === String(entidad.id))
         .sort((a: Horario, b: Horario) => {
           const diasOrden: { [key: string]: number } = {
             Lunes: 0,
@@ -1296,14 +1284,7 @@ const ScheduleScreen = () => {
               letter-spacing: 2px;
             }
             
-            .class-cell {
-              font-size: 8px;
-              font-weight: bold;
-              text-transform: uppercase;
-              line-height: 1.1;
-              padding: 1px;
-            }
-             .group-cell {
+            .group-cell {
               font-size: 12px;
               font-weight: bold;
             }
@@ -1342,96 +1323,67 @@ const ScheduleScreen = () => {
             <h1>COLEGIO DE BACHILLERES DEL ESTADO DE VERACRUZ</h1>
             <h2>ORGANISMO PÚBLICO DESCENTRALIZADO</h2>
             <h3>${nombrePlantel}</h3>
-            <div class="title">
-              ${
-                currentTab === "docentes"
-                  ? "HORARIO INDIVIDUAL"
-                  : "HORARIO DE GRUPO"
-              }
-            </div>
+            <div class="title">HORARIO INDIVIDUAL</div>
           </div>
           
-          ${
-            currentTab === "docentes"
-              ? `
-            <div class="info-sections-container">
-                <div class="info-section">
-                    <div class="info-row">
-                        <span class="info-label">SEMESTRE:</span>
-                        <span class="info-value">${semestre}</span>
-                    </div>
-                    <div class="info-row">
-                        <span class="info-label">DOCENTE:</span>
-                        <span class="info-value">${titulo}</span>
-                    </div>
-                    <div class="info-row">
-                        <span class="info-label">ASIGNATURAS:</span>
-                        <span class="info-value">${asignaturas.join(
-                          ", "
-                        )}</span>
-                    </div>
-                    <div class="info-row">
-                        <span class="info-label">GRUPO (S):</span>
-                        <span class="info-value">${gruposDocente.join(
-                          ", "
-                        )}</span>
-                    </div>
-                    <div class="info-row">
-                        <span class="info-label">TOTAL DE HORAS:</span>
-                        <span class="info-value">${totalHoras}</span>
-                    </div>
-                     <div class="info-row">
-                        <span class="info-label">NUM. EMPLEADO:</span>
-                        <span class="info-value">${numeroEmpleado}</span>
-                    </div>
-                </div>
-                <div class="info-section">
-                    <div class="info-row">
-                        <span class="info-label">SEMESTRE:</span>
-                        <span class="info-value">${semestre}</span>
-                    </div>
-                     <div class="info-row">
-                        <span class="info-label">DOCENTE:</span>
-                        <span class="info-value">${titulo}</span>
-                    </div>
-                    <div class="info-row">
-                        <span class="info-label">ASIGNATURAS:</span>
-                        <span class="info-value">${asignaturas.join(
-                          ", "
-                        )}</span>
-                    </div>
-                    <div class="info-row">
-                        <span class="info-label">GRUPO (S):</span>
-                        <span class="info-value">${gruposDocente.join(
-                          ", "
-                        )}</span>
-                    </div>
-                    <div class="info-row">
-                        <span class="info-label">TOTAL DE HORAS:</span>
-                        <span class="info-value">${totalHoras}</span>
-                    </div>
-                     <div class="info-row">
-                        <span class="info-label">NUM. EMPLEADO:</span>
-                        <span class="info-value">${numeroEmpleado}</span>
-                    </div>
-                </div>
-            </div>
-          `
-              : `
-          <div class="info-section">
-            <div class="info-left">
-              <div class="info-row">
-                <span class="info-label">SEMESTRE:</span>
-                <span class="info-value">${semestre}</span>
+          <div class="info-sections-container">
+              <div class="info-section">
+                  <div class="info-row">
+                      <span class="info-label">SEMESTRE:</span>
+                      <span class="info-value">${semestre}</span>
+                  </div>
+                  <div class="info-row">
+                      <span class="info-label">DOCENTE:</span>
+                      <span class="info-value">${titulo}</span>
+                  </div>
+                  <div class="info-row">
+                      <span class="info-label">ASIGNATURAS:</span>
+                      <span class="info-value">${asignaturas.join(", ")}</span>
+                  </div>
+                  <div class="info-row">
+                      <span class="info-label">GRUPO (S):</span>
+                      <span class="info-value">${gruposDocente.join(
+                        ", "
+                      )}</span>
+                  </div>
+                  <div class="info-row">
+                      <span class="info-label">TOTAL DE HORAS:</span>
+                      <span class="info-value">${totalHoras}</span>
+                  </div>
+                   <div class="info-row">
+                      <span class="info-label">NUM. EMPLEADO:</span>
+                      <span class="info-value">${numeroEmpleado}</span>
+                  </div>
               </div>
-              <div class="info-row">
-                <span class="info-label">GRUPO:</span>
-                <span class="info-value">${titulo}</span>
+              <div class="info-section">
+                  <div class="info-row">
+                      <span class="info-label">SEMESTRE:</span>
+                      <span class="info-value">${semestre}</span>
+                  </div>
+                   <div class="info-row">
+                      <span class="info-label">DOCENTE:</span>
+                      <span class="info-value">${titulo}</span>
+                  </div>
+                  <div class="info-row">
+                      <span class="info-label">ASIGNATURAS:</span>
+                      <span class="info-value">${asignaturas.join(", ")}</span>
+                  </div>
+                  <div class="info-row">
+                      <span class="info-label">GRUPO (S):</span>
+                      <span class="info-value">${gruposDocente.join(
+                        ", "
+                      )}</span>
+                  </div>
+                  <div class="info-row">
+                      <span class="info-label">TOTAL DE HORAS:</span>
+                      <span class="info-value">${totalHoras}</span>
+                  </div>
+                   <div class="info-row">
+                      <span class="info-label">NUM. EMPLEADO:</span>
+                      <span class="info-value">${numeroEmpleado}</span>
+                  </div>
               </div>
-            </div>
           </div>
-          `
-          }
           
           <div class="schedule-tables-container">
             <table class="schedule-table">
@@ -1480,53 +1432,12 @@ const ScheduleScreen = () => {
 
                           if (!horario) return "<td></td>";
 
-                          if (currentTab === "docentes") {
-                            const grupo = grupos.find(
-                              (g) => String(g.id) === String(horario.salonId)
-                            );
-                            // Agregar log para depuración
-                            if (!grupo) {
-                              console.log("Grupo no encontrado:", {
-                                buscandoId: horario.salonId,
-                                tipoId: typeof horario.salonId,
-                                gruposDisponibles: grupos.map((g) => ({
-                                  id: g.id,
-                                  tipo: typeof g.id,
-                                  nombre: g.nombre,
-                                })),
-                              });
-                            }
-                            // Mostrar el grupo en la celda del docente, con fallback
-                            return `<td class="group-cell">${
-                              grupo ? grupo.nombre : "Grupo no encontrado"
-                            }</td>`;
-                          } else {
-                            // currentTab === "grupos"
-                            const materia = materias.find(
-                              (m) => m.id === horario.materiaId
-                            );
-                            const docente = docentes.find(
-                              (d) => d.id === horario.docenteId
-                            );
-                            // Mostrar materia y docente en la celda del grupo, con fallbacks
-                            const materiaDisplay = materia
-                              ? materia.siglas ||
-                                materia.nombre.substring(0, 6).toUpperCase()
-                              : "Materia no encontrada";
-                            const docenteDisplay = docente
-                              ? `${docente.nombre.split(" ")[0]} ${
-                                  docente.apellido.split(" ")[0]
-                                }`
-                              : "Docente no encontrado";
-
-                            return `
-                                 <td class="class-cell">
-                                   ${materiaDisplay}
-                                   <br>
-                                   ${docenteDisplay}
-                                 </td>
-                               `;
-                          }
+                          const grupo = grupos.find(
+                            (g) => String(g.id) === String(horario.salonId)
+                          );
+                          return `<td class="group-cell">${
+                            grupo ? grupo.nombre : "Grupo no encontrado"
+                          }</td>`;
                         })
                         .join("")}
                     </tr>
@@ -1582,53 +1493,12 @@ const ScheduleScreen = () => {
 
                           if (!horario) return "<td></td>";
 
-                          if (currentTab === "docentes") {
-                            const grupo = grupos.find(
-                              (g) => String(g.id) === String(horario.salonId)
-                            );
-                            // Agregar log para depuración
-                            if (!grupo) {
-                              console.log("Grupo no encontrado:", {
-                                buscandoId: horario.salonId,
-                                tipoId: typeof horario.salonId,
-                                gruposDisponibles: grupos.map((g) => ({
-                                  id: g.id,
-                                  tipo: typeof g.id,
-                                  nombre: g.nombre,
-                                })),
-                              });
-                            }
-                            // Mostrar el grupo en la celda del docente, con fallback
-                            return `<td class="group-cell">${
-                              grupo ? grupo.nombre : "Grupo no encontrado"
-                            }</td>`;
-                          } else {
-                            // currentTab === "grupos"
-                            const materia = materias.find(
-                              (m) => m.id === horario.materiaId
-                            );
-                            const docente = docentes.find(
-                              (d) => d.id === horario.docenteId
-                            );
-                            // Mostrar materia y docente en la celda del grupo, con fallbacks
-                            const materiaDisplay = materia
-                              ? materia.siglas ||
-                                materia.nombre.substring(0, 6).toUpperCase()
-                              : "Materia no encontrada";
-                            const docenteDisplay = docente
-                              ? `${docente.nombre.split(" ")[0]} ${
-                                  docente.apellido.split(" ")[0]
-                                }`
-                              : "Docente no encontrado";
-
-                            return `
-                                 <td class="class-cell">
-                                   ${materiaDisplay}
-                                   <br>
-                                   ${docenteDisplay}
-                                 </td>
-                               `;
-                          }
+                          const grupo = grupos.find(
+                            (g) => String(g.id) === String(horario.salonId)
+                          );
+                          return `<td class="group-cell">${
+                            grupo ? grupo.nombre : "Grupo no encontrado"
+                          }</td>`;
                         })
                         .join("")}
                     </tr>
@@ -1672,6 +1542,427 @@ const ScheduleScreen = () => {
     } catch (error) {
       console.error("Error al generar PDF:", error);
       Alert.alert("Error", "No se pudo generar el PDF. Intenta de nuevo.");
+    }
+  };
+
+  const convertirAPdfGrupo = async (entidad: { id: string }) => {
+    try {
+      // Verificar datos disponibles
+      if (!Array.isArray(grupos) || grupos.length === 0) {
+        console.warn("No hay grupos disponibles:", grupos);
+        Alert.alert(
+          "Error",
+          "No hay datos de grupos disponibles para generar el PDF."
+        );
+        return;
+      }
+
+      // Obtener información de directivos
+      const director = directivos.find((d) => d.rol === "Director");
+      const subdirector = directivos.find(
+        (d) => d.rol === "Subdirector Académico"
+      );
+
+      const directorNombre = director ? director.nombre : "No asignado";
+      const directorPuesto = director
+        ? director.generoFemenino
+          ? "Directora"
+          : "Director"
+        : "Director";
+
+      const subdirectorNombre = subdirector
+        ? subdirector.nombre
+        : "No asignado";
+      const subdirectorPuesto = subdirector
+        ? subdirector.generoFemenino
+          ? "Subdirectora Académica"
+          : "Subdirector Académico"
+        : "Subdirector Académico";
+
+      const grupo = grupos?.find((g) => String(g.id) === String(entidad.id));
+      if (!grupo) {
+        Alert.alert("Error", "No se encontró el grupo");
+        return;
+      }
+
+      const titulo = grupo.nombre;
+
+      const horariosEntidad = horarios
+        .filter((h: Horario) => String(h.salonId) === String(entidad.id))
+        .sort((a: Horario, b: Horario) => {
+          const diasOrden: { [key: string]: number } = {
+            Lunes: 0,
+            Martes: 1,
+            Miércoles: 2,
+            Jueves: 3,
+            Viernes: 4,
+            Sábado: 5,
+          };
+          if (a.dia !== b.dia) {
+            return diasOrden[a.dia] - diasOrden[b.dia];
+          }
+          return (
+            convertirHoraAMinutos(a.horaInicio) -
+            convertirHoraAMinutos(b.horaFin)
+          );
+        });
+
+      // Determinar si hay clases en el turno matutino o vespertino
+      const hayClasesMatutinas = horariosEntidad.some(
+        (h) =>
+          convertirHoraAMinutos(h.horaInicio) < convertirHoraAMinutos("13:30")
+      );
+      const hayClasesVespertinas = horariosEntidad.some(
+        (h) =>
+          convertirHoraAMinutos(h.horaInicio) >= convertirHoraAMinutos("13:30")
+      );
+
+      // Seleccionar los bloques según el turno que tenga clases
+      const bloquesHorariosConHorarios = bloquesHorarios
+        .filter((bloque) => {
+          if (hayClasesMatutinas && !hayClasesVespertinas) {
+            return (
+              convertirHoraAMinutos(bloque.horaInicio) <
+              convertirHoraAMinutos("13:30")
+            );
+          } else if (!hayClasesMatutinas && hayClasesVespertinas) {
+            return (
+              convertirHoraAMinutos(bloque.horaInicio) >=
+              convertirHoraAMinutos("13:30")
+            );
+          }
+          return true;
+        })
+        .map((bloque) => {
+          const horariosEnBloque = horariosEntidad.filter(
+            (h: Horario) =>
+              convertirHoraAMinutos(h.horaInicio) <=
+                convertirHoraAMinutos(bloque.horaInicio) &&
+              convertirHoraAMinutos(h.horaFin) >
+                convertirHoraAMinutos(bloque.horaInicio)
+          );
+          return { ...bloque, horariosEnBloque };
+        });
+
+      // Obtener lista única de materias y docentes
+      const materiasYDocentes = horariosEntidad.reduce(
+        (acc: any[], horario) => {
+          const materia = materias.find((m) => m.id === horario.materiaId);
+          const docente = docentes.find((d) => d.id === horario.docenteId);
+          if (materia && docente) {
+            const materiaDisplay = `${
+              materia.siglas || materia.nombre.substring(0, 6).toUpperCase()
+            } - ${materia.nombre}`;
+            const docenteDisplay = `${docente.nombre} ${docente.apellido}`;
+            if (
+              !acc.some(
+                (item) =>
+                  item.materia === materiaDisplay &&
+                  item.docente === docenteDisplay
+              )
+            ) {
+              acc.push({ materia: materiaDisplay, docente: docenteDisplay });
+            }
+          }
+          return acc;
+        },
+        []
+      );
+
+      const html = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <style>
+            @page {
+              size: letter landscape;
+              margin: 15mm;
+            }
+            body {
+              font-family: Arial, sans-serif;
+              font-size: 12px;
+              margin: 0;
+              padding: 0;
+              line-height: 1.2;
+            }
+            
+            .header {
+              text-align: center;
+              margin-bottom: 20px;
+              padding-bottom: 10px;
+            }
+            
+            .header h1 {
+              font-size: 16px;
+              font-weight: bold;
+              margin: 0 0 3px 0;
+              text-transform: uppercase;
+            }
+            
+            .header h2 {
+              font-size: 16px;
+              font-weight: normal;
+              margin: 0 0 3px 0;
+              text-transform: uppercase;
+            }
+            
+            .header h3 {
+              font-size: 16px;
+              font-weight: normal;
+              margin: 0 0 5px 0;
+              text-transform: uppercase;
+            }
+            
+            .header .title {
+              font-size: 18px;
+              font-weight: bold;
+              margin: 8px 0 0 0;
+              font-style: italic;
+              text-transform: uppercase;
+            }
+            
+            .info-section {
+              display: flex;
+              justify-content: space-between;
+              font-size: 10px;
+              width: 100%;
+              margin-bottom: 15px;
+            }
+            
+            .info-row {
+              display: flex;
+              margin-bottom: 3px;
+              border-bottom: 1px solid #000;
+              padding-bottom: 1px;
+            }
+            
+            .info-label {
+              font-weight: bold;
+              width: 120px;
+              flex-shrink: 0;
+            }
+            
+            .info-value {
+              flex: 1;
+              text-transform: uppercase;
+            }
+            
+            .content-container {
+              display: flex;
+              gap: 20px;
+              align-items: flex-start;
+            }
+
+            .schedule-table {
+              flex: 2;
+              border-collapse: collapse;
+              margin-bottom: 20px;
+              font-size: 9px;
+              width: 65%;
+            }
+            
+            .schedule-table th,
+            .schedule-table td {
+              border: 1px solid #000;
+              text-align: center;
+              vertical-align: middle;
+              padding: 2px;
+              height: 25px;
+            }
+            
+            .schedule-table th {
+              background-color: #94d454;
+              font-weight: bold;
+              font-size: 10px;
+            }
+            
+            .time-column {
+              width: 60px;
+              font-weight: bold;
+              background-color: #f5f5f5;
+            }
+            
+            .day-column {
+              width: 80px;
+            }
+            
+            .receso-row th {
+              background-color: #94d454;
+              font-weight: bold;
+              letter-spacing: 2px;
+            }
+            
+            .class-cell {
+              font-size: 8px;
+              font-weight: bold;
+              text-transform: uppercase;
+              line-height: 1.1;
+              padding: 1px;
+            }
+
+            .subjects-table {
+              flex: 1;
+              border-collapse: collapse;
+              margin-bottom: 20px;
+              font-size: 9px;
+              width: 30%;
+            }
+
+            .subjects-table th,
+            .subjects-table td {
+              border: 1px solid #000;
+              text-align: left;
+              vertical-align: middle;
+              padding: 4px;
+              height: 20px;
+            }
+
+            .subjects-table th {
+              background-color: #94d454;
+              font-weight: bold;
+              font-size: 10px;
+              text-align: center;
+            }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <h1>COLEGIO DE BACHILLERES DEL ESTADO DE VERACRUZ</h1>
+            <h2>ORGANISMO PÚBLICO DESCENTRALIZADO</h2>
+            <h3>${nombrePlantel}</h3>
+            <div class="title">HORARIO DE GRUPO ${titulo}</div>
+          </div>
+          
+          <div class="info-section">
+            <div class="info-row">
+              <span class="info-label">PLANTEL:</span>
+              <span class="info-value">${nombrePlantel}</span>
+            </div>
+            <div class="info-row">
+              <span class="info-label">SEMESTRE:</span>
+              <span class="info-value">${semestre}</span>
+            </div>
+          </div>
+          
+          <div class="content-container">
+            <table class="schedule-table">
+              <thead>
+                <tr>
+                  <th class="time-column">HORA</th>
+                  ${["L", "M", "M", "J", "V", "S"]
+                    .map((dia) => `<th class="day-column">${dia}</th>`)
+                    .join("")}  
+                </tr>
+              </thead>
+              <tbody>
+                ${bloquesHorariosConHorarios
+                  .map((bloque) => {
+                    if (bloque.esReceso) {
+                      return `
+                      <tr class="receso-row">
+                        <th class="time-column">${bloque.horaInicio}<br>${bloque.horaFin}</th>
+                        <th>R</th>
+                        <th>E</th>
+                        <th>C</th>
+                        <th>E</th>
+                        <th>S</th>
+                        <th>O</th>
+                      </tr>
+                    `;
+                    }
+
+                    return `
+                    <tr>
+                      <td class="time-column">${bloque.horaInicio}<br>${
+                      bloque.horaFin
+                    }</td>
+                      ${[
+                        "Lunes",
+                        "Martes",
+                        "Miércoles",
+                        "Jueves",
+                        "Viernes",
+                        "Sábado",
+                      ]
+                        .map((diaCompleto) => {
+                          const horario = bloque.horariosEnBloque.find(
+                            (h: Horario) => h.dia === diaCompleto
+                          );
+
+                          if (!horario) return "<td></td>";
+
+                          const materia = materias.find(
+                            (m) => m.id === horario.materiaId
+                          );
+                          const materiaDisplay = materia
+                            ? materia.siglas ||
+                              materia.nombre.substring(0, 6).toUpperCase()
+                            : "Materia no encontrada";
+
+                          return `
+                               <td class="class-cell">
+                                 ${materiaDisplay}
+                               </td>
+                             `;
+                        })
+                        .join("")}
+                    </tr>
+                  `;
+                  })
+                  .join("")}
+              </tbody>
+            </table>
+
+            <table class="subjects-table">
+              <thead>
+                <tr>
+                  <th>ASIGNATURA</th>
+                  <th>DOCENTE</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${materiasYDocentes
+                  .map(
+                    (item) => `
+                  <tr>
+                    <td>${item.materia}</td>
+                    <td>${item.docente}</td>
+                  </tr>
+                `
+                  )
+                  .join("")}
+              </tbody>
+            </table>
+          </div>
+        </body>
+        </html>
+      `;
+
+      const { uri } = await Print.printToFileAsync({
+        html,
+        base64: false,
+        width: 612,
+        height: 792,
+      });
+
+      await Sharing.shareAsync(uri, {
+        mimeType: "application/pdf",
+        dialogTitle: "Compartir horario",
+        UTI: "com.adobe.pdf",
+      });
+    } catch (error) {
+      console.error("Error al generar PDF:", error);
+      Alert.alert("Error", "No se pudo generar el PDF. Intenta de nuevo.");
+    }
+  };
+
+  const convertirAPdf = async (entidad: { id: string }) => {
+    if (currentTab === "docentes") {
+      await convertirAPdfDocente(entidad);
+    } else {
+      await convertirAPdfGrupo(entidad);
     }
   };
 
@@ -2116,15 +2407,20 @@ const ScheduleScreen = () => {
             h.docenteId === docenteId
         );
 
-        // Verificar si el grupo ya tiene clase en ese horario
-        const grupoOcupado = horarios.some(
+        // Verificar si el grupo ya tiene clase en ese horario en el mismo día
+        const grupoOcupadoEnDia = horarios.some(
           (h) =>
             h.dia === dia &&
             h.horaInicio === bloque.horaInicio &&
             h.salonId === grupoId
         );
 
-        return !docenteOcupado && !grupoOcupado;
+        // Verificar si el grupo ya tiene clase en esa hora en cualquier día (vertical)
+        const grupoOcupadoEnHora = horarios.some(
+          (h) => h.horaInicio === bloque.horaInicio && h.salonId === grupoId
+        );
+
+        return !docenteOcupado && !grupoOcupadoEnDia && !grupoOcupadoEnHora;
       };
 
       // Función para encontrar el mejor bloque disponible
@@ -2180,25 +2476,80 @@ const ScheduleScreen = () => {
 
           // Priorizar bloques continuos
           if (esBloqueContinuo(dia, bloque)) {
-            puntuacion += 10;
+            puntuacion += 20; // Aumentamos la prioridad de bloques continuos
           }
 
-          // Priorizar bloques en la mañana para turno matutino
-          if (
-            turno === "matutino" &&
-            convertirHoraAMinutos(bloque.horaInicio) <
-              convertirHoraAMinutos("10:00")
-          ) {
-            puntuacion += 5;
+          // Priorizar horarios tempranos según el turno
+          const horaInicioMinutos = convertirHoraAMinutos(bloque.horaInicio);
+          if (turno === "matutino") {
+            if (horaInicioMinutos < convertirHoraAMinutos("08:00")) {
+              puntuacion += 25; // Máxima prioridad para primeras horas de la mañana
+            } else if (horaInicioMinutos < convertirHoraAMinutos("10:00")) {
+              puntuacion += 20;
+            } else if (horaInicioMinutos < convertirHoraAMinutos("12:00")) {
+              puntuacion += 15;
+            }
+          } else if (turno === "vespertino") {
+            if (horaInicioMinutos < convertirHoraAMinutos("14:00")) {
+              puntuacion += 25; // Máxima prioridad para primeras horas de la tarde
+            } else if (horaInicioMinutos < convertirHoraAMinutos("16:00")) {
+              puntuacion += 20;
+            } else if (horaInicioMinutos < convertirHoraAMinutos("18:00")) {
+              puntuacion += 15;
+            }
           }
 
-          // Priorizar bloques en la tarde para turno vespertino
-          if (
-            turno === "vespertino" &&
-            convertirHoraAMinutos(bloque.horaInicio) >=
-              convertirHoraAMinutos("16:00")
-          ) {
-            puntuacion += 5;
+          // Penalizar espacios libres entre clases
+          const horariosDelDia = horariosAsignados.filter((h) => h.dia === dia);
+          if (horariosDelDia.length > 0) {
+            const hayEspacioLibre = horariosDelDia.some((h) => {
+              const horaFinHorario = convertirHoraAMinutos(h.horaFin);
+              const horaInicioBloque = convertirHoraAMinutos(bloque.horaInicio);
+              const horaFinBloque = convertirHoraAMinutos(bloque.horaFin);
+              const horaInicioHorario = convertirHoraAMinutos(h.horaInicio);
+
+              // Si hay un espacio libre entre clases
+              return (
+                (horaFinHorario < horaInicioBloque &&
+                  horaInicioBloque - horaFinHorario > 60) ||
+                (horaFinBloque < horaInicioHorario &&
+                  horaInicioHorario - horaFinBloque > 60)
+              );
+            });
+
+            if (hayEspacioLibre) {
+              puntuacion -= 25; // Mayor penalización por espacios libres
+            }
+          }
+
+          // Priorizar el llenado horizontal (de lunes a viernes)
+          const indiceDia = diasOrdenados.indexOf(dia);
+          const numHorariosEnDia = horariosDelDia.length;
+          puntuacion += (5 - indiceDia) * 2; // Más puntuación para días anteriores
+          puntuacion += numHorariosEnDia * 3; // Más puntuación para días con más clases
+
+          // Penalizar horarios dispersos
+          const horariosOrdenados = [...horariosDelDia].sort(
+            (a, b) =>
+              convertirHoraAMinutos(a.horaInicio) -
+              convertirHoraAMinutos(b.horaInicio)
+          );
+
+          if (horariosOrdenados.length > 0) {
+            const distanciaPromedio =
+              horariosOrdenados.reduce((acc: number, h, i) => {
+                if (i === 0) return acc;
+                const distancia =
+                  convertirHoraAMinutos(h.horaInicio) -
+                  convertirHoraAMinutos(horariosOrdenados[i - 1].horaFin);
+                return acc + distancia;
+              }, 0) /
+              (horariosOrdenados.length - 1);
+
+            if (distanciaPromedio > 60) {
+              // Si hay más de 1 hora de promedio entre clases
+              puntuacion -= 20;
+            }
           }
 
           return puntuacion;
@@ -2209,9 +2560,17 @@ const ScheduleScreen = () => {
           let mejorPuntuacion = -1;
           let mejorBloque = null;
 
-          for (const bloque of bloquesDisponibles) {
-            if (bloque.esReceso) continue;
-            for (const dia of diasOrdenados) {
+          // Primero intentar con bloques en días con menos clases
+          const diasPorClases = diasOrdenados
+            .map((dia) => ({
+              dia,
+              clases: horariosAsignados.filter((h) => h.dia === dia).length,
+            }))
+            .sort((a, b) => a.clases - b.clases);
+
+          for (const { dia } of diasPorClases) {
+            for (const bloque of bloquesDisponibles) {
+              if (bloque.esReceso) continue;
               if (
                 disponibilidad[dia][bloque.horaInicio] &&
                 isBloqueDisponible(dia, bloque, docenteId, grupoId)
@@ -2227,52 +2586,22 @@ const ScheduleScreen = () => {
           return mejorBloque;
         }
 
-        // Primero buscar si el grupo ya tiene alguna hora asignada
-        const horariosGrupo = horariosAsignados.filter(
-          (h) => h.salonId === grupoId
-        );
-
-        if (horariosGrupo.length > 0) {
-          // Intentar mantener la misma hora en diferentes días
-          const horaPreferida = horariosGrupo[0].horaInicio;
-          const bloquePreferido = bloquesDisponibles.find(
-            (b) => b.horaInicio === horaPreferida
-          );
-
-          if (bloquePreferido && !bloquePreferido.esReceso) {
-            let mejorPuntuacion = -1;
-            let mejorDia = null;
-
-            for (const dia of diasOrdenados) {
-              if (
-                disponibilidad[dia][horaPreferida] &&
-                isBloqueDisponible(dia, bloquePreferido, docenteId, grupoId)
-              ) {
-                const puntuacion = calcularPuntuacionBloque(
-                  dia,
-                  bloquePreferido
-                );
-                if (puntuacion > mejorPuntuacion) {
-                  mejorPuntuacion = puntuacion;
-                  mejorDia = dia;
-                }
-              }
-            }
-
-            if (mejorDia) {
-              return { dia: mejorDia, bloque: bloquePreferido };
-            }
-          }
-        }
-
-        // Si no se pudo mantener la misma hora, buscar el mejor bloque disponible
+        // Buscar el mejor bloque disponible priorizando el llenado horizontal
         let mejorPuntuacion = -1;
         let mejorBloque = null;
 
-        for (const bloque of bloquesDisponibles) {
-          if (bloque.esReceso) continue;
+        // Ordenar los días por número de clases (menos a más)
+        const diasOrdenadosPorClases = diasOrdenados
+          .map((dia) => ({
+            dia,
+            clases: horariosAsignados.filter((h) => h.dia === dia).length,
+          }))
+          .sort((a, b) => a.clases - b.clases)
+          .map((d) => d.dia);
 
-          for (const dia of diasOrdenados) {
+        for (const dia of diasOrdenadosPorClases) {
+          for (const bloque of bloquesDisponibles) {
+            if (bloque.esReceso) continue;
             if (
               disponibilidad[dia][bloque.horaInicio] &&
               isBloqueDisponible(dia, bloque, docenteId, grupoId)
@@ -2286,18 +2615,7 @@ const ScheduleScreen = () => {
           }
         }
 
-        if (mejorBloque) {
-          return mejorBloque;
-        }
-
-        // Si no se encontró un bloque, intentar de nuevo con una estrategia diferente
-        return encontrarMejorBloque(
-          docenteId,
-          grupoId,
-          disponibilidad,
-          horariosAsignados,
-          intentos + 1
-        );
+        return mejorBloque;
       };
 
       for (const docente of docentes) {
