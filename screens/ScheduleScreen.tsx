@@ -49,6 +49,47 @@ const ScheduleScreen = () => {
     dia: string;
     bloque: { horaInicio: string; horaFin: string; esReceso: boolean };
   } | null>(null);
+  const [nombrePlantel, setNombrePlantel] = useState("");
+  const [semestre, setSemestre] = useState("");
+
+  // Cargar datos guardados al iniciar
+  useEffect(() => {
+    const cargarDatosGuardados = async () => {
+      try {
+        const plantelGuardado = await AsyncStorage.getItem("nombrePlantel");
+        const semestreGuardado = await AsyncStorage.getItem("semestre");
+
+        if (plantelGuardado) {
+          setNombrePlantel(plantelGuardado);
+        }
+        if (semestreGuardado) {
+          setSemestre(semestreGuardado);
+        }
+      } catch (error) {
+        console.error("Error al cargar datos guardados:", error);
+      }
+    };
+
+    cargarDatosGuardados();
+  }, []);
+
+  // Guardar datos cuando cambien
+  useEffect(() => {
+    const guardarDatos = async () => {
+      try {
+        if (nombrePlantel) {
+          await AsyncStorage.setItem("nombrePlantel", nombrePlantel);
+        }
+        if (semestre) {
+          await AsyncStorage.setItem("semestre", semestre);
+        }
+      } catch (error) {
+        console.error("Error al guardar datos:", error);
+      }
+    };
+
+    guardarDatos();
+  }, [nombrePlantel, semestre]);
 
   // Estado para la configuración de generación automática
   const [autoScheduleConfig, setAutoScheduleConfig] = useState({
@@ -1300,12 +1341,14 @@ const ScheduleScreen = () => {
           <div class="header">
             <h1>COLEGIO DE BACHILLERES DEL ESTADO DE VERACRUZ</h1>
             <h2>ORGANISMO PÚBLICO DESCENTRALIZADO</h2>
-            <h3>PLANTEL 18 - COATZACOALCOS</h3>
-            <div class="title">${
-              currentTab === "docentes"
-                ? "HORARIO INDIVIDUAL"
-                : "HORARIO DE GRUPO"
-            }</div>
+            <h3>${nombrePlantel}</h3>
+            <div class="title">
+              ${
+                currentTab === "docentes"
+                  ? "HORARIO INDIVIDUAL"
+                  : "HORARIO DE GRUPO"
+              }
+            </div>
           </div>
           
           ${
@@ -1315,7 +1358,7 @@ const ScheduleScreen = () => {
                 <div class="info-section">
                     <div class="info-row">
                         <span class="info-label">SEMESTRE:</span>
-                        <span class="info-value">2025-A</span>
+                        <span class="info-value">${semestre}</span>
                     </div>
                     <div class="info-row">
                         <span class="info-label">DOCENTE:</span>
@@ -1345,7 +1388,7 @@ const ScheduleScreen = () => {
                 <div class="info-section">
                     <div class="info-row">
                         <span class="info-label">SEMESTRE:</span>
-                        <span class="info-value">2025-A</span>
+                        <span class="info-value">${semestre}</span>
                     </div>
                      <div class="info-row">
                         <span class="info-label">DOCENTE:</span>
@@ -1379,7 +1422,7 @@ const ScheduleScreen = () => {
             <div class="info-left">
               <div class="info-row">
                 <span class="info-label">SEMESTRE:</span>
-                <span class="info-value">2025-A</span>
+                <span class="info-value">${semestre}</span>
               </div>
               <div class="info-row">
                 <span class="info-label">GRUPO:</span>
@@ -1668,6 +1711,52 @@ const ScheduleScreen = () => {
   const renderAutoScheduleTab = () => {
     return (
       <View style={{ flex: 1 }}>
+        <View
+          style={[styles.autoScheduleHeader, { borderColor: colors.border }]}
+        >
+          <View style={styles.autoScheduleInputContainer}>
+            <Text
+              style={[styles.autoScheduleInputLabel, { color: colors.text }]}
+            >
+              Nombre del Plantel:
+            </Text>
+            <TextInput
+              style={[
+                styles.autoScheduleInput,
+                {
+                  backgroundColor: colors.card,
+                  color: colors.text,
+                  borderColor: colors.border,
+                },
+              ]}
+              value={nombrePlantel}
+              onChangeText={setNombrePlantel}
+              placeholder="Ingrese el nombre del plantel"
+              placeholderTextColor={colors.text + "80"}
+            />
+          </View>
+          <View style={styles.autoScheduleInputContainer}>
+            <Text
+              style={[styles.autoScheduleInputLabel, { color: colors.text }]}
+            >
+              Semestre:
+            </Text>
+            <TextInput
+              style={[
+                styles.autoScheduleInput,
+                {
+                  backgroundColor: colors.card,
+                  color: colors.text,
+                  borderColor: colors.border,
+                },
+              ]}
+              value={semestre}
+              onChangeText={setSemestre}
+              placeholder="Ingrese el semestre"
+              placeholderTextColor={colors.text + "80"}
+            />
+          </View>
+        </View>
         <ScrollView style={{ flex: 1 }}>
           {docentes.map((docente) => {
             const isExpanded = expandedDocenteId === docente.id;
@@ -2387,7 +2476,7 @@ const ScheduleScreen = () => {
               { color: currentTab === "auto" ? colors.primary : colors.text },
             ]}
           >
-            Generación Automática
+            Generación
           </Text>
         </TouchableOpacity>
       </View>
@@ -2857,6 +2946,33 @@ const styles = StyleSheet.create({
   turnoButtonText: {
     fontSize: 12,
     fontWeight: "500",
+  },
+  autoScheduleHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingBottom: 15,
+    paddingHorizontal: 16,
+    paddingTop: 16,
+    borderBottomWidth: 1,
+  },
+  autoScheduleInputContainer: {
+    flex: 1,
+    marginRight: 10,
+    paddingHorizontal: 8,
+  },
+  autoScheduleInputLabel: {
+    fontSize: 14,
+    fontWeight: "bold",
+    marginBottom: 8,
+  },
+  autoScheduleInput: {
+    width: "100%",
+    padding: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    textAlign: "center",
+    fontSize: 14,
   },
 });
 
