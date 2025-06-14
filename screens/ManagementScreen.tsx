@@ -20,6 +20,7 @@ import { Feather } from "@expo/vector-icons";
 import * as DocumentPicker from "expo-document-picker";
 import * as FileSystem from "expo-file-system";
 import * as XLSX from "xlsx";
+import { commonStyles } from "../styles/theme";
 
 const ManagementScreen = () => {
   const { colors, theme } = useTheme();
@@ -2227,66 +2228,7 @@ const ManagementScreen = () => {
             </View>
           </>
         );
-      case "administrativos":
-        return (
-          <>
-            <Text style={[styles.label, { color: colors.text }]}>
-              Nombre Completo:
-            </Text>
-            <TextInput
-              style={[
-                styles.input,
-                {
-                  backgroundColor: colors.card || "#f5f5f5",
-                  color: colors.text,
-                },
-              ]}
-              value={administrativoForm.nombre}
-              onChangeText={(text) =>
-                setAdministrativoForm({ ...administrativoForm, nombre: text })
-              }
-              placeholder="Nombre completo"
-              placeholderTextColor={colors.placeholder || "#999"}
-            />
 
-            <Text style={[styles.label, { color: colors.text }]}>Celular:</Text>
-            <TextInput
-              style={[
-                styles.input,
-                {
-                  backgroundColor: colors.card || "#f5f5f5",
-                  color: colors.text,
-                },
-              ]}
-              value={administrativoForm.celular}
-              onChangeText={(text) =>
-                setAdministrativoForm({ ...administrativoForm, celular: text })
-              }
-              placeholder="Celular"
-              placeholderTextColor={colors.placeholder || "#999"}
-              keyboardType="phone-pad"
-            />
-
-            <Text style={[styles.label, { color: colors.text }]}>Correo:</Text>
-            <TextInput
-              style={[
-                styles.input,
-                {
-                  backgroundColor: colors.card || "#f5f5f5",
-                  color: colors.text,
-                },
-              ]}
-              value={administrativoForm.correo}
-              onChangeText={(text) =>
-                setAdministrativoForm({ ...administrativoForm, correo: text })
-              }
-              placeholder="Correo electrónico"
-              placeholderTextColor={colors.placeholder || "#999"}
-              keyboardType="email-address"
-              autoCapitalize="none"
-            />
-          </>
-        );
       default:
         return null;
     }
@@ -2296,13 +2238,23 @@ const ManagementScreen = () => {
     container: {
       flex: 1,
     },
-    tabsContainer: {},
-    tabsScroll: {
+    tabsContainer: {
       flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      paddingVertical: 10,
+      paddingHorizontal: 15,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.border,
+    },
+    tabsContent: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
     },
     tab: {
-      paddingVertical: 15,
-      paddingHorizontal: 20,
+      paddingVertical: 10,
+      paddingHorizontal: 15,
       borderBottomWidth: 2,
       borderBottomColor: "transparent",
     },
@@ -2311,9 +2263,10 @@ const ManagementScreen = () => {
     },
     tabText: {
       fontSize: 16,
+      letterSpacing: 0.3,
     },
     activeTabText: {
-      fontWeight: "bold",
+      fontWeight: "600",
     },
     contentContainer: {
       flex: 1,
@@ -2326,33 +2279,48 @@ const ManagementScreen = () => {
       marginBottom: 15,
     },
     headerTitle: {
-      fontSize: 20,
-      fontWeight: "bold",
+      fontSize: 24,
+      fontWeight: "600",
+      letterSpacing: 0.5,
     },
     headerButtons: {
       flexDirection: "row",
       alignItems: "center",
+      gap: 10,
     },
     uploadButton: {
-      width: 40,
-      height: 40,
-      borderRadius: 20,
+      ...commonStyles.buttonIcon,
+      backgroundColor: theme === "dark" ? "#ffffff" : colors.primary,
       justifyContent: "center",
       alignItems: "center",
-      marginRight: 8,
     },
     addButton: {
-      width: 40,
-      height: 40,
-      borderRadius: 20,
+      ...commonStyles.buttonIcon,
+      backgroundColor: theme === "dark" ? "#ffffff" : colors.primary,
       justifyContent: "center",
       alignItems: "center",
-      marginRight: 8,
     },
     deleteButton: {
-      width: 40,
-      height: 40,
-      borderRadius: 20,
+      ...commonStyles.buttonIcon,
+      backgroundColor: theme === "dark" ? "#ffffff" : colors.primary,
+      justifyContent: "center",
+      alignItems: "center",
+    },
+    emailButton: {
+      ...commonStyles.buttonIconSmall,
+      backgroundColor: theme === "dark" ? "#ffffff" : colors.primary,
+      justifyContent: "center",
+      alignItems: "center",
+    },
+    editButton: {
+      ...commonStyles.buttonIconSmall,
+      backgroundColor: theme === "dark" ? "#ffffff" : colors.primary,
+      justifyContent: "center",
+      alignItems: "center",
+    },
+    cardDeleteButton: {
+      ...commonStyles.buttonIconSmall,
+      backgroundColor: theme === "dark" ? "#ffffff" : colors.primary,
       justifyContent: "center",
       alignItems: "center",
     },
@@ -2373,36 +2341,17 @@ const ManagementScreen = () => {
     },
     itemTitle: {
       fontSize: 16,
-      fontWeight: "bold",
+      fontWeight: "600",
       marginBottom: 5,
+      letterSpacing: 0.3,
     },
     itemSubtitle: {
       fontSize: 14,
+      letterSpacing: 0.2,
     },
     itemActions: {
       flexDirection: "row",
       gap: 8,
-    },
-    emailButton: {
-      width: 32,
-      height: 32,
-      borderRadius: 16,
-      justifyContent: "center",
-      alignItems: "center",
-    },
-    editButton: {
-      width: 32,
-      height: 32,
-      borderRadius: 16,
-      justifyContent: "center",
-      alignItems: "center",
-    },
-    cardDeleteButton: {
-      width: 32,
-      height: 32,
-      borderRadius: 16,
-      justifyContent: "center",
-      alignItems: "center",
     },
     modalContainer: {
       flex: 1,
@@ -2421,15 +2370,17 @@ const ManagementScreen = () => {
       elevation: 5,
     },
     modalTitle: {
-      fontSize: 18,
-      fontWeight: "bold",
+      fontSize: 20,
+      fontWeight: "600",
       marginBottom: 15,
       textAlign: "center",
+      letterSpacing: 0.5,
     },
     modalSubtitle: {
       fontSize: 16,
       marginBottom: 15,
       textAlign: "center",
+      letterSpacing: 0.3,
     },
     input: {
       height: 40,
@@ -2484,10 +2435,13 @@ const ManagementScreen = () => {
       flex: 1,
       marginHorizontal: 5,
       alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: theme === "dark" ? "#ffffff" : colors.primary,
     },
     modalButtonText: {
-      color: "#ffffff",
-      fontWeight: "bold",
+      color: theme === "dark" ? colors.text : "#ffffff",
+      fontWeight: "600",
+      letterSpacing: 0.5,
     },
     loadingModalContent: {
       width: "80%",
@@ -2505,8 +2459,9 @@ const ManagementScreen = () => {
     },
     loadingText: {
       fontSize: 16,
-      fontWeight: "bold",
+      fontWeight: "600",
       textAlign: "center",
+      letterSpacing: 0.3,
     },
     excelDataList: {
       width: "100%",
@@ -2544,11 +2499,13 @@ const ManagementScreen = () => {
     },
     excelItemTitle: {
       fontSize: 16,
-      fontWeight: "bold",
+      fontWeight: "600",
       marginBottom: 4,
+      letterSpacing: 0.3,
     },
     excelItemSubtitle: {
       fontSize: 14,
+      letterSpacing: 0.2,
     },
     docentesList: {
       maxHeight: 200,
@@ -2716,11 +2673,7 @@ const ManagementScreen = () => {
       />
 
       <View style={styles.tabsContainer}>
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          style={styles.tabsScroll}
-        >
+        <View style={styles.tabsContent}>
           <TouchableOpacity
             style={[
               styles.tab,
@@ -2833,28 +2786,9 @@ const ManagementScreen = () => {
               ],
             ]}
             onPress={() => setActiveTab("administrativos")}
-          >
-            <Text
-              style={[
-                styles.tabText,
-                activeTab === "administrativos" && [
-                  styles.activeTabText,
-                  { color: colors.primary },
-                ],
-                {
-                  color:
-                    activeTab === "administrativos"
-                      ? colors.primary
-                      : colors.text,
-                },
-              ]}
-            >
-              Académicos
-            </Text>
-          </TouchableOpacity>
-        </ScrollView>
+          ></TouchableOpacity>
+        </View>
       </View>
-
       <View
         style={[
           styles.searchContainer,

@@ -1,14 +1,22 @@
-"use client"
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert } from "react-native"
-import { useTheme } from "../context/ThemeContext"
-import { useData } from "../context/DataContext"
-import { Feather } from "@expo/vector-icons"
-import * as Print from "expo-print"
-import * as Sharing from "expo-sharing"
+"use client";
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  ScrollView,
+  Alert,
+} from "react-native";
+import { useTheme } from "../context/ThemeContext";
+import { useData } from "../context/DataContext";
+import { Feather } from "@expo/vector-icons";
+import * as Print from "expo-print";
+import * as Sharing from "expo-sharing";
+import { commonStyles } from "../styles/theme";
 
 const StatisticsScreen = () => {
-  const { colors } = useTheme()
-  const { docentes, materias, grupos, directivos, horarios } = useData()
+  const { colors } = useTheme();
+  const { docentes, materias, grupos, directivos, horarios } = useData();
 
   const stats = [
     { title: "Docentes", count: docentes.length, icon: "users" },
@@ -16,13 +24,13 @@ const StatisticsScreen = () => {
     { title: "Grupos", count: grupos.length, icon: "layers" },
     { title: "Directivos", count: directivos.length, icon: "briefcase" },
     { title: "Horarios", count: horarios.length, icon: "clock" },
-  ]
+  ];
 
   const generateDocentesPDF = async () => {
     try {
       if (docentes.length === 0) {
-        Alert.alert("Error", "No hay docentes para generar el PDF")
-        return
+        Alert.alert("Error", "No hay docentes para generar el PDF");
+        return;
       }
 
       const html = `
@@ -91,35 +99,35 @@ const StatisticsScreen = () => {
                 <td>${docente.email}</td>
                 <td>${docente.numeroEmpleado}</td>
               </tr>
-            `,
+            `
               )
               .join("")}
           </table>
         </body>
         </html>
-      `
+      `;
 
       const { uri } = await Print.printToFileAsync({
         html,
         base64: false,
-      })
+      });
 
       await Sharing.shareAsync(uri, {
         mimeType: "application/pdf",
         dialogTitle: "Compartir lista de docentes",
         UTI: "com.adobe.pdf",
-      })
+      });
     } catch (error) {
-      console.error("Error al generar PDF:", error)
-      Alert.alert("Error", "No se pudo generar el PDF. Intenta de nuevo.")
+      console.error("Error al generar PDF:", error);
+      Alert.alert("Error", "No se pudo generar el PDF. Intenta de nuevo.");
     }
-  }
+  };
 
   const generateMateriasPDF = async () => {
     try {
       if (materias.length === 0) {
-        Alert.alert("Error", "No hay materias para generar el PDF")
-        return
+        Alert.alert("Error", "No hay materias para generar el PDF");
+        return;
       }
 
       const html = `
@@ -186,35 +194,35 @@ const StatisticsScreen = () => {
                 <td>${materia.nombre}</td>
                 <td>${materia.siglas}</td>
               </tr>
-            `,
+            `
               )
               .join("")}
           </table>
         </body>
         </html>
-      `
+      `;
 
       const { uri } = await Print.printToFileAsync({
         html,
         base64: false,
-      })
+      });
 
       await Sharing.shareAsync(uri, {
         mimeType: "application/pdf",
         dialogTitle: "Compartir lista de materias",
         UTI: "com.adobe.pdf",
-      })
+      });
     } catch (error) {
-      console.error("Error al generar PDF:", error)
-      Alert.alert("Error", "No se pudo generar el PDF. Intenta de nuevo.")
+      console.error("Error al generar PDF:", error);
+      Alert.alert("Error", "No se pudo generar el PDF. Intenta de nuevo.");
     }
-  }
+  };
 
   const generateGruposPDF = async () => {
     try {
       if (grupos.length === 0) {
-        Alert.alert("Error", "No hay grupos para generar el PDF")
-        return
+        Alert.alert("Error", "No hay grupos para generar el PDF");
+        return;
       }
 
       const html = `
@@ -275,8 +283,10 @@ const StatisticsScreen = () => {
             </tr>
             ${grupos
               .map((grupo, index) => {
-                const docente = docentes.find((d) => d.id === grupo.docenteId)
-                const docenteNombre = docente ? `${docente.nombre} ${docente.apellido}` : "No asignado"
+                const docente = docentes.find((d) => d.id === grupo.docenteId);
+                const docenteNombre = docente
+                  ? `${docente.nombre} ${docente.apellido}`
+                  : "No asignado";
 
                 return `
                 <tr>
@@ -284,35 +294,35 @@ const StatisticsScreen = () => {
                   <td>${grupo.nombre}</td>
                   <td>${docenteNombre}</td>
                 </tr>
-              `
+              `;
               })
               .join("")}
           </table>
         </body>
         </html>
-      `
+      `;
 
       const { uri } = await Print.printToFileAsync({
         html,
         base64: false,
-      })
+      });
 
       await Sharing.shareAsync(uri, {
         mimeType: "application/pdf",
         dialogTitle: "Compartir lista de grupos",
         UTI: "com.adobe.pdf",
-      })
+      });
     } catch (error) {
-      console.error("Error al generar PDF:", error)
-      Alert.alert("Error", "No se pudo generar el PDF. Intenta de nuevo.")
+      console.error("Error al generar PDF:", error);
+      Alert.alert("Error", "No se pudo generar el PDF. Intenta de nuevo.");
     }
-  }
+  };
 
   const generateDirectivosPDF = async () => {
     try {
       if (directivos.length === 0) {
-        Alert.alert("Error", "No hay directivos para generar el PDF")
-        return
+        Alert.alert("Error", "No hay directivos para generar el PDF");
+        return;
       }
 
       const html = `
@@ -379,8 +389,8 @@ const StatisticsScreen = () => {
                       ? "Directora"
                       : "Director"
                     : directivo.generoFemenino
-                      ? "Subdirectora Académica"
-                      : "Subdirector Académico"
+                    ? "Subdirectora Académica"
+                    : "Subdirector Académico";
 
                 return `
                 <tr>
@@ -388,82 +398,102 @@ const StatisticsScreen = () => {
                   <td>${directivo.nombre}</td>
                   <td>${puesto}</td>
                 </tr>
-              `
+              `;
               })
               .join("")}
           </table>
         </body>
         </html>
-      `
+      `;
 
       const { uri } = await Print.printToFileAsync({
         html,
         base64: false,
-      })
+      });
 
       await Sharing.shareAsync(uri, {
         mimeType: "application/pdf",
         dialogTitle: "Compartir lista de directivos",
         UTI: "com.adobe.pdf",
-      })
+      });
     } catch (error) {
-      console.error("Error al generar PDF:", error)
-      Alert.alert("Error", "No se pudo generar el PDF. Intenta de nuevo.")
+      console.error("Error al generar PDF:", error);
+      Alert.alert("Error", "No se pudo generar el PDF. Intenta de nuevo.");
     }
-  }
+  };
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <ScrollView>
         <View style={styles.statsContainer}>
           {stats.map((stat, index) => (
-            <View key={index} style={[styles.statCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+            <View
+              key={index}
+              style={[
+                styles.statCard,
+                { backgroundColor: colors.card, borderColor: colors.border },
+              ]}
+            >
               <Feather name={stat.icon} size={30} color={colors.primary} />
-              <Text style={[styles.statCount, { color: colors.text }]}>{stat.count}</Text>
-              <Text style={[styles.statTitle, { color: colors.secondary }]}>{stat.title}</Text>
+              <Text style={[styles.statCount, { color: colors.text }]}>
+                {stat.count}
+              </Text>
+              <Text style={[styles.statTitle, { color: colors.secondary }]}>
+                {stat.title}
+              </Text>
             </View>
           ))}
         </View>
 
         <View style={styles.reportsContainer}>
-          <Text style={[styles.reportsTitle, { color: colors.text }]}>Reportes</Text>
+          <Text style={[styles.reportsTitle, { color: colors.text }]}>
+            Reportes
+          </Text>
 
           <TouchableOpacity
-            style={[styles.reportButton, { backgroundColor: colors.card, borderColor: colors.border }]}
+            style={[styles.button, { backgroundColor: colors.primary }]}
             onPress={generateDocentesPDF}
           >
-            <Feather name="users" size={20} color={colors.primary} />
-            <Text style={[styles.reportButtonText, { color: colors.text }]}>Imprimir Lista de Docentes</Text>
+            <Feather name="users" size={20} color="#ffffff" />
+            <Text style={[styles.buttonText, { marginLeft: 10 }]}>
+              Imprimir Lista de Docentes
+            </Text>
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={[styles.reportButton, { backgroundColor: colors.card, borderColor: colors.border }]}
+            style={[styles.button, { backgroundColor: colors.primary }]}
             onPress={generateMateriasPDF}
           >
-            <Feather name="book" size={20} color={colors.primary} />
-            <Text style={[styles.reportButtonText, { color: colors.text }]}>Imprimir Lista de Materias</Text>
+            <Feather name="book" size={20} color="#ffffff" />
+            <Text style={[styles.buttonText, { marginLeft: 10 }]}>
+              Imprimir Lista de Materias
+            </Text>
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={[styles.reportButton, { backgroundColor: colors.card, borderColor: colors.border }]}
+            style={[styles.button, { backgroundColor: colors.primary }]}
             onPress={generateGruposPDF}
           >
-            <Feather name="layers" size={20} color={colors.primary} />
-            <Text style={[styles.reportButtonText, { color: colors.text }]}>Imprimir Lista de Grupos</Text>
+            <Feather name="layers" size={20} color="#ffffff" />
+            <Text style={[styles.buttonText, { marginLeft: 10 }]}>
+              Imprimir Lista de Grupos
+            </Text>
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={[styles.reportButton, { backgroundColor: colors.card, borderColor: colors.border }]}
+            style={[styles.button, { backgroundColor: colors.primary }]}
             onPress={generateDirectivosPDF}
           >
-            <Feather name="briefcase" size={20} color={colors.primary} />
-            <Text style={[styles.reportButtonText, { color: colors.text }]}>Imprimir Lista de Directivos</Text>
+            <Feather name="briefcase" size={20} color="#ffffff" />
+            <Text style={[styles.buttonText, { marginLeft: 10 }]}>
+              Imprimir Lista de Directivos
+            </Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
     </View>
-  )
-}
+  );
+};
 
 const styles = StyleSheet.create({
   container: {
@@ -500,18 +530,19 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     marginBottom: 15,
   },
-  reportButton: {
+  button: {
     flexDirection: "row",
     alignItems: "center",
+    justifyContent: "center",
     padding: 15,
     borderRadius: 10,
     marginBottom: 10,
-    borderWidth: 1,
   },
-  reportButtonText: {
+  buttonText: {
+    color: "#ffffff",
     fontSize: 16,
-    marginLeft: 10,
+    fontWeight: "500",
   },
-})
+});
 
-export default StatisticsScreen
+export default StatisticsScreen;

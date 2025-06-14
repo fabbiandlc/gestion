@@ -10,6 +10,7 @@ import {
   Modal,
   Alert,
   TextInput,
+  FlatList,
 } from "react-native";
 import { useTheme } from "../context/ThemeContext";
 import {
@@ -2005,7 +2006,7 @@ const ScheduleScreen = () => {
         <View
           style={[styles.autoScheduleHeader, { borderColor: colors.border }]}
         >
-          <View style={styles.autoScheduleInputContainer}>
+          <View style={[styles.autoScheduleInputContainer, { width: 245 }]}>
             <Text
               style={[styles.autoScheduleInputLabel, { color: colors.text }]}
             >
@@ -2022,11 +2023,11 @@ const ScheduleScreen = () => {
               ]}
               value={nombrePlantel}
               onChangeText={setNombrePlantel}
-              placeholder="Ingrese el nombre del plantel"
+              placeholder=""
               placeholderTextColor={colors.text + "80"}
             />
           </View>
-          <View style={styles.autoScheduleInputContainer}>
+          <View style={[styles.autoScheduleInputContainer, { width: 120 }]}>
             <Text
               style={[styles.autoScheduleInputLabel, { color: colors.text }]}
             >
@@ -2043,336 +2044,348 @@ const ScheduleScreen = () => {
               ]}
               value={semestre}
               onChangeText={setSemestre}
-              placeholder="Ingrese el semestre"
+              placeholder=""
               placeholderTextColor={colors.text + "80"}
             />
           </View>
         </View>
-        <ScrollView style={{ flex: 1 }}>
-          {docentes.map((docente) => {
-            const isExpanded = expandedDocenteId === docente.id;
-            const config = autoScheduleConfigs[docente.id] || {
-              grupos: [],
-              horasPorMateria: {},
-              materias: docente.materias.map((m) => m.id),
-            };
-            return (
-              <View
-                key={docente.id}
-                style={[
-                  styles.autoScheduleCard,
-                  { borderColor: colors.border },
-                ]}
-              >
-                <TouchableOpacity
-                  style={styles.autoScheduleCardHeader}
-                  onPress={() => {
-                    setExpandedDocenteId(isExpanded ? null : docente.id);
-                    if (!autoScheduleConfigs[docente.id]) {
-                      initDocenteConfig(
-                        docente.id,
-                        docente.materias.map((m) => m.id)
-                      );
-                    }
-                  }}
+        <View style={{ flex: 1, overflow: "hidden" }}>
+          <FlatList
+            data={docentes}
+            style={{ flex: 1 }}
+            showsVerticalScrollIndicator={false}
+            showsHorizontalScrollIndicator={false}
+            keyExtractor={(item) => item.id}
+            renderItem={({ item: docente }) => {
+              const isExpanded = expandedDocenteId === docente.id;
+              const config = autoScheduleConfigs[docente.id] || {
+                grupos: [],
+                horasPorMateria: {},
+                materias: docente.materias.map((m) => m.id),
+              };
+              return (
+                <View
+                  key={docente.id}
+                  style={[
+                    styles.autoScheduleCard,
+                    { borderColor: colors.border },
+                  ]}
                 >
-                  <Text
-                    style={[
-                      styles.autoScheduleCardTitle,
-                      { color: colors.text },
-                    ]}
-                  >
-                    {docente.nombre} {docente.apellido}
-                  </Text>
-                  <Feather
-                    name={isExpanded ? "chevron-up" : "chevron-down"}
-                    size={20}
-                    color={colors.text}
-                  />
-                </TouchableOpacity>
-                {isExpanded && (
-                  <View
-                    style={[
-                      styles.autoScheduleCardContent,
-                      { borderTopColor: colors.border },
-                    ]}
-                  >
-                    {/* Sección de Materias */}
-                    <View style={styles.autoScheduleSection}>
-                      <Text
-                        style={[
-                          styles.autoScheduleSectionTitle,
-                          { color: colors.text },
-                        ]}
-                      >
-                        Materias
-                      </Text>
-                      {docente.materias.map((materia) => (
-                        <View
-                          key={materia.id}
-                          style={styles.autoScheduleMateriaItem}
-                        >
-                          <TouchableOpacity
-                            style={[
-                              styles.autoScheduleCheckbox,
-                              {
-                                borderColor: colors.primary,
-                                backgroundColor: config.materias.includes(
-                                  materia.id
-                                )
-                                  ? colors.primary
-                                  : "transparent",
-                              },
-                            ]}
-                            onPress={() => {
-                              setAutoScheduleConfigs((prev) => ({
-                                ...prev,
-                                [docente.id]: {
-                                  ...config,
-                                  materias: config.materias.includes(materia.id)
-                                    ? config.materias.filter(
-                                        (id) => id !== materia.id
-                                      )
-                                    : [...config.materias, materia.id],
-                                },
-                              }));
-                            }}
-                          >
-                            {config.materias.includes(materia.id) && (
-                              <Feather name="check" size={16} color="#fff" />
-                            )}
-                          </TouchableOpacity>
-                          <Text
-                            style={[
-                              styles.autoScheduleMateriaText,
-                              { color: colors.text },
-                            ]}
-                          >
-                            {materia.nombre}
-                          </Text>
-                        </View>
-                      ))}
-                    </View>
-
-                    {/* Sección de Grupos */}
-                    <View style={styles.autoScheduleSection}>
-                      <Text
-                        style={[
-                          styles.autoScheduleSectionTitle,
-                          { color: colors.text },
-                        ]}
-                      >
-                        Grupos
-                      </Text>
-                      <ScrollView
-                        horizontal
-                        showsHorizontalScrollIndicator={false}
-                        style={{ marginBottom: 8 }}
-                      >
-                        <View style={styles.autoScheduleGruposContainer}>
-                          {grupos.map((grupo) => (
-                            <View
-                              key={grupo.id}
-                              style={styles.grupoTurnoContainer}
-                            >
-                              <TouchableOpacity
-                                style={[
-                                  styles.autoScheduleGrupoItem,
-                                  {
-                                    backgroundColor: config.grupos.includes(
-                                      grupo.id
-                                    )
-                                      ? colors.primary + "20"
-                                      : "transparent",
-                                    borderColor: config.grupos.includes(
-                                      grupo.id
-                                    )
-                                      ? colors.primary
-                                      : colors.border,
-                                  },
-                                ]}
-                                onPress={() => {
-                                  setAutoScheduleConfigs((prev) => ({
-                                    ...prev,
-                                    [docente.id]: {
-                                      ...config,
-                                      grupos: config.grupos.includes(grupo.id)
-                                        ? config.grupos.filter(
-                                            (id) => id !== grupo.id
-                                          )
-                                        : [...config.grupos, grupo.id],
-                                    },
-                                  }));
-                                }}
-                              >
-                                <Text
-                                  style={[
-                                    styles.autoScheduleGrupoText,
-                                    {
-                                      color: config.grupos.includes(grupo.id)
-                                        ? colors.primary
-                                        : colors.text,
-                                    },
-                                  ]}
-                                >
-                                  {grupo.nombre}
-                                </Text>
-                              </TouchableOpacity>
-                              {config.grupos.includes(grupo.id) && (
-                                <View style={styles.turnoSelector}>
-                                  <TouchableOpacity
-                                    style={[
-                                      styles.turnoButton,
-                                      {
-                                        backgroundColor:
-                                          gruposTurnos[grupo.id] === "matutino"
-                                            ? colors.primary
-                                            : "transparent",
-                                        borderColor: colors.primary,
-                                      },
-                                    ]}
-                                    onPress={() =>
-                                      setGruposTurnos((prev) => ({
-                                        ...prev,
-                                        [grupo.id]: "matutino",
-                                      }))
-                                    }
-                                  >
-                                    <Text
-                                      style={[
-                                        styles.turnoButtonText,
-                                        {
-                                          color:
-                                            gruposTurnos[grupo.id] ===
-                                            "matutino"
-                                              ? "#fff"
-                                              : colors.primary,
-                                        },
-                                      ]}
-                                    >
-                                      Matutino
-                                    </Text>
-                                  </TouchableOpacity>
-                                  <TouchableOpacity
-                                    style={[
-                                      styles.turnoButton,
-                                      {
-                                        backgroundColor:
-                                          gruposTurnos[grupo.id] ===
-                                          "vespertino"
-                                            ? colors.primary
-                                            : "transparent",
-                                        borderColor: colors.primary,
-                                      },
-                                    ]}
-                                    onPress={() =>
-                                      setGruposTurnos((prev) => ({
-                                        ...prev,
-                                        [grupo.id]: "vespertino",
-                                      }))
-                                    }
-                                  >
-                                    <Text
-                                      style={[
-                                        styles.turnoButtonText,
-                                        {
-                                          color:
-                                            gruposTurnos[grupo.id] ===
-                                            "vespertino"
-                                              ? "#fff"
-                                              : colors.primary,
-                                        },
-                                      ]}
-                                    >
-                                      Vespertino
-                                    </Text>
-                                  </TouchableOpacity>
-                                </View>
-                              )}
-                            </View>
-                          ))}
-                        </View>
-                      </ScrollView>
-                    </View>
-
-                    {/* Sección de Horas por Materia */}
-                    <View style={styles.autoScheduleSection}>
-                      <Text
-                        style={[
-                          styles.autoScheduleSectionTitle,
-                          { color: colors.text },
-                        ]}
-                      >
-                        Horas por materia
-                      </Text>
-                      {config.materias.map((materiaId) => {
-                        const materia = materias.find(
-                          (m) => m.id === materiaId
+                  <TouchableOpacity
+                    style={styles.autoScheduleCardHeader}
+                    onPress={() => {
+                      setExpandedDocenteId(isExpanded ? null : docente.id);
+                      if (!autoScheduleConfigs[docente.id]) {
+                        initDocenteConfig(
+                          docente.id,
+                          docente.materias.map((m) => m.id)
                         );
-                        if (!materia) return null;
-                        return (
+                      }
+                    }}
+                  >
+                    <Text
+                      style={[
+                        styles.autoScheduleCardTitle,
+                        { color: colors.text },
+                      ]}
+                    >
+                      {docente.nombre} {docente.apellido}
+                    </Text>
+                    <Feather
+                      name={isExpanded ? "chevron-up" : "chevron-down"}
+                      size={20}
+                      color={colors.text}
+                    />
+                  </TouchableOpacity>
+                  {isExpanded && (
+                    <View
+                      style={[
+                        styles.autoScheduleCardContent,
+                        { borderTopColor: colors.border },
+                      ]}
+                    >
+                      {/* Sección de Materias */}
+                      <View style={styles.autoScheduleSection}>
+                        <Text
+                          style={[
+                            styles.autoScheduleSectionTitle,
+                            { color: colors.text },
+                          ]}
+                        >
+                          Materias
+                        </Text>
+                        {docente.materias.map((materia) => (
                           <View
-                            key={materiaId}
-                            style={styles.autoScheduleHorasContainer}
+                            key={materia.id}
+                            style={styles.autoScheduleMateriaItem}
                           >
+                            <TouchableOpacity
+                              style={[
+                                styles.autoScheduleCheckbox,
+                                {
+                                  borderColor: colors.primary,
+                                  backgroundColor: config.materias.includes(
+                                    materia.id
+                                  )
+                                    ? colors.primary
+                                    : "transparent",
+                                },
+                              ]}
+                              onPress={() => {
+                                setAutoScheduleConfigs((prev) => ({
+                                  ...prev,
+                                  [docente.id]: {
+                                    ...config,
+                                    materias: config.materias.includes(
+                                      materia.id
+                                    )
+                                      ? config.materias.filter(
+                                          (id) => id !== materia.id
+                                        )
+                                      : [...config.materias, materia.id],
+                                  },
+                                }));
+                              }}
+                            >
+                              {config.materias.includes(materia.id) && (
+                                <Feather name="check" size={16} color="#fff" />
+                              )}
+                            </TouchableOpacity>
                             <Text
                               style={[
-                                styles.autoScheduleHorasLabel,
+                                styles.autoScheduleMateriaText,
                                 { color: colors.text },
                               ]}
                             >
                               {materia.nombre}
                             </Text>
-                            <TextInput
-                              style={[
-                                styles.autoScheduleHorasInput,
-                                {
-                                  backgroundColor: colors.card,
-                                  color: colors.text,
-                                  borderColor: colors.border,
-                                },
-                              ]}
-                              keyboardType="number-pad"
-                              value={String(
-                                config.horasPorMateria[materiaId] || ""
-                              )}
-                              onChangeText={(text) => {
-                                const horas = parseInt(text) || 0;
-                                setAutoScheduleConfigs((prev) => ({
-                                  ...prev,
-                                  [docente.id]: {
-                                    ...config,
-                                    horasPorMateria: {
-                                      ...config.horasPorMateria,
-                                      [materiaId]: horas,
-                                    },
-                                  },
-                                }));
-                              }}
-                              placeholder="Horas"
-                              placeholderTextColor={colors.text + "80"}
-                            />
                           </View>
-                        );
-                      })}
+                        ))}
+                      </View>
+
+                      {/* Sección de Grupos */}
+                      <View style={styles.autoScheduleSection}>
+                        <Text
+                          style={[
+                            styles.autoScheduleSectionTitle,
+                            { color: colors.text },
+                          ]}
+                        >
+                          Grupos
+                        </Text>
+                        <ScrollView
+                          horizontal
+                          showsHorizontalScrollIndicator={false}
+                          style={{ marginBottom: 8 }}
+                        >
+                          <View style={styles.autoScheduleGruposContainer}>
+                            {grupos.map((grupo) => (
+                              <View
+                                key={grupo.id}
+                                style={styles.grupoTurnoContainer}
+                              >
+                                <TouchableOpacity
+                                  style={[
+                                    styles.autoScheduleGrupoItem,
+                                    {
+                                      backgroundColor: config.grupos.includes(
+                                        grupo.id
+                                      )
+                                        ? colors.primary + "20"
+                                        : "transparent",
+                                      borderColor: config.grupos.includes(
+                                        grupo.id
+                                      )
+                                        ? colors.primary
+                                        : colors.border,
+                                    },
+                                  ]}
+                                  onPress={() => {
+                                    setAutoScheduleConfigs((prev) => ({
+                                      ...prev,
+                                      [docente.id]: {
+                                        ...config,
+                                        grupos: config.grupos.includes(grupo.id)
+                                          ? config.grupos.filter(
+                                              (id) => id !== grupo.id
+                                            )
+                                          : [...config.grupos, grupo.id],
+                                      },
+                                    }));
+                                  }}
+                                >
+                                  <Text
+                                    style={[
+                                      styles.autoScheduleGrupoText,
+                                      {
+                                        color: config.grupos.includes(grupo.id)
+                                          ? colors.primary
+                                          : colors.text,
+                                      },
+                                    ]}
+                                  >
+                                    {grupo.nombre}
+                                  </Text>
+                                </TouchableOpacity>
+                                {config.grupos.includes(grupo.id) && (
+                                  <View style={styles.turnoSelector}>
+                                    <TouchableOpacity
+                                      style={[
+                                        styles.turnoButton,
+                                        {
+                                          backgroundColor:
+                                            gruposTurnos[grupo.id] ===
+                                            "matutino"
+                                              ? colors.primary
+                                              : "transparent",
+                                          borderColor: colors.primary,
+                                        },
+                                      ]}
+                                      onPress={() =>
+                                        setGruposTurnos((prev) => ({
+                                          ...prev,
+                                          [grupo.id]: "matutino",
+                                        }))
+                                      }
+                                    >
+                                      <Text
+                                        style={[
+                                          styles.turnoButtonText,
+                                          {
+                                            color:
+                                              gruposTurnos[grupo.id] ===
+                                              "matutino"
+                                                ? "#fff"
+                                                : colors.primary,
+                                          },
+                                        ]}
+                                      >
+                                        Matutino
+                                      </Text>
+                                    </TouchableOpacity>
+                                    <TouchableOpacity
+                                      style={[
+                                        styles.turnoButton,
+                                        {
+                                          backgroundColor:
+                                            gruposTurnos[grupo.id] ===
+                                            "vespertino"
+                                              ? colors.primary
+                                              : "transparent",
+                                          borderColor: colors.primary,
+                                        },
+                                      ]}
+                                      onPress={() =>
+                                        setGruposTurnos((prev) => ({
+                                          ...prev,
+                                          [grupo.id]: "vespertino",
+                                        }))
+                                      }
+                                    >
+                                      <Text
+                                        style={[
+                                          styles.turnoButtonText,
+                                          {
+                                            color:
+                                              gruposTurnos[grupo.id] ===
+                                              "vespertino"
+                                                ? "#fff"
+                                                : colors.primary,
+                                          },
+                                        ]}
+                                      >
+                                        Vespertino
+                                      </Text>
+                                    </TouchableOpacity>
+                                  </View>
+                                )}
+                              </View>
+                            ))}
+                          </View>
+                        </ScrollView>
+                      </View>
+
+                      {/* Sección de Horas por Materia */}
+                      <View style={styles.autoScheduleSection}>
+                        <Text
+                          style={[
+                            styles.autoScheduleSectionTitle,
+                            { color: colors.text },
+                          ]}
+                        >
+                          Horas por materia
+                        </Text>
+                        {config.materias.map((materiaId) => {
+                          const materia = materias.find(
+                            (m) => m.id === materiaId
+                          );
+                          if (!materia) return null;
+                          return (
+                            <View
+                              key={materiaId}
+                              style={styles.autoScheduleHorasContainer}
+                            >
+                              <Text
+                                style={[
+                                  styles.autoScheduleHorasLabel,
+                                  { color: colors.text },
+                                ]}
+                              >
+                                {materia.nombre}
+                              </Text>
+                              <TextInput
+                                style={[
+                                  styles.autoScheduleHorasInput,
+                                  {
+                                    backgroundColor: colors.card,
+                                    color: colors.text,
+                                    borderColor: colors.border,
+                                  },
+                                ]}
+                                keyboardType="number-pad"
+                                value={String(
+                                  config.horasPorMateria[materiaId] || ""
+                                )}
+                                onChangeText={(text) => {
+                                  const horas = parseInt(text) || 0;
+                                  setAutoScheduleConfigs((prev) => ({
+                                    ...prev,
+                                    [docente.id]: {
+                                      ...config,
+                                      horasPorMateria: {
+                                        ...config.horasPorMateria,
+                                        [materiaId]: horas,
+                                      },
+                                    },
+                                  }));
+                                }}
+                                placeholder="Horas"
+                                placeholderTextColor={colors.text + "80"}
+                              />
+                            </View>
+                          );
+                        })}
+                      </View>
                     </View>
-                  </View>
-                )}
-              </View>
-            );
-          })}
-        </ScrollView>
+                  )}
+                </View>
+              );
+            }}
+          />
+        </View>
         {/* Botón para generar horarios de todos los docentes */}
         <TouchableOpacity
           style={[
             styles.generateButton,
-            { backgroundColor: colors.primary, margin: 16 },
+            {
+              backgroundColor: colors.primary,
+              margin: 16,
+              alignSelf: "center",
+            },
           ]}
           onPress={generateAutoScheduleForAll}
         >
-          <Text style={styles.generateButtonText}>
-            Generar horarios de todos
-          </Text>
+          <Text style={styles.generateButtonText}>Generar horarios</Text>
         </TouchableOpacity>
       </View>
     );
@@ -3238,11 +3251,13 @@ const styles = StyleSheet.create({
     borderRadius: 5,
     alignItems: "center",
     alignSelf: "flex-end",
+    marginBottom: 30,
   },
   generateButtonText: {
     color: "#ffffff",
-    fontSize: 12,
-    fontWeight: "bold",
+    fontSize: 16,
+    fontWeight: "600",
+    letterSpacing: 0.5,
   },
   grupoTurnoContainer: {
     marginRight: 10,
@@ -3267,16 +3282,16 @@ const styles = StyleSheet.create({
   },
   autoScheduleHeader: {
     flexDirection: "row",
-    justifyContent: "space-between",
+    justifyContent: "center",
     alignItems: "center",
     paddingBottom: 15,
     paddingHorizontal: 16,
     paddingTop: 16,
     borderBottomWidth: 1,
+    gap: 20,
   },
   autoScheduleInputContainer: {
-    flex: 1,
-    marginRight: 10,
+    flex: 0,
     paddingHorizontal: 8,
   },
   autoScheduleInputLabel: {
@@ -3291,6 +3306,27 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     textAlign: "center",
     fontSize: 14,
+  },
+  input: {
+    padding: 10,
+    marginBottom: 10,
+    borderWidth: 1,
+    borderRadius: 5,
+  },
+  plantelInput: {
+    width: "100%",
+  },
+  semestreInput: {
+    width: "50%",
+  },
+  label: {
+    fontSize: 16,
+    fontWeight: "bold",
+    marginBottom: 5,
+  },
+  hideScrollbar: {
+    scrollbarWidth: "none",
+    msOverflowStyle: "none",
   },
 });
 
