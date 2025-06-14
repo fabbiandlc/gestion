@@ -1,8 +1,14 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity } from 'react-native';
-import { useTheme } from '../context/ThemeContext';
-import { useData } from '../context/DataContext';
-import { Ionicons } from '@expo/vector-icons';
+import React, { useState } from "react";
+import {
+  View,
+  Text,
+  StyleSheet,
+  FlatList,
+  TouchableOpacity,
+} from "react-native";
+import { useTheme } from "../context/ThemeContext";
+import { useData } from "../context/DataContext";
+import { Ionicons } from "@expo/vector-icons";
 
 const DocentesScreen = () => {
   const { colors } = useTheme();
@@ -18,9 +24,7 @@ const DocentesScreen = () => {
   const renderItem = ({ item }) => (
     <View style={[styles.item, { backgroundColor: colors.card }]}>
       <View style={styles.itemContent}>
-        <Text style={[styles.name, { color: colors.text }]}>
-          {item.nombre} {item.apellido}
-        </Text>
+        <Text style={[styles.name, { color: colors.text }]}>{item.nombre}</Text>
         <Text style={[styles.detail, { color: colors.textSecondary }]}>
           {item.email}
         </Text>
@@ -32,7 +36,7 @@ const DocentesScreen = () => {
         <TouchableOpacity style={styles.actionButton}>
           <Ionicons name="pencil" size={20} color={colors.primary} />
         </TouchableOpacity>
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.actionButton}
           onPress={() => deleteDocente(item.id)}
         >
@@ -47,7 +51,7 @@ const DocentesScreen = () => {
       <FlatList
         data={docentes}
         renderItem={renderItem}
-        keyExtractor={item => item.id}
+        keyExtractor={(item) => item.id}
         contentContainerStyle={styles.list}
         refreshing={refreshing}
         onRefresh={handleRefresh}
@@ -57,7 +61,7 @@ const DocentesScreen = () => {
           </Text>
         }
       />
-      <TouchableOpacity 
+      <TouchableOpacity
         style={[styles.addButton, { backgroundColor: colors.primary }]}
         onPress={() => {}}
       >
@@ -75,14 +79,14 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   item: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     padding: 16,
     borderRadius: 8,
     marginBottom: 12,
     elevation: 1,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
     shadowRadius: 2,
@@ -92,7 +96,7 @@ const styles = StyleSheet.create({
   },
   name: {
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: "600",
     marginBottom: 4,
   },
   detail: {
@@ -100,26 +104,26 @@ const styles = StyleSheet.create({
     marginBottom: 2,
   },
   actions: {
-    flexDirection: 'row',
+    flexDirection: "row",
   },
   actionButton: {
     padding: 8,
     marginLeft: 8,
   },
   emptyText: {
-    textAlign: 'center',
+    textAlign: "center",
     marginTop: 32,
     fontSize: 16,
   },
   addButton: {
-    position: 'absolute',
+    position: "absolute",
     bottom: 24,
     right: 24,
     width: 56,
     height: 56,
     borderRadius: 28,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     elevation: 4,
   },
 });

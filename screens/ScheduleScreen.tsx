@@ -573,9 +573,7 @@ const ScheduleScreen = () => {
             {entities.map((entity) => {
               const nombre =
                 currentTab === "docentes"
-                  ? `${(entity as Docente).nombre} ${
-                      (entity as Docente).apellido
-                    }`
+                  ? `${(entity as Docente).nombre}`
                   : (entity as Grupo).nombre;
 
               return (
@@ -968,10 +966,7 @@ const ScheduleScreen = () => {
                 <Text
                   style={[styles.legendDetailText, { color: colors.secondary }]}
                 >
-                  Docente:{" "}
-                  {docente
-                    ? `${docente.nombre} ${docente.apellido}`
-                    : "No asignado"}
+                  Docente: {docente ? `${docente.nombre}` : "No asignado"}
                 </Text>
               );
             }
@@ -1083,7 +1078,7 @@ const ScheduleScreen = () => {
         return;
       }
 
-      const titulo = `${docente.nombre} ${docente.apellido}`;
+      const titulo = docente.nombre;
       const numeroEmpleado = docente.numeroEmpleado || "No asignado";
 
       // Calcular total de horas
@@ -2089,7 +2084,7 @@ const ScheduleScreen = () => {
                         { color: colors.text },
                       ]}
                     >
-                      {docente.nombre} {docente.apellido}
+                      {docente.nombre}
                     </Text>
                     <Feather
                       name={isExpanded ? "chevron-up" : "chevron-down"}

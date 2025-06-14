@@ -95,7 +95,7 @@ const StatisticsScreen = () => {
                 (docente, index) => `
               <tr>
                 <td>${index + 1}</td>
-                <td>${docente.nombre} ${docente.apellido}</td>
+                <td>${docente.nombre}</td>
                 <td>${docente.email}</td>
                 <td>${docente.numeroEmpleado}</td>
               </tr>
@@ -285,7 +285,7 @@ const StatisticsScreen = () => {
               .map((grupo, index) => {
                 const docente = docentes.find((d) => d.id === grupo.docenteId);
                 const docenteNombre = docente
-                  ? `${docente.nombre} ${docente.apellido}`
+                  ? `${docente.nombre}`
                   : "No asignado";
 
                 return `

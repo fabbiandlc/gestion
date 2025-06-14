@@ -73,7 +73,6 @@ const ManagementScreen = () => {
   // Estados para formularios
   const [docenteForm, setDocenteForm] = useState({
     nombre: "",
-    apellido: "",
     email: "",
     numeroEmpleado: "",
     materias: [] as { id: string; nombre: string; siglas: string }[],
@@ -94,7 +93,6 @@ const ManagementScreen = () => {
   const resetForms = () => {
     setDocenteForm({
       nombre: "",
-      apellido: "",
       email: "",
       numeroEmpleado: "",
       materias: [],
@@ -109,248 +107,296 @@ const ManagementScreen = () => {
 
   const handleAddItem = async () => {
     try {
-      // Validación de campos requeridos según la pestaña activa
-      if (activeTab === "docentes") {
-        if (
-          !docenteForm.nombre ||
-          !docenteForm.apellido ||
-          !docenteForm.email ||
-          !docenteForm.numeroEmpleado
-        ) {
-          Alert.alert("Error", "Por favor complete todos los campos");
+      if (activeTab === "materias") {
+        if (!materiaForm.nombre.trim()) {
+          Alert.alert("Error", "Por favor ingrese el nombre de la materia");
           return;
         }
 
-        if (isEditing && currentEditId) {
-          const result = await updateDocente(currentEditId, docenteForm);
-          // Assuming success if no exception is thrown and result is not explicitly success: false
-          if (result?.success === false) {
-            Alert.alert(
-              "Error",
-              result?.error || "Error al actualizar el docente"
-            );
-          } else {
-            Alert.alert("Éxito", "Docente actualizado correctamente");
-            resetForms();
-            setModalVisible(false);
-          }
+        // Generar siglas automáticamente
+        const palabras = materiaForm.nombre.trim().split(" ");
+        let siglas = "";
+        if (palabras.length > 1) {
+          // Tomar la primera letra de cada palabra para formar las siglas
+          siglas = palabras
+            .map((palabra) => palabra.charAt(0).toUpperCase())
+            .join("");
         } else {
-          const result = await addDocente(docenteForm);
-          // Assuming success if no exception is thrown and result is not explicitly success: false
-          if (result?.success === false) {
-            Alert.alert(
-              "Error",
-              result?.error || "Error al agregar el docente"
-            );
-          } else {
-            Alert.alert("Éxito", "Docente agregado correctamente");
-            resetForms();
-            setModalVisible(false);
-          }
+          // Si solo hay una palabra, tomar las primeras 3 letras
+          siglas = materiaForm.nombre.trim().substring(0, 3).toUpperCase();
         }
-      } else if (activeTab === "materias") {
-        if (!materiaForm.nombre || !materiaForm.siglas) {
-          Alert.alert("Error", "Por favor complete todos los campos");
+
+        const result = await addMateria({
+          ...materiaForm,
+          siglas: siglas,
+        });
+
+        if (result?.success === false) {
+          Alert.alert("Error", result?.error || "Error al agregar la materia");
+        } else {
+          Alert.alert("Éxito", "Materia agregada correctamente");
+          resetForms();
+        }
+      } else if (activeTab === "docentes") {
+        if (!docenteForm.nombre.trim()) {
+          Alert.alert("Error", "Por favor ingrese el nombre del docente");
           return;
         }
 
-        if (isEditing && currentEditId) {
-          const result = await updateMateria(currentEditId, materiaForm);
-          // Assuming success if no exception is thrown and result is not explicitly success: false
-          if (result?.success === false) {
-            Alert.alert(
-              "Error",
-              result?.error || "Error al actualizar la materia"
-            );
-          } else {
-            Alert.alert("Éxito", "Materia actualizada correctamente");
-            resetForms();
-            setModalVisible(false);
+        // Generar siglas automáticamente para cada materia nueva
+        const materiasConSiglas = docenteForm.materias.map((materia) => {
+          if (!materia.siglas && materia.nombre) {
+            const palabras = materia.nombre.trim().split(" ");
+            let siglas = "";
+            if (palabras.length > 1) {
+              siglas = palabras
+                .map((palabra) => palabra.charAt(0).toUpperCase())
+                .join("");
+            } else {
+              siglas = materia.nombre.trim().substring(0, 3).toUpperCase();
+            }
+            return { ...materia, siglas };
           }
+          return materia;
+        });
+
+        const nuevoDocente = {
+          id: `docente_${Date.now()}_${Math.random()
+            .toString(36)
+            .substr(2, 9)}`,
+          nombre: docenteForm.nombre,
+          email: docenteForm.email,
+          numeroEmpleado: docenteForm.numeroEmpleado,
+          materias: materiasConSiglas,
+        };
+
+        const result = await addDocente(nuevoDocente);
+
+        if (result?.success === false) {
+          Alert.alert("Error", result?.error || "Error al agregar el docente");
         } else {
-          const result = await addMateria(materiaForm);
-          // Assuming success if no exception is thrown and result is not explicitly success: false
-          if (result?.success === false) {
-            Alert.alert(
-              "Error",
-              result?.error || "Error al agregar la materia"
-            );
-          } else {
-            Alert.alert("Éxito", "Materia agregada correctamente");
-            resetForms();
-            setModalVisible(false);
-          }
-        }
-      } else if (activeTab === "grupos") {
-        if (isEditing && currentEditId) {
-          const result = await updateGrupo(currentEditId, grupoForm);
-          // Assuming success if no exception is thrown and result is not explicitly success: false
-          if (result?.success === false) {
-            Alert.alert(
-              "Error",
-              result?.error || "Error al actualizar el grupo"
-            );
-          } else {
-            Alert.alert("Éxito", "Grupo actualizado correctamente");
-            resetForms();
-            setModalVisible(false);
-          }
-        } else {
-          const result = await addGrupo(grupoForm);
-          // Assuming success if no exception is thrown and result is not explicitly success: false
-          if (result?.success === false) {
-            Alert.alert("Error", result?.error || "Error al agregar el grupo");
-          } else {
-            Alert.alert("Éxito", "Grupo agregado correctamente");
-            resetForms();
-            setModalVisible(false);
-          }
+          Alert.alert("Éxito", "Docente agregado correctamente");
+          resetForms();
         }
       } else if (activeTab === "directivos") {
-        if (!directivoForm.nombre || !directivoForm.rol) {
-          Alert.alert("Error", "Por favor complete todos los campos");
+        if (!directivoForm.nombre.trim()) {
+          Alert.alert("Error", "Por favor ingrese el nombre del directivo");
           return;
         }
 
-        if (isEditing && currentEditId) {
-          const result = await updateDirectivo(currentEditId, directivoForm);
-          // Assuming success if no exception is thrown and result is not explicitly success: false
-          if (result?.success === false) {
-            Alert.alert(
-              "Error",
-              result?.error || "Error al actualizar el directivo"
-            );
-          } else {
-            Alert.alert("Éxito", "Directivo actualizado correctamente");
-            resetForms();
-            setModalVisible(false);
-          }
-        } else {
-          const result = await addDirectivo(directivoForm);
-          // Assuming success if no exception is thrown and result is not explicitly success: false
-          if (result?.success === false) {
-            Alert.alert(
-              "Error",
-              result?.error || "Error al agregar el directivo"
-            );
-          } else {
-            Alert.alert("Éxito", "Directivo agregado correctamente");
-            resetForms();
-            setModalVisible(false);
-          }
-        }
-      } else if (activeTab === "administrativos") {
-        if (
-          !administrativoForm.nombre ||
-          !administrativoForm.celular ||
-          !administrativoForm.correo
-        ) {
-          Alert.alert("Error", "Por favor complete todos los campos");
-          return;
-        }
+        const result = await addDirectivo({
+          nombre: directivoForm.nombre,
+          rol: directivoForm.rol,
+          generoFemenino: directivoForm.generoFemenino,
+        });
 
-        // Validar formato de correo electrónico
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!emailRegex.test(administrativoForm.correo)) {
+        if (result?.success === false) {
           Alert.alert(
             "Error",
-            "Por favor ingrese un correo electrónico válido"
+            result?.error || "Error al agregar el directivo"
+          );
+        } else {
+          Alert.alert("Éxito", "Directivo agregado correctamente");
+          resetForms();
+        }
+      } else if (activeTab === "administrativos") {
+        if (!administrativoForm.nombre.trim()) {
+          Alert.alert(
+            "Error",
+            "Por favor ingrese el nombre del administrativo"
           );
           return;
         }
 
-        if (isEditing && currentEditId) {
-          const result = await updateAdministrativo(
-            currentEditId,
-            administrativoForm
+        const result = await addAdministrativo({
+          nombre: administrativoForm.nombre,
+          celular: administrativoForm.celular,
+          correo: administrativoForm.correo,
+        });
+
+        if (result?.success === false) {
+          Alert.alert(
+            "Error",
+            result?.error || "Error al agregar el administrativo"
           );
-          // Assuming success if no exception is thrown and result is not explicitly success: false
-          if (result?.success === false) {
-            Alert.alert(
-              "Error",
-              result?.error || "Error al actualizar el administrativo"
-            );
-          } else {
-            Alert.alert("Éxito", "Administrativo actualizado correctamente");
-            resetForms();
-            setModalVisible(false);
-          }
         } else {
-          const result = await addAdministrativo(administrativoForm);
-          // Assuming success if no exception is thrown and result is not explicitly success: false
-          if (result?.success === false) {
-            Alert.alert(
-              "Error",
-              result?.error || "Error al agregar el administrativo"
-            );
-          } else {
-            Alert.alert("Éxito", "Administrativo agregado correctamente");
-            resetForms();
-            setModalVisible(false);
-          }
+          Alert.alert("Éxito", "Administrativo agregado correctamente");
+          resetForms();
         }
       }
     } catch (error) {
-      console.error("Error en handleAddItem:", error);
-      Alert.alert(
-        "Error",
-        "Ocurrió un error inesperado. Por favor, intente nuevamente."
-      );
+      console.error("Error al agregar:", error);
+      Alert.alert("Error", "Ocurrió un error al agregar el elemento");
     }
   };
 
-  const handleEditItem = (id: string) => {
-    setIsEditing(true);
-    setCurrentEditId(id);
+  const handleEditItem = async (id: string) => {
+    try {
+      if (activeTab === "materias") {
+        const materia = materias.find((m) => m.id === id);
+        if (materia) {
+          setMateriaForm({
+            nombre: materia.nombre,
+            siglas: materia.siglas,
+          });
+          setIsEditing(true);
+          setCurrentEditId(id);
+        }
+      } else if (activeTab === "docentes") {
+        const docente = docentes.find((d) => d.id === id);
+        if (docente) {
+          // Obtener las materias completas usando los IDs y generar siglas si no existen
+          const materiasCompletas = docente.materias.map((materiaId) => {
+            const materia = materias.find((m) => m.id === materiaId.id);
+            if (materia) {
+              return {
+                id: materia.id,
+                nombre: materia.nombre,
+                siglas: materia.siglas || generarSiglas(materia.nombre),
+              };
+            }
+            return {
+              id: materiaId.id,
+              nombre: materiaId.nombre || "",
+              siglas: materiaId.siglas || generarSiglas(materiaId.nombre || ""),
+            };
+          });
 
-    if (activeTab === "docentes") {
-      const docente = docentes.find((d) => d.id === id);
-      if (docente) {
-        setDocenteForm({
-          nombre: docente.nombre,
-          apellido: docente.apellido,
-          email: docente.email,
-          numeroEmpleado: docente.numeroEmpleado,
-          materias: docente.materias || [], // Ensure materias is always an array
-        });
+          setDocenteForm({
+            nombre: docente.nombre,
+            email: docente.email,
+            numeroEmpleado: docente.numeroEmpleado,
+            materias: materiasCompletas,
+          });
+          setIsEditing(true);
+          setCurrentEditId(id);
+        }
+      } else if (activeTab === "directivos") {
+        const directivo = directivos.find((d) => d.id === id);
+        if (directivo) {
+          setDirectivoForm({
+            nombre: directivo.nombre,
+            rol: directivo.rol,
+            generoFemenino: directivo.generoFemenino,
+          });
+          setIsEditing(true);
+          setCurrentEditId(id);
+        }
       }
-    } else if (activeTab === "materias") {
-      const materia = materias.find((m) => m.id === id);
-      if (materia) {
-        setMateriaForm({
-          nombre: materia.nombre,
-          siglas: materia.siglas,
-        });
-      }
-    } else if (activeTab === "grupos") {
-      const grupo = grupos.find((g) => g.id === id);
-      if (grupo) {
-        setGrupoForm({
-          nombre: grupo.nombre,
-          docenteId: grupo.docenteId,
-        });
-      }
-    } else if (activeTab === "directivos") {
-      const directivo = directivos.find((d) => d.id === id);
-      if (directivo) {
-        setDirectivoForm({
-          nombre: directivo.nombre,
-          rol: directivo.rol,
-          generoFemenino: directivo.generoFemenino,
-        });
-      }
-    } else if (activeTab === "administrativos") {
-      const administrativo = administrativos.find((a) => a.id === id);
-      if (administrativo) {
-        setAdministrativoForm({
-          nombre: administrativo.nombre,
-          celular: administrativo.celular,
-          correo: administrativo.correo,
-        });
-      }
+    } catch (error) {
+      console.error("Error al editar:", error);
+      Alert.alert("Error", "Ocurrió un error al editar el elemento");
     }
+  };
 
-    setModalVisible(true);
+  const handleUpdateItem = async () => {
+    try {
+      if (activeTab === "materias") {
+        if (!materiaForm.nombre.trim()) {
+          Alert.alert("Error", "Por favor ingrese el nombre de la materia");
+          return;
+        }
+
+        // Generar siglas automáticamente si no existen
+        let siglas = materiaForm.siglas;
+        if (!siglas) {
+          const palabras = materiaForm.nombre.trim().split(" ");
+          if (palabras.length > 1) {
+            siglas = palabras
+              .map((palabra) => palabra.charAt(0).toUpperCase())
+              .join("");
+          } else {
+            siglas = materiaForm.nombre.trim().substring(0, 3).toUpperCase();
+          }
+        }
+
+        const result = await updateMateria(currentEditId, {
+          ...materiaForm,
+          siglas: siglas,
+        });
+
+        if (result?.success === false) {
+          Alert.alert(
+            "Error",
+            result?.error || "Error al actualizar la materia"
+          );
+        } else {
+          // Actualizar la materia en los docentes que la tienen asignada
+          const docentesActualizados = docentes.map((docente) => {
+            const materiasActualizadas = docente.materias.map((m) => {
+              if (m.id === currentEditId) {
+                return { ...m, nombre: materiaForm.nombre, siglas: siglas };
+              }
+              return m;
+            });
+            return { ...docente, materias: materiasActualizadas };
+          });
+          setDocentes(docentesActualizados);
+
+          Alert.alert("Éxito", "Materia actualizada correctamente");
+          resetForms();
+        }
+      } else if (activeTab === "docentes") {
+        if (!docenteForm.nombre.trim()) {
+          Alert.alert("Error", "Por favor ingrese el nombre del docente");
+          return;
+        }
+
+        // Asegurar que todas las materias tengan siglas
+        const materiasConSiglas = docenteForm.materias.map((m) => {
+          if (!m.siglas && m.nombre) {
+            const palabras = m.nombre.trim().split(" ");
+            let siglas = "";
+            if (palabras.length > 1) {
+              siglas = palabras
+                .map((palabra) => palabra.charAt(0).toUpperCase())
+                .join("");
+            } else {
+              siglas = m.nombre.trim().substring(0, 3).toUpperCase();
+            }
+            return { ...m, siglas };
+          }
+          return m;
+        });
+
+        const result = await updateDocente(currentEditId, {
+          ...docenteForm,
+          materias: materiasConSiglas,
+        });
+
+        if (result?.success === false) {
+          Alert.alert(
+            "Error",
+            result?.error || "Error al actualizar el docente"
+          );
+        } else {
+          Alert.alert("Éxito", "Docente actualizado correctamente");
+          resetForms();
+        }
+      } else if (activeTab === "directivos") {
+        if (!directivoForm.nombre.trim()) {
+          Alert.alert("Error", "Por favor ingrese el nombre del directivo");
+          return;
+        }
+
+        const result = await updateDirectivo(currentEditId, {
+          ...directivoForm,
+        });
+
+        if (result?.success === false) {
+          Alert.alert(
+            "Error",
+            result?.error || "Error al actualizar el directivo"
+          );
+        } else {
+          Alert.alert("Éxito", "Directivo actualizado correctamente");
+          resetForms();
+        }
+      }
+    } catch (error) {
+      console.error("Error al actualizar:", error);
+      Alert.alert("Error", "Ocurrió un error al actualizar el elemento");
+    }
   };
 
   const handleDeleteItem = (id: string) => {
@@ -560,25 +606,8 @@ const ManagementScreen = () => {
                   if (j + 2 < jsonData[i].length && jsonData[i][j + 2]) {
                     const nombreCompleto = jsonData[i][j + 2];
 
-                    // Extraer nombre y apellido
-                    const partes = nombreCompleto.split(" ");
-                    let nombre = "";
-                    let apellido = "";
-
-                    if (partes.length >= 3 && partes[0].includes("LIC.")) {
-                      // Formato: "LIC. TERESA MARGARITA ABAD SANCHEZ"
-                      nombre = partes.slice(1, 3).join(" "); // "TERESA MARGARITA"
-                      apellido = partes.slice(3).join(" "); // "ABAD SANCHEZ"
-                    } else if (
-                      partes.length >= 3 &&
-                      partes[0].includes("ING.")
-                    ) {
-                      // Formato: "ING. NOMBRE APELLIDO"
-                      nombre = partes[1];
-                      apellido = partes.slice(2).join(" ");
-                    } else {
-                      nombre = nombreCompleto;
-                    }
+                    // Usar el nombre completo directamente
+                    const nombre = nombreCompleto;
 
                     // Extraer materias de la fila 7 (índice 6)
                     const filaMaterias = jsonData[6] || [];
@@ -602,10 +631,7 @@ const ManagementScreen = () => {
                     docenteInfo = {
                       id: `excel_docente_${Date.now()}`,
                       nombre: nombre,
-                      apellido: apellido,
                       email: `${nombre
-                        .toLowerCase()
-                        .replace(/\s+/g, ".")}.${apellido
                         .toLowerCase()
                         .replace(/\s+/g, ".")}@cobaev.edu.mx`,
                       numeroEmpleado: "",
@@ -627,17 +653,8 @@ const ManagementScreen = () => {
             ) {
               const nombreCompleto = jsonData[5][10];
 
-              // Extraer nombre y apellido
-              const partes = nombreCompleto.split(" ");
-              let nombre = "";
-              let apellido = "";
-
-              if (partes.length >= 3 && partes[0].includes("LIC.")) {
-                nombre = partes.slice(1, 3).join(" ");
-                apellido = partes.slice(3).join(" ");
-              } else {
-                nombre = nombreCompleto;
-              }
+              // Usar el nombre completo directamente
+              const nombre = nombreCompleto;
 
               // Buscar el número de empleado
               let numeroEmpleado = "";
@@ -674,10 +691,7 @@ const ManagementScreen = () => {
                 {
                   id: `excel_docente_${Date.now()}`,
                   nombre: nombre,
-                  apellido: apellido,
                   email: `${nombre
-                    .toLowerCase()
-                    .replace(/\s+/g, ".")}.${apellido
                     .toLowerCase()
                     .replace(/\s+/g, ".")}@cobaev.edu.mx`,
                   numeroEmpleado: numeroEmpleado,
@@ -704,23 +718,7 @@ const ManagementScreen = () => {
                   ) {
                     // Se asume que es un nombre de docente
                     const nombreCompleto = cell.trim();
-                    const partes = nombreCompleto.split(" ");
-                    let nombre = "";
-                    let apellido = "";
-                    if (
-                      partes.length >= 3 &&
-                      (partes[0].includes("LIC.") ||
-                        partes[0].includes("ING.") ||
-                        partes[0].includes("MTRO.") ||
-                        partes[0].includes("MTRA.") ||
-                        partes[0].includes("DR.") ||
-                        partes[0].includes("DRA."))
-                    ) {
-                      nombre = partes.slice(1, 3).join(" ");
-                      apellido = partes.slice(3).join(" ");
-                    } else {
-                      nombre = nombreCompleto;
-                    }
+                    const nombre = nombreCompleto;
 
                     // Extraer materias de la fila 7 (índice 6)
                     const filaMaterias = jsonData[6] || [];
@@ -745,10 +743,7 @@ const ManagementScreen = () => {
                       {
                         id: `excel_docente_${Date.now()}`,
                         nombre: nombre,
-                        apellido: apellido,
                         email: `${nombre
-                          .toLowerCase()
-                          .replace(/\s+/g, ".")}.${apellido
                           .toLowerCase()
                           .replace(/\s+/g, ".")}@cobaev.edu.mx`,
                         numeroEmpleado: "",
@@ -793,21 +788,20 @@ const ManagementScreen = () => {
                     // Generar siglas a partir del nombre de la materia
                     const palabras = nombreMateria.split(" ");
                     let siglas = "";
-
                     if (palabras.length > 1) {
                       // Tomar la primera letra de cada palabra para formar las siglas
                       siglas = palabras
-                        .map((palabra) => palabra.charAt(0))
+                        .map((palabra) => palabra.charAt(0).toUpperCase())
                         .join("");
                     } else {
                       // Si solo hay una palabra, tomar las primeras 3 letras
-                      siglas = nombreMateria.substring(0, 3);
+                      siglas = nombreMateria.substring(0, 3).toUpperCase();
                     }
 
                     materiasInfo.push({
                       id: `excel_materia_${Date.now()}_${Math.random()
                         .toString(36)
-                        .substr(2, 9)}_${materiasInfo.length}`,
+                        .substr(2, 9)}`,
                       nombre: nombreMateria,
                       siglas: siglas,
                     });
@@ -830,13 +824,13 @@ const ManagementScreen = () => {
                 // Generar siglas
                 const palabras = nombreMateria.split(" ");
                 let siglas = palabras
-                  .map((palabra) => palabra.charAt(0))
+                  .map((palabra) => palabra.charAt(0).toUpperCase())
                   .join("");
 
                 materiasInfo.push({
                   id: `excel_materia_${Date.now()}_${Math.random()
                     .toString(36)
-                    .substr(2, 9)}_0`,
+                    .substr(2, 9)}`,
                   nombre: nombreMateria,
                   siglas: siglas,
                 });
@@ -853,13 +847,13 @@ const ManagementScreen = () => {
                 // Generar siglas
                 const palabras = nombreMateria.split(" ");
                 let siglas = palabras
-                  .map((palabra) => palabra.charAt(0))
+                  .map((palabra) => palabra.charAt(0).toUpperCase())
                   .join("");
 
                 materiasInfo.push({
                   id: `excel_materia_${Date.now()}_${Math.random()
                     .toString(36)
-                    .substr(2, 9)}_1`,
+                    .substr(2, 9)}`,
                   nombre: nombreMateria,
                   siglas: siglas,
                 });
@@ -919,13 +913,13 @@ const ManagementScreen = () => {
                           // Generar siglas
                           const palabras = cell.split(" ");
                           let siglas = palabras
-                            .map((palabra) => palabra.charAt(0))
+                            .map((palabra) => palabra.charAt(0).toUpperCase())
                             .join("");
 
                           materiasInfo.push({
                             id: `excel_materia_${Date.now()}_${Math.random()
                               .toString(36)
-                              .substr(2, 9)}_${materiasInfo.length}`,
+                              .substr(2, 9)}`,
                             nombre: cell,
                             siglas: siglas,
                           });
@@ -951,13 +945,13 @@ const ManagementScreen = () => {
                 // Generar siglas
                 const palabras = nombreMateria.split(" ");
                 let siglas = palabras
-                  .map((palabra) => palabra.charAt(0))
+                  .map((palabra) => palabra.charAt(0).toUpperCase())
                   .join("");
 
                 materiasInfo.push({
                   id: `excel_materia_${Date.now()}_${Math.random()
                     .toString(36)
-                    .substr(2, 9)}_0`,
+                    .substr(2, 9)}`,
                   nombre: nombreMateria,
                   siglas: siglas,
                 });
@@ -974,13 +968,13 @@ const ManagementScreen = () => {
                 // Generar siglas
                 const palabras = nombreMateria.split(" ");
                 let siglas = palabras
-                  .map((palabra) => palabra.charAt(0))
+                  .map((palabra) => palabra.charAt(0).toUpperCase())
                   .join("");
 
                 materiasInfo.push({
                   id: `excel_materia_${Date.now()}_${Math.random()
                     .toString(36)
-                    .substr(2, 9)}_1`,
+                    .substr(2, 9)}`,
                   nombre: nombreMateria,
                   siglas: siglas,
                 });
@@ -1301,7 +1295,6 @@ const ManagementScreen = () => {
       for (const docente of selectedData) {
         const uniqueDocente = {
           nombre: docente.nombre,
-          apellido: docente.apellido,
           email: docente.email,
           numeroEmpleado: docente.numeroEmpleado,
           materias: docente.materias || [],
@@ -1319,7 +1312,15 @@ const ManagementScreen = () => {
               let siglas = materia.siglas;
               if (!siglas) {
                 const palabras = materia.nombre.split(" ");
-                siglas = palabras.map((palabra) => palabra.charAt(0)).join("");
+                if (palabras.length > 1) {
+                  // Tomar la primera letra de cada palabra para formar las siglas
+                  siglas = palabras
+                    .map((palabra) => palabra.charAt(0).toUpperCase())
+                    .join("");
+                } else {
+                  // Si solo hay una palabra, tomar las primeras 3 letras
+                  siglas = materia.nombre.substring(0, 3).toUpperCase();
+                }
               }
 
               // Agregar la materia a la lista de materias
@@ -1395,32 +1396,48 @@ const ManagementScreen = () => {
 
   const filteredData = () => {
     if (!searchQuery.trim()) {
-      if (activeTab === "docentes") return docentes;
-      if (activeTab === "materias") return materias;
-      if (activeTab === "grupos") return grupos;
-      if (activeTab === "directivos") return directivos;
-      if (activeTab === "administrativos") return administrativos;
+      if (activeTab === "docentes") return docentes || [];
+      if (activeTab === "materias") return materias || [];
+      if (activeTab === "grupos") return grupos || [];
+      if (activeTab === "directivos") return directivos || [];
+      if (activeTab === "administrativos") return administrativos || [];
       return [];
     }
 
     const query = searchQuery.toLowerCase().trim();
 
     if (activeTab === "docentes") {
-      return docentes.filter(
+      return (docentes || []).filter(
         (docente) =>
           docente.nombre.toLowerCase().includes(query) ||
-          docente.apellido.toLowerCase().includes(query) ||
           docente.email.toLowerCase().includes(query) ||
           docente.numeroEmpleado.toLowerCase().includes(query)
       );
     }
 
     if (activeTab === "materias") {
-      return materias.filter(
+      const materiasFiltradas = materias.filter(
         (materia) =>
           materia.nombre.toLowerCase().includes(query) ||
           materia.siglas.toLowerCase().includes(query)
       );
+
+      // Eliminar duplicados basados en el nombre (ignorando espacios)
+      const materiasUnicas = materiasFiltradas.reduce((acc, materia) => {
+        const nombreSinEspacios = materia.nombre
+          .toLowerCase()
+          .replace(/\s+/g, "");
+        const existe = acc.find(
+          (m) =>
+            m.nombre.toLowerCase().replace(/\s+/g, "") === nombreSinEspacios
+        );
+        if (!existe) {
+          acc.push(materia);
+        }
+        return acc;
+      }, [] as typeof materiasFiltradas);
+
+      return materiasUnicas;
     }
 
     if (activeTab === "grupos") {
@@ -1477,7 +1494,7 @@ const ManagementScreen = () => {
             >
               <View style={styles.itemInfo}>
                 <Text style={[styles.itemTitle, { color: colors.text }]}>
-                  {docente.nombre} {docente.apellido}
+                  {docente.nombre}
                 </Text>
                 <Text
                   style={[styles.itemSubtitle, { color: colors.secondary }]}
@@ -1490,19 +1507,35 @@ const ManagementScreen = () => {
                   No. Empleado: {docente.numeroEmpleado}
                 </Text>
                 {docente.materias && docente.materias.length > 0 && (
-                  <View style={styles.materiasContainer}>
+                  <View
+                    style={[
+                      styles.materiasContainer,
+                      { backgroundColor: colors.card },
+                    ]}
+                  >
                     <Text
                       style={[styles.materiasTitle, { color: colors.text }]}
                     >
                       Materias:
                     </Text>
                     {docente.materias.map((materia, index) => (
-                      <Text
+                      <View
                         key={materia.id || index}
-                        style={[styles.materiaItem, { color: colors.text }]}
+                        style={styles.materiaItemContainer}
                       >
-                        • {materia.nombre}
-                      </Text>
+                        <Feather
+                          name="book"
+                          size={14}
+                          color={colors.primary}
+                          style={styles.materiaIcon}
+                        />
+                        <Text
+                          style={[styles.materiaItem, { color: colors.text }]}
+                        >
+                          {materia.siglas ? `${materia.siglas} - ` : ""}
+                          {materia.nombre}
+                        </Text>
+                      </View>
                     ))}
                   </View>
                 )}
@@ -1871,25 +1904,6 @@ const ManagementScreen = () => {
               placeholderTextColor={colors.placeholder || "#999"}
             />
 
-            <Text style={[styles.label, { color: colors.text }]}>
-              Apellido:
-            </Text>
-            <TextInput
-              style={[
-                styles.input,
-                {
-                  backgroundColor: colors.card || "#f5f5f5",
-                  color: colors.text,
-                },
-              ]}
-              value={docenteForm.apellido}
-              onChangeText={(text) =>
-                setDocenteForm({ ...docenteForm, apellido: text })
-              }
-              placeholder="Apellido del docente"
-              placeholderTextColor={colors.placeholder || "#999"}
-            />
-
             <Text style={[styles.label, { color: colors.text }]}>Email:</Text>
             <TextInput
               style={[
@@ -1929,7 +1943,6 @@ const ManagementScreen = () => {
               keyboardType="number-pad"
             />
 
-            {/* Sección de materias */}
             <Text style={[styles.label, { color: colors.text }]}>
               Materias:
             </Text>
@@ -1949,6 +1962,19 @@ const ManagementScreen = () => {
                       onChangeText={(text) => {
                         const newMaterias = [...docenteForm.materias];
                         newMaterias[idx].nombre = text;
+
+                        // Generar siglas automáticamente
+                        const palabras = text.trim().split(" ");
+                        let siglas = "";
+                        if (palabras.length > 1) {
+                          siglas = palabras
+                            .map((palabra) => palabra.charAt(0).toUpperCase())
+                            .join("");
+                        } else {
+                          siglas = text.trim().substring(0, 3).toUpperCase();
+                        }
+                        newMaterias[idx].siglas = siglas;
+
                         setDocenteForm({
                           ...docenteForm,
                           materias: newMaterias,
@@ -1994,14 +2020,20 @@ const ManagementScreen = () => {
                       );
                       setDocenteForm({ ...docenteForm, materias: newMaterias });
                     }}
-                    style={styles.deleteButton}
+                    style={[
+                      styles.deleteButton,
+                      { backgroundColor: colors.error + "20" },
+                    ]}
                   >
                     <Feather name="trash-2" size={18} color={colors.error} />
                   </TouchableOpacity>
                 </View>
               ))}
               <TouchableOpacity
-                style={styles.addMateriaButton}
+                style={[
+                  styles.addMateriaButton,
+                  { backgroundColor: colors.primary + "20" },
+                ]}
                 onPress={() =>
                   setDocenteForm({
                     ...docenteForm,
@@ -2359,35 +2391,54 @@ const ManagementScreen = () => {
     },
     modalContent: {
       width: "90%",
-      borderRadius: 10,
+      maxHeight: "80%",
+      borderRadius: 20,
       padding: 20,
       shadowColor: "#000",
-      shadowOffset: { width: 0, height: 2 },
+      shadowOffset: {
+        width: 0,
+        height: 2,
+      },
       shadowOpacity: 0.25,
-      shadowRadius: 3.84,
+      shadowRadius: 4,
       elevation: 5,
+    },
+    modalHeader: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      marginBottom: 20,
     },
     modalTitle: {
       fontSize: 20,
-      fontWeight: "600",
-      marginBottom: 15,
-      textAlign: "center",
-      letterSpacing: 0.5,
+      fontWeight: "bold",
     },
-    modalSubtitle: {
-      fontSize: 16,
-      marginBottom: 15,
-      textAlign: "center",
-      letterSpacing: 0.3,
+    closeButton: {
+      padding: 5,
     },
-    input: {
-      height: 40,
+    formContainer: {
+      maxHeight: 400,
+    },
+    modalFooter: {
+      flexDirection: "row",
+      justifyContent: "flex-end",
+      gap: 10,
+      marginTop: 20,
+    },
+    cancelButton: {
+      paddingHorizontal: 20,
+      paddingVertical: 10,
+      borderRadius: 8,
       borderWidth: 1,
-      borderColor: "#ddd",
-      borderRadius: 5,
-      marginBottom: 15,
-      paddingHorizontal: 10,
-      width: "100%",
+    },
+    saveButton: {
+      paddingHorizontal: 20,
+      paddingVertical: 10,
+      borderRadius: 8,
+    },
+    buttonText: {
+      fontSize: 16,
+      fontWeight: "500",
     },
     pickerContainer: {
       borderWidth: 1,
@@ -2538,10 +2589,16 @@ const ManagementScreen = () => {
       fontSize: 14,
       marginBottom: 6,
     },
+    materiaItemContainer: {
+      flexDirection: "row",
+      alignItems: "center",
+      marginBottom: 4,
+    },
+    materiaIcon: {
+      marginRight: 4,
+    },
     materiaItem: {
       fontSize: 13,
-      marginLeft: 8,
-      marginBottom: 4,
     },
     addMateriaButton: {
       flexDirection: "row",
@@ -2661,26 +2718,87 @@ const ManagementScreen = () => {
       justifyContent: "center",
       alignItems: "center",
     },
-    modalHeader: {
-      flexDirection: "row",
-      justifyContent: "space-between",
-      alignItems: "center",
-      marginBottom: 15,
-    },
-    closeButton: {
-      borderRadius: 20,
-      padding: 10,
-      elevation: 2,
-    },
   });
+
+  // Agregar esta función auxiliar al inicio del componente
+  const generarSiglas = (nombre: string): string => {
+    const palabras = nombre.split(" ");
+    let siglas = "";
+    if (palabras.length > 1) {
+      // Tomar la primera letra de cada palabra para formar las siglas
+      siglas = palabras
+        .map((palabra) => palabra.charAt(0).toUpperCase())
+        .join("");
+    } else {
+      // Si solo hay una palabra, tomar las primeras 5 letras
+      siglas = nombre.substring(0, 5).toUpperCase();
+    }
+    // Limitar a 5 letras
+    return siglas.substring(0, 5);
+  };
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <StatusBar
-        backgroundColor={colors.card}
         barStyle={theme === "dark" ? "light-content" : "dark-content"}
+        backgroundColor={colors.background}
       />
 
+      {/* Modal para el formulario */}
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={modalVisible || isEditing}
+        onRequestClose={() => {
+          setModalVisible(false);
+          resetForms();
+        }}
+      >
+        <View style={styles.modalContainer}>
+          <View style={[styles.modalContent, { backgroundColor: colors.card }]}>
+            <View style={styles.modalHeader}>
+              <Text style={[styles.modalTitle, { color: colors.text }]}>
+                {isEditing ? "Editar" : "Agregar"} {activeTab.slice(0, -1)}
+              </Text>
+              <TouchableOpacity
+                onPress={() => {
+                  setModalVisible(false);
+                  resetForms();
+                }}
+                style={styles.closeButton}
+              >
+                <Feather name="x" size={24} color={colors.text} />
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView style={styles.formContainer}>{renderForm()}</ScrollView>
+
+            <View style={styles.modalFooter}>
+              <TouchableOpacity
+                style={[styles.cancelButton, { borderColor: colors.border }]}
+                onPress={() => {
+                  setModalVisible(false);
+                  resetForms();
+                }}
+              >
+                <Text style={[styles.buttonText, { color: colors.text }]}>
+                  Cancelar
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.saveButton, { backgroundColor: colors.primary }]}
+                onPress={isEditing ? handleUpdateItem : handleAddItem}
+              >
+                <Text style={[styles.buttonText, { color: "#fff" }]}>
+                  {isEditing ? "Actualizar" : "Guardar"}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Resto del contenido */}
       <View style={styles.tabsContainer}>
         <View style={styles.tabsContent}>
           <TouchableOpacity
@@ -2882,82 +3000,6 @@ const ManagementScreen = () => {
         {renderTabContent()}
       </View>
 
-      {/* Modal para agregar/editar elementos */}
-      <Modal
-        animationType="slide"
-        transparent={true}
-        visible={modalVisible}
-        onRequestClose={() => {
-          setModalVisible(false);
-          resetForms();
-        }}
-      >
-        <View
-          style={[
-            styles.centeredView,
-            { backgroundColor: "rgba(0, 0, 0, 0.5)" },
-          ]}
-        >
-          <View
-            style={[
-              styles.modalView,
-              {
-                backgroundColor: colors.card || "#ffffff",
-                width: "90%",
-                maxHeight: "80%",
-              },
-            ]}
-          >
-            <Text style={[styles.modalTitle, { color: colors.text }]}>
-              {isEditing ? "Editar" : "Agregar"}{" "}
-              {activeTab === "docentes"
-                ? "Docente"
-                : activeTab === "materias"
-                ? "Materia"
-                : activeTab === "grupos"
-                ? "Grupo"
-                : activeTab === "directivos"
-                ? "Directivo"
-                : "Académico"}
-            </Text>
-
-            <ScrollView
-              style={[
-                styles.formContainer,
-                { width: "100%", marginVertical: 10, maxHeight: 400 },
-              ]}
-              showsVerticalScrollIndicator={false}
-            >
-              {renderForm()}
-            </ScrollView>
-
-            <View style={styles.modalButtons}>
-              <TouchableOpacity
-                style={[
-                  styles.modalButton,
-                  { backgroundColor: colors.secondary },
-                ]}
-                onPress={() => {
-                  setModalVisible(false);
-                  resetForms();
-                }}
-              >
-                <Text style={styles.modalButtonText}>Cancelar</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[
-                  styles.modalButton,
-                  { backgroundColor: colors.primary },
-                ]}
-                onPress={handleAddItem}
-              >
-                <Text style={styles.modalButtonText}>Guardar</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      </Modal>
-
       {/* Modal para mostrar el proceso de carga */}
       <Modal visible={loadingFile} transparent animationType="fade">
         <View style={styles.modalContainer}>
@@ -3074,7 +3116,12 @@ const ManagementScreen = () => {
 
                         {/* Mostrar materias del docente */}
                         {item.materias && item.materias.length > 0 && (
-                          <View style={styles.materiasContainer}>
+                          <View
+                            style={[
+                              styles.materiasContainer,
+                              { backgroundColor: colors.card },
+                            ]}
+                          >
                             <Text
                               style={[
                                 styles.materiasTitle,
@@ -3084,15 +3131,26 @@ const ManagementScreen = () => {
                               Materias del docente:
                             </Text>
                             {item.materias.map((materia, idx) => (
-                              <Text
+                              <View
                                 key={materia.id || idx}
-                                style={[
-                                  styles.materiaItem,
-                                  { color: colors.text },
-                                ]}
+                                style={styles.materiaItemContainer}
                               >
-                                • {materia.nombre}
-                              </Text>
+                                <Feather
+                                  name="book"
+                                  size={14}
+                                  color={colors.primary}
+                                  style={styles.materiaIcon}
+                                />
+                                <Text
+                                  style={[
+                                    styles.materiaItem,
+                                    { color: colors.text },
+                                  ]}
+                                >
+                                  {materia.siglas ? `${materia.siglas} - ` : ""}
+                                  {materia.nombre}
+                                </Text>
+                              </View>
                             ))}
                           </View>
                         )}

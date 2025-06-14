@@ -8,7 +8,6 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 export interface Docente {
   id: string;
   nombre: string;
-  apellido: string;
   email: string;
   numeroEmpleado: string;
   materias: Materia[]; // Agregamos el array de materias
