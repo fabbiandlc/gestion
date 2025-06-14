@@ -101,9 +101,25 @@ export type DataContextType = {
   addDirectivo: (
     directivo: Omit<Directivo, "id">
   ) => Promise<{ success: boolean; error?: string }>;
+  updateDirectivo: (
+    id: string,
+    directivo: Partial<Omit<Directivo, "id">>
+  ) => Promise<{ success: boolean; error?: string }>;
+  deleteDirectivo: (
+    id: string
+  ) => Promise<{ success: boolean; error?: string }>;
+  clearDirectivos: () => Promise<{ success: boolean; error?: string }>;
   addAdministrativo: (
     administrativo: Omit<Administrativo, "id">
   ) => Promise<{ success: boolean; error?: string }>;
+  updateAdministrativo: (
+    id: string,
+    administrativo: Partial<Omit<Administrativo, "id">>
+  ) => Promise<{ success: boolean; error?: string }>;
+  deleteAdministrativo: (
+    id: string
+  ) => Promise<{ success: boolean; error?: string }>;
+  clearAdministrativos: () => Promise<{ success: boolean; error?: string }>;
   addActividad: (actividad: Omit<Actividad, "id">) => void;
   addEntrega: (
     entrega: Omit<Entrega, "id">
@@ -887,7 +903,13 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({
         clearHorariosByEntity,
         updateHorarios,
         addDirectivo,
+        updateDirectivo,
+        deleteDirectivo,
+        clearDirectivos,
         addAdministrativo,
+        updateAdministrativo,
+        deleteAdministrativo,
+        clearAdministrativos,
         addActividad,
         addEntrega,
         updateEntrega,

@@ -386,21 +386,22 @@ const ManagementScreen = () => {
                 result = await deleteGrupo(id);
               } else if (activeTab === "directivos") {
                 result = await deleteDirectivo(id);
+                if (!result?.success) {
+                  throw new Error(
+                    result?.error || `Error al eliminar ${itemType}`
+                  );
+                }
               } else if (activeTab === "administrativos") {
                 result = await deleteAdministrativo(id);
+                if (!result?.success) {
+                  throw new Error(
+                    result?.error || `Error al eliminar ${itemType}`
+                  );
+                }
               }
 
               // Si no hay error explícito, asumimos que la operación fue exitosa
-              if (!result?.error) {
-                Alert.alert(
-                  "Éxito",
-                  `Se ha eliminado ${itemType} correctamente`
-                );
-              } else {
-                throw new Error(
-                  result.error || `Error al eliminar ${itemType}`
-                );
-              }
+              Alert.alert("Éxito", `Se ha eliminado ${itemType} correctamente`);
             } catch (error) {
               console.error(`Error al eliminar ${itemType}:`, error);
               Alert.alert(
@@ -434,16 +435,15 @@ const ManagementScreen = () => {
                 );
               } else if (activeTab === "materias") {
                 result = await clearMaterias();
-                if (result?.success) {
-                  Alert.alert(
-                    "Éxito",
-                    `Se han eliminado todos los ${activeTab} correctamente`
-                  );
-                } else {
+                if (!result?.success) {
                   throw new Error(
                     result?.error || `Error al eliminar los ${activeTab}`
                   );
                 }
+                Alert.alert(
+                  "Éxito",
+                  `Se han eliminado todos los ${activeTab} correctamente`
+                );
               } else if (activeTab === "grupos") {
                 clearGrupos();
                 Alert.alert(
@@ -452,28 +452,26 @@ const ManagementScreen = () => {
                 );
               } else if (activeTab === "directivos") {
                 result = await clearDirectivos();
-                if (result?.success) {
-                  Alert.alert(
-                    "Éxito",
-                    `Se han eliminado todos los ${activeTab} correctamente`
-                  );
-                } else {
+                if (!result?.success) {
                   throw new Error(
                     result?.error || `Error al eliminar los ${activeTab}`
                   );
                 }
+                Alert.alert(
+                  "Éxito",
+                  `Se han eliminado todos los ${activeTab} correctamente`
+                );
               } else if (activeTab === "administrativos") {
                 result = await clearAdministrativos();
-                if (result?.success) {
-                  Alert.alert(
-                    "Éxito",
-                    `Se han eliminado todos los ${activeTab} correctamente`
-                  );
-                } else {
+                if (!result?.success) {
                   throw new Error(
                     result?.error || `Error al eliminar los ${activeTab}`
                   );
                 }
+                Alert.alert(
+                  "Éxito",
+                  `Se han eliminado todos los ${activeTab} correctamente`
+                );
               }
             } catch (error) {
               console.error(`Error al eliminar los ${activeTab}:`, error);
@@ -1971,7 +1969,7 @@ const ManagementScreen = () => {
                       value={mat.siglas}
                       onChangeText={(text) => {
                         const newMaterias = [...docenteForm.materias];
-                        newMaterias[idx].siglas = text;
+                        newMaterias[idx].siglas = text.toUpperCase();
                         setDocenteForm({
                           ...docenteForm,
                           materias: newMaterias,
@@ -2061,7 +2059,7 @@ const ManagementScreen = () => {
               ]}
               value={materiaForm.siglas}
               onChangeText={(text) =>
-                setMateriaForm({ ...materiaForm, siglas: text })
+                setMateriaForm({ ...materiaForm, siglas: text.toUpperCase() })
               }
               placeholder="Siglas"
               placeholderTextColor={colors.placeholder || "#999"}
@@ -2663,6 +2661,17 @@ const ManagementScreen = () => {
       justifyContent: "center",
       alignItems: "center",
     },
+    modalHeader: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      marginBottom: 15,
+    },
+    closeButton: {
+      borderRadius: 20,
+      padding: 10,
+      elevation: 2,
+    },
   });
 
   return (
@@ -2917,6 +2926,7 @@ const ManagementScreen = () => {
                 styles.formContainer,
                 { width: "100%", marginVertical: 10, maxHeight: 400 },
               ]}
+              showsVerticalScrollIndicator={false}
             >
               {renderForm()}
             </ScrollView>
