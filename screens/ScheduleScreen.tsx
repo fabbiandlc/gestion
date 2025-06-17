@@ -2248,6 +2248,7 @@ const ScheduleScreen = () => {
         <View style={{ flex: 1, overflow: "hidden" }}>
           <FlatList
             data={docentes}
+            extraData={{ autoScheduleConfigs, expandedDocenteId }}
             style={{ flex: 1 }}
             showsVerticalScrollIndicator={false}
             showsHorizontalScrollIndicator={false}
@@ -3317,9 +3318,7 @@ const styles = StyleSheet.create({
     flex: 1,
     marginLeft: 8,
   },
-  gruposContainer: {
-    marginLeft: 34,
-  },
+  gruposContainer: {},
   gruposTitle: {
     fontSize: 14,
     fontWeight: "bold",
