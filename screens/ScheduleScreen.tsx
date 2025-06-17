@@ -24,6 +24,24 @@ import { Feather } from "@expo/vector-icons";
 import * as Print from "expo-print";
 import * as Sharing from "expo-sharing";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { v4 as uuidv4 } from "uuid";
+
+interface AutoScheduleConfig {
+  materias: {
+    [materiaId: string]: {
+      grupos: string[];
+      horas: number;
+    };
+  };
+}
+
+interface GruposTurnos {
+  [docenteId: string]: {
+    [materiaId: string]: {
+      [grupoId: string]: "matutino" | "vespertino";
+    };
+  };
+}
 
 const ScheduleScreen = () => {
   const { colors, theme } = useTheme();
@@ -109,18 +127,17 @@ const ScheduleScreen = () => {
   // Estado para la configuración de cada docente
   const [autoScheduleConfigs, setAutoScheduleConfigs] = useState<{
     [docenteId: string]: {
-      grupos: string[];
-      horasPorMateria: { [materiaId: string]: number };
-      materias: string[];
+      materias: {
+        [materiaId: string]: {
+          grupos: string[];
+          horas: number;
+        };
+      };
     };
   }>({});
 
   // Estado para los turnos de los grupos por docente
-  const [gruposTurnos, setGruposTurnos] = useState<{
-    [docenteId: string]: {
-      [grupoId: string]: "matutino" | "vespertino";
-    };
-  }>({});
+  const [gruposTurnos, setGruposTurnos] = useState<GruposTurnos>({});
 
   useEffect(() => {
     console.log("Materia seleccionada:", selectedMateria);
@@ -1968,14 +1985,33 @@ const ScheduleScreen = () => {
 
   // Función para inicializar la configuración de un docente
   const initDocenteConfig = (docenteId: string, materiasDocente: string[]) => {
-    setAutoScheduleConfigs((prev) => ({
-      ...prev,
-      [docenteId]: prev[docenteId] || {
-        grupos: [],
-        horasPorMateria: {},
-        materias: materiasDocente,
-      },
-    }));
+    if (!docenteId || !materiasDocente || materiasDocente.length === 0) {
+      return;
+    }
+
+    setAutoScheduleConfigs((prev) => {
+      const currentConfig = prev[docenteId] || { materias: {} };
+      const materiasConfig = materiasDocente.reduce(
+        (acc, materiaId) => ({
+          ...acc,
+          [materiaId]: {
+            grupos: [],
+            horas: 0,
+          },
+        }),
+        {}
+      );
+
+      return {
+        ...prev,
+        [docenteId]: {
+          materias: {
+            ...currentConfig.materias,
+            ...materiasConfig,
+          },
+        },
+      };
+    });
   };
 
   // Función para obtener los bloques horarios según el turno
@@ -2001,41 +2037,103 @@ const ScheduleScreen = () => {
   // Optimizar las funciones de manejo de eventos
   const handleMateriaToggle = useCallback(
     (docenteId: string, materiaId: string) => {
-      setAutoScheduleConfigs((prev) => ({
-        ...prev,
-        [docenteId]: {
-          ...prev[docenteId],
-          materias: prev[docenteId].materias.includes(materiaId)
-            ? prev[docenteId].materias.filter((id) => id !== materiaId)
-            : [...prev[docenteId].materias, materiaId],
-        },
-      }));
+      setAutoScheduleConfigs((prev) => {
+        const currentConfig = prev[docenteId] || { materias: {} };
+        const materiaConfig = currentConfig.materias[materiaId] || {
+          grupos: [],
+          horas: 0,
+        };
+
+        return {
+          ...prev,
+          [docenteId]: {
+            ...currentConfig,
+            materias: {
+              ...currentConfig.materias,
+              [materiaId]: {
+                ...materiaConfig,
+                grupos:
+                  materiaConfig.grupos.length > 0 ? [] : materiaConfig.grupos,
+              },
+            },
+          },
+        };
+      });
     },
     []
   );
 
   const handleGrupoToggle = useCallback(
-    (docenteId: string, grupoId: string) => {
-      setAutoScheduleConfigs((prev) => ({
-        ...prev,
-        [docenteId]: {
-          ...prev[docenteId],
-          grupos: prev[docenteId].grupos.includes(grupoId)
-            ? prev[docenteId].grupos.filter((id) => id !== grupoId)
-            : [...prev[docenteId].grupos, grupoId],
-        },
-      }));
+    (docenteId: string, materiaId: string, grupoId: string) => {
+      setAutoScheduleConfigs((prev) => {
+        const currentConfig = prev[docenteId] || { materias: {} };
+        const materiaConfig = currentConfig.materias[materiaId] || {
+          grupos: [],
+          horas: 0,
+        };
+
+        return {
+          ...prev,
+          [docenteId]: {
+            ...currentConfig,
+            materias: {
+              ...currentConfig.materias,
+              [materiaId]: {
+                ...materiaConfig,
+                grupos: materiaConfig.grupos.includes(grupoId)
+                  ? materiaConfig.grupos.filter((id) => id !== grupoId)
+                  : [...materiaConfig.grupos, grupoId],
+              },
+            },
+          },
+        };
+      });
+    },
+    []
+  );
+
+  const handleHorasChange = useCallback(
+    (docenteId: string, materiaId: string, horas: number) => {
+      setAutoScheduleConfigs((prev) => {
+        const currentConfig = prev[docenteId] || { materias: {} };
+        const materiaConfig = currentConfig.materias[materiaId] || {
+          grupos: [],
+          horas: 0,
+        };
+
+        return {
+          ...prev,
+          [docenteId]: {
+            ...currentConfig,
+            materias: {
+              ...currentConfig.materias,
+              [materiaId]: {
+                ...materiaConfig,
+                horas: horas,
+              },
+            },
+          },
+        };
+      });
     },
     []
   );
 
   const handleTurnoChange = useCallback(
-    (docenteId: string, grupoId: string, turno: "matutino" | "vespertino") => {
+    (
+      docenteId: string,
+      materiaId: string,
+      grupoId: string,
+      turno: "matutino" | "vespertino"
+    ) => {
       setGruposTurnos((prev) => ({
         ...prev,
         [docenteId]: {
-          ...prev[docenteId],
-          [grupoId]: turno,
+          ...(prev[docenteId] || {}),
+          [materiaId]: {
+            ...(prev[docenteId]?.[materiaId] || {}),
+            [grupoId]: turno,
+          },
         },
       }));
     },
@@ -2046,48 +2144,59 @@ const ScheduleScreen = () => {
   const TurnoButton = useMemo(() => {
     const MemoizedButton = ({
       docenteId,
+      materiaId,
       grupoId,
       turno,
       onPress,
     }: {
       docenteId: string;
+      materiaId: string;
       grupoId: string;
       turno: "matutino" | "vespertino";
       onPress: () => void;
-    }) => (
-      <TouchableOpacity
-        style={[
-          styles.turnoButton,
-          {
-            backgroundColor:
-              gruposTurnos[docenteId]?.[grupoId] === turno
-                ? colors.primary
-                : "transparent",
-            borderColor: colors.primary,
-          },
-        ]}
-        onPress={onPress}
-      >
-        <Text
+    }) => {
+      const isSelected =
+        gruposTurnos[docenteId]?.[materiaId]?.[grupoId] === turno;
+
+      return (
+        <TouchableOpacity
           style={[
-            styles.turnoButtonText,
+            styles.turnoButton,
             {
-              color:
-                gruposTurnos[docenteId]?.[grupoId] === turno
-                  ? "#fff"
-                  : colors.text,
+              backgroundColor: isSelected ? colors.primary : "transparent",
+              borderColor: colors.primary,
             },
           ]}
+          onPress={onPress}
         >
-          {turno === "matutino" ? "M" : "V"}
-        </Text>
-      </TouchableOpacity>
-    );
+          <Text
+            style={[
+              styles.turnoButtonText,
+              {
+                color: isSelected ? "#fff" : colors.text,
+              },
+            ]}
+          >
+            {turno === "matutino" ? "M" : "V"}
+          </Text>
+        </TouchableOpacity>
+      );
+    };
     return MemoizedButton;
   }, [colors, gruposTurnos]);
 
   // Renderizado de la pestaña de generación automática
   const renderAutoScheduleTab = () => {
+    if (!docentes || docentes.length === 0) {
+      return (
+        <View style={styles.emptyStateContainer}>
+          <Text style={[styles.emptyStateText, { color: colors.text }]}>
+            No hay docentes disponibles
+          </Text>
+        </View>
+      );
+    }
+
     return (
       <View style={{ flex: 1 }}>
         <View
@@ -2146,10 +2255,9 @@ const ScheduleScreen = () => {
             renderItem={({ item: docente }) => {
               const isExpanded = expandedDocenteId === docente.id;
               const config = autoScheduleConfigs[docente.id] || {
-                grupos: [],
-                horasPorMateria: {},
-                materias: docente.materias.map((m) => m.id),
+                materias: {},
               };
+
               return (
                 <View
                   key={docente.id}
@@ -2161,13 +2269,14 @@ const ScheduleScreen = () => {
                   <TouchableOpacity
                     style={styles.autoScheduleCardHeader}
                     onPress={() => {
-                      setExpandedDocenteId(isExpanded ? null : docente.id);
-                      if (!autoScheduleConfigs[docente.id]) {
+                      if (!isExpanded) {
+                        // Solo inicializar cuando se expande
                         initDocenteConfig(
                           docente.id,
                           docente.materias.map((m) => m.id)
                         );
                       }
+                      setExpandedDocenteId(isExpanded ? null : docente.id);
                     }}
                   >
                     <Text
@@ -2191,7 +2300,6 @@ const ScheduleScreen = () => {
                         { borderTopColor: colors.border },
                       ]}
                     >
-                      {/* Sección de Materias */}
                       <View style={styles.autoScheduleSection}>
                         <Text
                           style={[
@@ -2202,118 +2310,90 @@ const ScheduleScreen = () => {
                           Materias y Grupos
                         </Text>
                         <ScrollView style={styles.materiasScroll}>
-                          {docente.materias.map((materia) => (
-                            <View
-                              key={materia.id}
-                              style={[
-                                styles.materiaCard,
-                                { borderColor: colors.border },
-                              ]}
-                            >
-                              <View style={styles.materiaHeader}>
-                                <TouchableOpacity
-                                  style={[
-                                    styles.autoScheduleCheckbox,
-                                    {
-                                      borderColor: colors.primary,
-                                      backgroundColor: config.materias.includes(
+                          {docente.materias.map((materia) => {
+                            const materiaConfig = config.materias[
+                              materia.id
+                            ] || { grupos: [], horas: 0 };
+                            return (
+                              <View
+                                key={materia.id}
+                                style={[
+                                  styles.materiaCard,
+                                  { borderColor: colors.border },
+                                ]}
+                              >
+                                <View style={styles.materiaHeader}>
+                                  <TouchableOpacity
+                                    style={[
+                                      styles.autoScheduleCheckbox,
+                                      {
+                                        borderColor: colors.primary,
+                                        backgroundColor:
+                                          materiaConfig.grupos.length > 0
+                                            ? colors.primary
+                                            : "transparent",
+                                      },
+                                    ]}
+                                    onPress={() =>
+                                      handleMateriaToggle(
+                                        docente.id,
                                         materia.id
                                       )
-                                        ? colors.primary
-                                        : "transparent",
-                                    },
-                                  ]}
-                                  onPress={() => {
-                                    setAutoScheduleConfigs((prev) => ({
-                                      ...prev,
-                                      [docente.id]: {
-                                        ...config,
-                                        materias: config.materias.includes(
-                                          materia.id
-                                        )
-                                          ? config.materias.filter(
-                                              (id) => id !== materia.id
-                                            )
-                                          : [...config.materias, materia.id],
-                                      },
-                                    }));
-                                  }}
-                                >
-                                  {config.materias.includes(materia.id) && (
-                                    <Feather
-                                      name="check"
-                                      size={16}
-                                      color="#fff"
-                                    />
-                                  )}
-                                </TouchableOpacity>
-                                <Text
-                                  style={[
-                                    styles.materiaText,
-                                    { color: colors.text },
-                                  ]}
-                                >
-                                  {materia.nombre}
-                                </Text>
-                                <View style={styles.horasInputContainer}>
+                                    }
+                                  >
+                                    {materiaConfig.grupos.length > 0 && (
+                                      <Feather
+                                        name="check"
+                                        size={16}
+                                        color="#fff"
+                                      />
+                                    )}
+                                  </TouchableOpacity>
                                   <Text
                                     style={[
-                                      styles.inputLabel,
+                                      styles.materiaText,
                                       { color: colors.text },
                                     ]}
                                   >
-                                    Horas:
+                                    {materia.nombre}
                                   </Text>
-                                  <TextInput
-                                    style={[
-                                      styles.horasInput,
-                                      {
-                                        backgroundColor: colors.card,
-                                        color: colors.text,
-                                        borderColor: colors.border,
-                                      },
-                                    ]}
-                                    keyboardType="numeric"
-                                    value={
-                                      config.horasPorMateria[
-                                        materia.id
-                                      ]?.toString() || ""
-                                    }
-                                    onChangeText={(value) => {
-                                      setAutoScheduleConfigs((prev) => ({
-                                        ...prev,
-                                        [docente.id]: {
-                                          ...config,
-                                          horasPorMateria: {
-                                            ...config.horasPorMateria,
-                                            [materia.id]: parseInt(value) || 0,
-                                          },
+                                  <View style={styles.horasInputContainer}>
+                                    <Text
+                                      style={[
+                                        styles.inputLabel,
+                                        { color: colors.text },
+                                      ]}
+                                    >
+                                      Horas:
+                                    </Text>
+                                    <TextInput
+                                      style={[
+                                        styles.horasInput,
+                                        {
+                                          backgroundColor: colors.card,
+                                          color: colors.text,
+                                          borderColor: colors.border,
                                         },
-                                      }));
-                                    }}
-                                    placeholder="0"
-                                    placeholderTextColor={colors.text + "80"}
-                                  />
+                                      ]}
+                                      keyboardType="numeric"
+                                      value={
+                                        materiaConfig.horas?.toString() || ""
+                                      }
+                                      onChangeText={(value) => {
+                                        handleHorasChange(
+                                          docente.id,
+                                          materia.id,
+                                          parseInt(value) || 0
+                                        );
+                                      }}
+                                    />
+                                  </View>
                                 </View>
-                              </View>
-
-                              <View style={styles.gruposContainer}>
-                                <Text
-                                  style={[
-                                    styles.gruposTitle,
-                                    { color: colors.text },
-                                  ]}
-                                >
-                                  Grupos:
-                                </Text>
-                                <View style={styles.gruposList}>
+                                <View style={styles.gruposContainer}>
                                   {grupos.map((grupo) => (
                                     <View
                                       key={grupo.id}
-                                      style={[
-                                        styles.grupoItem,
-                                        { borderColor: colors.border },
-                                      ]}
+                                      style={styles.grupoRow}
                                     >
                                       <TouchableOpacity
                                         style={[
@@ -2321,31 +2401,27 @@ const ScheduleScreen = () => {
                                           {
                                             borderColor: colors.primary,
                                             backgroundColor:
-                                              config.grupos.includes(grupo.id)
+                                              materiaConfig.grupos.includes(
+                                                grupo.id
+                                              )
                                                 ? colors.primary
                                                 : "transparent",
                                           },
                                         ]}
-                                        onPress={() => {
-                                          setAutoScheduleConfigs((prev) => ({
-                                            ...prev,
-                                            [docente.id]: {
-                                              ...config,
-                                              grupos: config.grupos.includes(
-                                                grupo.id
-                                              )
-                                                ? config.grupos.filter(
-                                                    (id) => id !== grupo.id
-                                                  )
-                                                : [...config.grupos, grupo.id],
-                                            },
-                                          }));
-                                        }}
+                                        onPress={() =>
+                                          handleGrupoToggle(
+                                            docente.id,
+                                            materia.id,
+                                            grupo.id
+                                          )
+                                        }
                                       >
-                                        {config.grupos.includes(grupo.id) && (
+                                        {materiaConfig.grupos.includes(
+                                          grupo.id
+                                        ) && (
                                           <Feather
                                             name="check"
-                                            size={12}
+                                            size={16}
                                             color="#fff"
                                           />
                                         )}
@@ -2358,92 +2434,44 @@ const ScheduleScreen = () => {
                                       >
                                         {grupo.nombre}
                                       </Text>
-                                      <View style={styles.turnoSelector}>
-                                        <TouchableOpacity
-                                          style={[
-                                            styles.turnoButton,
-                                            {
-                                              backgroundColor:
-                                                gruposTurnos[docente.id]?.[
-                                                  grupo.id
-                                                ] === "matutino"
-                                                  ? colors.primary
-                                                  : "transparent",
-                                              borderColor: colors.primary,
-                                            },
-                                          ]}
+                                      <View
+                                        style={styles.turnoButtonsContainer}
+                                      >
+                                        <TurnoButton
+                                          docenteId={docente.id}
+                                          materiaId={materia.id}
+                                          grupoId={grupo.id}
+                                          turno="matutino"
                                           onPress={() =>
-                                            setGruposTurnos((prev) => ({
-                                              ...prev,
-                                              [docente.id]: {
-                                                ...prev[docente.id],
-                                                [grupo.id]: "matutino",
-                                              },
-                                            }))
+                                            handleTurnoChange(
+                                              docente.id,
+                                              materia.id,
+                                              grupo.id,
+                                              "matutino"
+                                            )
                                           }
-                                        >
-                                          <Text
-                                            style={[
-                                              styles.turnoButtonText,
-                                              {
-                                                color:
-                                                  gruposTurnos[docente.id]?.[
-                                                    grupo.id
-                                                  ] === "matutino"
-                                                    ? "#fff"
-                                                    : colors.text,
-                                              },
-                                            ]}
-                                          >
-                                            M
-                                          </Text>
-                                        </TouchableOpacity>
-                                        <TouchableOpacity
-                                          style={[
-                                            styles.turnoButton,
-                                            {
-                                              backgroundColor:
-                                                gruposTurnos[docente.id]?.[
-                                                  grupo.id
-                                                ] === "vespertino"
-                                                  ? colors.primary
-                                                  : "transparent",
-                                              borderColor: colors.primary,
-                                            },
-                                          ]}
+                                        />
+                                        <TurnoButton
+                                          docenteId={docente.id}
+                                          materiaId={materia.id}
+                                          grupoId={grupo.id}
+                                          turno="vespertino"
                                           onPress={() =>
-                                            setGruposTurnos((prev) => ({
-                                              ...prev,
-                                              [docente.id]: {
-                                                ...prev[docente.id],
-                                                [grupo.id]: "vespertino",
-                                              },
-                                            }))
+                                            handleTurnoChange(
+                                              docente.id,
+                                              materia.id,
+                                              grupo.id,
+                                              "vespertino"
+                                            )
                                           }
-                                        >
-                                          <Text
-                                            style={[
-                                              styles.turnoButtonText,
-                                              {
-                                                color:
-                                                  gruposTurnos[docente.id]?.[
-                                                    grupo.id
-                                                  ] === "vespertino"
-                                                    ? "#fff"
-                                                    : colors.text,
-                                              },
-                                            ]}
-                                          >
-                                            V
-                                          </Text>
-                                        </TouchableOpacity>
+                                        />
                                       </View>
                                     </View>
                                   ))}
                                 </View>
                               </View>
-                            </View>
-                          ))}
+                            );
+                          })}
                         </ScrollView>
                       </View>
                     </View>
@@ -2453,599 +2481,132 @@ const ScheduleScreen = () => {
             }}
           />
         </View>
-        {/* Botón para generar horarios de todos los docentes */}
-        <TouchableOpacity
-          style={[
-            styles.generateButton,
-            {
-              backgroundColor: colors.primary,
-              margin: 16,
-              alignSelf: "center",
-            },
-          ]}
-          onPress={generateAutoScheduleForAll}
-        >
-          <Text style={styles.generateButtonText}>Generar horarios</Text>
-        </TouchableOpacity>
       </View>
     );
   };
 
   // Función para generar horarios para todos los docentes
   const generateAutoScheduleForAll = async () => {
-    let totalHorariosGenerados = 0;
-    let mensajesAdvertencia: string[] = [];
-    let nuevosHorarios: Horario[] = [];
     try {
-      const diasOrdenados = [
-        "Lunes",
-        "Martes",
-        "Miércoles",
-        "Jueves",
-        "Viernes",
-      ];
+      const horariosAsignados: Horario[] = [];
+      const disponibilidad: { [key: string]: { [key: string]: boolean } } = {};
 
-      // Función auxiliar para verificar disponibilidad de un bloque
-      const isBloqueDisponible = (
-        dia: string,
-        bloque: { horaInicio: string; horaFin: string },
-        docenteId: string,
-        grupoId: string
-      ) => {
-        // Verificar si el docente ya tiene clase en ese horario
-        const docenteOcupado = horarios.some(
-          (h) =>
-            h.dia === dia &&
-            h.horaInicio === bloque.horaInicio &&
-            h.docenteId === docenteId
-        );
+      // Inicializar disponibilidad
+      diasSemana.forEach((dia) => {
+        disponibilidad[dia] = {};
+        bloquesHorarios.forEach((bloque) => {
+          disponibilidad[dia][`${bloque.horaInicio}-${bloque.horaFin}`] = true;
+        });
+      });
 
-        // Verificar si el grupo ya tiene clase en ese horario en el mismo día
-        const grupoOcupadoEnDia = horarios.some(
-          (h) =>
-            h.dia === dia &&
-            h.horaInicio === bloque.horaInicio &&
-            h.salonId === grupoId
-        );
-
-        // Verificar si el grupo ya tiene clase en esa hora en cualquier día (vertical)
-        const grupoOcupadoEnHora = horarios.some(
-          (h) => h.horaInicio === bloque.horaInicio && h.salonId === grupoId
-        );
-
-        return !docenteOcupado && !grupoOcupadoEnDia && !grupoOcupadoEnHora;
-      };
-
-      // Función para encontrar el mejor bloque disponible
-      const encontrarMejorBloque = (
-        docenteId: string,
-        grupoId: string,
-        disponibilidad: { [key: string]: { [key: string]: boolean } },
-        horariosAsignados: Horario[],
-        intentos: number = 0
-      ) => {
-        const turno = gruposTurnos[grupoId] || "matutino";
-        const bloquesDisponibles = getBloquesPorTurno(turno);
-
-        // Función para verificar si un bloque es continuo con otros horarios del grupo
-        const esBloqueContinuo = (
-          dia: string,
-          bloque: { horaInicio: string; horaFin: string }
-        ) => {
-          const horariosGrupoEnDia = horariosAsignados.filter(
-            (h) => h.salonId === grupoId && h.dia === dia
-          );
-
-          if (horariosGrupoEnDia.length === 0) return true;
-
-          // Ordenar horarios por hora de inicio
-          const horariosOrdenados = [...horariosGrupoEnDia].sort(
-            (a, b) =>
-              convertirHoraAMinutos(a.horaInicio) -
-              convertirHoraAMinutos(b.horaInicio)
-          );
-
-          // Verificar si el bloque es continuo con algún horario existente
-          return horariosOrdenados.some((h) => {
-            const horaFinHorario = convertirHoraAMinutos(h.horaFin);
-            const horaInicioBloque = convertirHoraAMinutos(bloque.horaInicio);
-            const horaFinBloque = convertirHoraAMinutos(bloque.horaFin);
-            const horaInicioHorario = convertirHoraAMinutos(h.horaInicio);
-
-            // Es continuo si termina justo cuando empieza otro o empieza justo cuando termina otro
-            return (
-              horaFinHorario === horaInicioBloque ||
-              horaInicioHorario === horaFinBloque
-            );
-          });
-        };
-
-        // Función para calcular la puntuación de un bloque
-        const calcularPuntuacionBloque = (
-          dia: string,
-          bloque: { horaInicio: string; horaFin: string }
-        ) => {
-          let puntuacion = 0;
-
-          // Priorizar bloques continuos
-          if (esBloqueContinuo(dia, bloque)) {
-            puntuacion += 20; // Aumentamos la prioridad de bloques continuos
-          }
-
-          // Priorizar horarios tempranos según el turno
-          const horaInicioMinutos = convertirHoraAMinutos(bloque.horaInicio);
-          if (turno === "matutino") {
-            if (horaInicioMinutos < convertirHoraAMinutos("08:00")) {
-              puntuacion += 25; // Máxima prioridad para primeras horas de la mañana
-            } else if (horaInicioMinutos < convertirHoraAMinutos("10:00")) {
-              puntuacion += 20;
-            } else if (horaInicioMinutos < convertirHoraAMinutos("12:00")) {
-              puntuacion += 15;
-            }
-          } else if (turno === "vespertino") {
-            if (horaInicioMinutos < convertirHoraAMinutos("14:00")) {
-              puntuacion += 25; // Máxima prioridad para primeras horas de la tarde
-            } else if (horaInicioMinutos < convertirHoraAMinutos("16:00")) {
-              puntuacion += 20;
-            } else if (horaInicioMinutos < convertirHoraAMinutos("18:00")) {
-              puntuacion += 15;
-            }
-          }
-
-          // Penalizar espacios libres entre clases
-          const horariosDelDia = horariosAsignados.filter((h) => h.dia === dia);
-          if (horariosDelDia.length > 0) {
-            const hayEspacioLibre = horariosDelDia.some((h) => {
-              const horaFinHorario = convertirHoraAMinutos(h.horaFin);
-              const horaInicioBloque = convertirHoraAMinutos(bloque.horaInicio);
-              const horaFinBloque = convertirHoraAMinutos(bloque.horaFin);
-              const horaInicioHorario = convertirHoraAMinutos(h.horaInicio);
-
-              // Si hay un espacio libre entre clases
-              return (
-                (horaFinHorario < horaInicioBloque &&
-                  horaInicioBloque - horaFinHorario > 60) ||
-                (horaFinBloque < horaInicioHorario &&
-                  horaInicioHorario - horaFinBloque > 60)
-              );
-            });
-
-            if (hayEspacioLibre) {
-              puntuacion -= 25; // Mayor penalización por espacios libres
-            }
-          }
-
-          // Priorizar el llenado horizontal (de lunes a viernes)
-          const indiceDia = diasOrdenados.indexOf(dia);
-          const numHorariosEnDia = horariosDelDia.length;
-          puntuacion += (5 - indiceDia) * 2; // Más puntuación para días anteriores
-          puntuacion += numHorariosEnDia * 3; // Más puntuación para días con más clases
-
-          // Penalizar horarios dispersos
-          const horariosOrdenados = [...horariosDelDia].sort(
-            (a, b) =>
-              convertirHoraAMinutos(a.horaInicio) -
-              convertirHoraAMinutos(b.horaInicio)
-          );
-
-          if (horariosOrdenados.length > 0) {
-            const distanciaPromedio =
-              horariosOrdenados.reduce((acc: number, h, i) => {
-                if (i === 0) return acc;
-                const distancia =
-                  convertirHoraAMinutos(h.horaInicio) -
-                  convertirHoraAMinutos(horariosOrdenados[i - 1].horaFin);
-                return acc + distancia;
-              }, 0) /
-              (horariosOrdenados.length - 1);
-
-            if (distanciaPromedio > 60) {
-              // Si hay más de 1 hora de promedio entre clases
-              puntuacion -= 20;
-            }
-          }
-
-          return puntuacion;
-        };
-
-        // Si ya intentamos demasiadas veces, intentar con cualquier bloque disponible
-        if (intentos > 3) {
-          let mejorPuntuacion = -1;
-          let mejorBloque = null;
-
-          // Primero intentar con bloques en días con menos clases
-          const diasPorClases = diasOrdenados
-            .map((dia) => ({
-              dia,
-              clases: horariosAsignados.filter((h) => h.dia === dia).length,
-            }))
-            .sort((a, b) => a.clases - b.clases);
-
-          for (const { dia } of diasPorClases) {
-            for (const bloque of bloquesDisponibles) {
-              if (bloque.esReceso) continue;
-              if (
-                disponibilidad[dia][bloque.horaInicio] &&
-                isBloqueDisponible(dia, bloque, docenteId, grupoId)
-              ) {
-                const puntuacion = calcularPuntuacionBloque(dia, bloque);
-                if (puntuacion > mejorPuntuacion) {
-                  mejorPuntuacion = puntuacion;
-                  mejorBloque = { dia, bloque };
-                }
-              }
-            }
-          }
-          return mejorBloque;
-        }
-
-        // Buscar el mejor bloque disponible priorizando el llenado horizontal
-        let mejorPuntuacion = -1;
-        let mejorBloque = null;
-
-        // Ordenar los días por número de clases (menos a más)
-        const diasOrdenadosPorClases = diasOrdenados
-          .map((dia) => ({
-            dia,
-            clases: horariosAsignados.filter((h) => h.dia === dia).length,
-          }))
-          .sort((a, b) => a.clases - b.clases)
-          .map((d) => d.dia);
-
-        for (const dia of diasOrdenadosPorClases) {
-          for (const bloque of bloquesDisponibles) {
-            if (bloque.esReceso) continue;
-            if (
-              disponibilidad[dia][bloque.horaInicio] &&
-              isBloqueDisponible(dia, bloque, docenteId, grupoId)
-            ) {
-              const puntuacion = calcularPuntuacionBloque(dia, bloque);
-              if (puntuacion > mejorPuntuacion) {
-                mejorPuntuacion = puntuacion;
-                mejorBloque = { dia, bloque };
-              }
-            }
-          }
-        }
-
-        return mejorBloque;
-      };
-
+      // Para cada docente
       for (const docente of docentes) {
         const config = autoScheduleConfigs[docente.id];
         if (!config) continue;
 
-        // Crear mapa de disponibilidad inicial
-        const disponibilidad = diasOrdenados.reduce((acc, dia) => {
-          acc[dia] = bloquesHorarios.reduce((bloqueAcc, bloque) => {
-            if (bloque.esReceso) {
-              bloqueAcc[bloque.horaInicio] = false;
-            } else {
-              bloqueAcc[bloque.horaInicio] = true;
-            }
-            return bloqueAcc;
-          }, {} as { [key: string]: boolean });
-          return acc;
-        }, {} as { [key: string]: { [key: string]: boolean } });
-
         // Para cada materia del docente
-        for (const materiaId of config.materias) {
-          const horasNecesarias = config.horasPorMateria[materiaId] || 0;
-          let horasAsignadas = 0;
-          let grupoIndex = 0;
-          let intentosPorGrupo = new Map<string, number>();
+        for (const [materiaId, materiaConfig] of Object.entries(
+          config.materias
+        )) {
+          if (!materiaConfig.grupos.length) continue;
 
-          // Intentar asignar todas las horas necesarias
-          while (horasAsignadas < horasNecesarias) {
-            const grupoId = config.grupos[grupoIndex % config.grupos.length];
-            const intentos = intentosPorGrupo.get(grupoId) || 0;
+          // Para cada grupo seleccionado
+          for (const grupoId of materiaConfig.grupos) {
+            const turno = gruposTurnos[docente.id]?.[materiaId]?.[grupoId];
+            if (!turno) continue;
 
-            // Si ya intentamos demasiadas veces con este grupo, pasar al siguiente
-            if (intentos > 5) {
-              grupoIndex++;
-              continue;
+            const bloquesDisponibles = getBloquesPorTurno(turno);
+            const horasNecesarias = materiaConfig.horas;
+
+            // Intentar asignar bloques continuos
+            let bloquesAsignados = 0;
+            for (const dia of diasSemana) {
+              if (bloquesAsignados >= horasNecesarias) break;
+
+              for (let i = 0; i < bloquesDisponibles.length; i++) {
+                const bloque = bloquesDisponibles[i];
+                const claveBloque = `${bloque.horaInicio}-${bloque.horaFin}`;
+
+                if (disponibilidad[dia][claveBloque]) {
+                  // Verificar si hay conflictos
+                  const hayConflicto = checkScheduleConflict(
+                    dia,
+                    bloque.horaInicio,
+                    materiaId,
+                    grupoId,
+                    docente.id
+                  );
+
+                  if (!hayConflicto) {
+                    // Asignar el bloque
+                    disponibilidad[dia][claveBloque] = false;
+                    horariosAsignados.push({
+                      id: uuidv4(),
+                      dia,
+                      horaInicio: bloque.horaInicio,
+                      horaFin: bloque.horaFin,
+                      materiaId,
+                      grupoId,
+                      docenteId: docente.id,
+                    });
+                    bloquesAsignados++;
+                  }
+                }
+              }
             }
-
-            // Encontrar el mejor bloque disponible
-            const mejorBloque = encontrarMejorBloque(
-              docente.id,
-              grupoId,
-              disponibilidad,
-              nuevosHorarios,
-              intentos
-            );
-
-            if (mejorBloque) {
-              // Asignar la clase
-              nuevosHorarios.push({
-                id:
-                  Date.now().toString() +
-                  Math.random().toString(36).substr(2, 9),
-                docenteId: docente.id,
-                materiaId,
-                dia: mejorBloque.dia,
-                horaInicio: mejorBloque.bloque.horaInicio,
-                horaFin: mejorBloque.bloque.horaFin,
-                salonId: grupoId,
-              });
-
-              // Marcar el bloque como ocupado
-              disponibilidad[mejorBloque.dia][mejorBloque.bloque.horaInicio] =
-                false;
-              horasAsignadas++;
-              grupoIndex++;
-              intentosPorGrupo.set(grupoId, 0); // Resetear intentos si tuvo éxito
-            } else {
-              intentosPorGrupo.set(grupoId, intentos + 1);
-              grupoIndex++;
-            }
-          }
-
-          if (horasAsignadas < horasNecesarias) {
-            const materia = materias.find((m) => m.id === materiaId);
-            mensajesAdvertencia.push(
-              `No se pudieron asignar todas las horas para ${
-                materia?.nombre || "la materia"
-              } del docente ${docente.nombre} ${
-                docente.apellido
-              }. Horas asignadas: ${horasAsignadas} de ${horasNecesarias}`
-            );
           }
         }
       }
 
-      // Guardar los nuevos horarios
-      if (nuevosHorarios.length > 0) {
-        const updatedHorarios = [...horarios, ...nuevosHorarios];
-        await AsyncStorage.setItem("horarios", JSON.stringify(updatedHorarios));
-        updateHorarios(updatedHorarios);
-        totalHorariosGenerados = nuevosHorarios.length;
-      }
-
-      let mensaje = `Se generaron ${totalHorariosGenerados} nuevos horarios para todos los docentes seleccionados.`;
-      if (mensajesAdvertencia.length > 0) {
-        mensaje += "\n\nAdvertencias:\n" + mensajesAdvertencia.join("\n");
-      }
-      Alert.alert("Resultado", mensaje);
+      // Actualizar los horarios en el estado
+      setHorarios(horariosAsignados);
+      Alert.alert("Éxito", "Horarios generados correctamente");
     } catch (error) {
-      console.error("Error al generar horarios automáticamente:", error);
-      Alert.alert(
-        "Error",
-        "Ocurrió un error al generar los horarios automáticamente"
-      );
+      console.error("Error al generar horarios:", error);
+      Alert.alert("Error", "No se pudieron generar los horarios");
     }
   };
 
-  // Componente memoizado para cada materia
-  const MateriaItem = useCallback(
-    ({
-      materia,
-      docente,
-      config,
-    }: {
-      materia: Materia;
-      docente: Docente;
-      config: AutoScheduleConfig;
-    }) => {
-      const handleMateriaToggle = useCallback(() => {
-        setAutoScheduleConfigs((prev) => ({
-          ...prev,
-          [docente.id]: {
-            ...config,
-            materias: config.materias.includes(materia.id)
-              ? config.materias.filter((id) => id !== materia.id)
-              : [...config.materias, materia.id],
-          },
-        }));
-      }, [docente.id, materia.id, config]);
-
-      const handleHorasChange = useCallback(
-        (value: string) => {
-          setAutoScheduleConfigs((prev) => ({
-            ...prev,
-            [docente.id]: {
-              ...config,
-              horasPorMateria: {
-                ...config.horasPorMateria,
-                [materia.id]: parseInt(value) || 0,
-              },
-            },
-          }));
-        },
-        [docente.id, materia.id, config]
+  // Funciones de persistencia
+  const guardarConfiguracion = async () => {
+    try {
+      await AsyncStorage.setItem(
+        "autoScheduleConfigs",
+        JSON.stringify(autoScheduleConfigs)
       );
+      await AsyncStorage.setItem("gruposTurnos", JSON.stringify(gruposTurnos));
+    } catch (error) {
+      console.error("Error al guardar la configuración:", error);
+    }
+  };
 
-      return (
-        <View style={[styles.materiaCard, { borderColor: colors.border }]}>
-          <View style={styles.materiaHeader}>
-            <TouchableOpacity
-              style={[
-                styles.autoScheduleCheckbox,
-                {
-                  borderColor: colors.primary,
-                  backgroundColor: config.materias.includes(materia.id)
-                    ? colors.primary
-                    : "transparent",
-                },
-              ]}
-              onPress={handleMateriaToggle}
-            >
-              {config.materias.includes(materia.id) && (
-                <Feather name="check" size={16} color="#fff" />
-              )}
-            </TouchableOpacity>
-            <Text style={[styles.materiaText, { color: colors.text }]}>
-              {materia.nombre}
-            </Text>
-            <View style={styles.horasInputContainer}>
-              <Text style={[styles.inputLabel, { color: colors.text }]}>
-                Horas:
-              </Text>
-              <TextInput
-                style={[
-                  styles.horasInput,
-                  {
-                    backgroundColor: colors.card,
-                    color: colors.text,
-                    borderColor: colors.border,
-                  },
-                ]}
-                keyboardType="numeric"
-                value={config.horasPorMateria[materia.id]?.toString() || ""}
-                onChangeText={handleHorasChange}
-                placeholder="0"
-                placeholderTextColor={colors.text + "80"}
-              />
-            </View>
-          </View>
-
-          <View style={styles.gruposContainer}>
-            <Text style={[styles.gruposTitle, { color: colors.text }]}>
-              Grupos:
-            </Text>
-            <FlatList
-              data={grupos}
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              keyExtractor={(item) => item.id}
-              renderItem={({ item: grupo }) => (
-                <GrupoItem
-                  grupo={grupo}
-                  docenteId={docente.id}
-                  config={config}
-                  gruposTurnos={gruposTurnos}
-                  onGrupoToggle={handleGrupoToggle}
-                  onTurnoChange={handleTurnoChange}
-                />
-              )}
-              contentContainerStyle={styles.gruposList}
-            />
-          </View>
-        </View>
+  const cargarConfiguracion = async () => {
+    try {
+      const configsGuardadas = await AsyncStorage.getItem(
+        "autoScheduleConfigs"
       );
-    },
-    [colors, grupos, gruposTurnos]
-  );
+      const turnosGuardados = await AsyncStorage.getItem("gruposTurnos");
 
-  // Componente memoizado para cada grupo
-  const GrupoItem = useCallback(
-    ({
-      grupo,
-      docenteId,
-      config,
-      gruposTurnos,
-      onGrupoToggle,
-      onTurnoChange,
-    }: {
-      grupo: Grupo;
-      docenteId: string;
-      config: AutoScheduleConfig;
-      gruposTurnos: any;
-      onGrupoToggle: (docenteId: string, grupoId: string) => void;
-      onTurnoChange: (
-        docenteId: string,
-        grupoId: string,
-        turno: "matutino" | "vespertino"
-      ) => void;
-    }) => {
-      return (
-        <View style={[styles.grupoItem, { borderColor: colors.border }]}>
-          <TouchableOpacity
-            style={[
-              styles.grupoCheckbox,
-              {
-                borderColor: colors.primary,
-                backgroundColor: config.grupos.includes(grupo.id)
-                  ? colors.primary
-                  : "transparent",
-              },
-            ]}
-            onPress={() => onGrupoToggle(docenteId, grupo.id)}
-          >
-            {config.grupos.includes(grupo.id) && (
-              <Feather name="check" size={12} color="#fff" />
-            )}
-          </TouchableOpacity>
-          <Text style={[styles.grupoText, { color: colors.text }]}>
-            {grupo.nombre}
-          </Text>
-          <View style={styles.turnoSelector}>
-            <TouchableOpacity
-              style={[
-                styles.turnoButton,
-                {
-                  backgroundColor:
-                    gruposTurnos[docente.id]?.[grupo.id] === "matutino"
-                      ? colors.primary
-                      : "transparent",
-                  borderColor: colors.primary,
-                },
-              ]}
-              onPress={() =>
-                setGruposTurnos((prev) => ({
-                  ...prev,
-                  [docente.id]: {
-                    ...prev[docente.id],
-                    [grupo.id]: "matutino",
-                  },
-                }))
-              }
-            >
-              <Text
-                style={[
-                  styles.turnoButtonText,
-                  {
-                    color:
-                      gruposTurnos[docente.id]?.[grupo.id] === "matutino"
-                        ? "#fff"
-                        : colors.text,
-                  },
-                ]}
-              >
-                M
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[
-                styles.turnoButton,
-                {
-                  backgroundColor:
-                    gruposTurnos[docente.id]?.[grupo.id] === "vespertino"
-                      ? colors.primary
-                      : "transparent",
-                  borderColor: colors.primary,
-                },
-              ]}
-              onPress={() =>
-                setGruposTurnos((prev) => ({
-                  ...prev,
-                  [docente.id]: {
-                    ...prev[docente.id],
-                    [grupo.id]: "vespertino",
-                  },
-                }))
-              }
-            >
-              <Text
-                style={[
-                  styles.turnoButtonText,
-                  {
-                    color:
-                      gruposTurnos[docente.id]?.[grupo.id] === "vespertino"
-                        ? "#fff"
-                        : colors.text,
-                  },
-                ]}
-              >
-                V
-              </Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      );
-    },
-    [colors]
-  );
+      if (configsGuardadas) {
+        setAutoScheduleConfigs(JSON.parse(configsGuardadas));
+      }
+      if (turnosGuardados) {
+        setGruposTurnos(JSON.parse(turnosGuardados));
+      }
+    } catch (error) {
+      console.error("Error al cargar la configuración:", error);
+    }
+  };
+
+  // Cargar la configuración al iniciar
+  useEffect(() => {
+    cargarConfiguracion();
+  }, []);
+
+  // Guardar la configuración cuando cambie
+  useEffect(() => {
+    guardarConfiguracion();
+  }, [autoScheduleConfigs, gruposTurnos]);
 
   // En el renderizado principal, usar FlatList para las materias
   return (
@@ -3822,6 +3383,29 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     letterSpacing: 0.5,
     marginLeft: 5,
+  },
+  grupoRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: "#e0e0e0",
+  },
+  turnoButtonsContainer: {
+    flexDirection: "row",
+    marginLeft: "auto",
+    gap: 8,
+  },
+  emptyStateContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 20,
+  },
+  emptyStateText: {
+    fontSize: 16,
+    textAlign: "center",
   },
 });
 
