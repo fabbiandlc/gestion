@@ -2251,39 +2251,26 @@ const ScheduleScreen = () => {
             extraData={{ autoScheduleConfigs, expandedDocenteId }}
             style={{ flex: 1 }}
             showsVerticalScrollIndicator={false}
-            showsHorizontalScrollIndicator={false}
             keyExtractor={(item) => item.id}
             renderItem={({ item: docente }) => {
+              const config = autoScheduleConfigs[docente.id] || { materias: {} };
               const isExpanded = expandedDocenteId === docente.id;
-              const config = autoScheduleConfigs[docente.id] || {
-                materias: {},
-              };
 
               return (
                 <View
-                  key={docente.id}
                   style={[
                     styles.autoScheduleCard,
-                    { borderColor: colors.border },
+                    { backgroundColor: colors.card, borderColor: colors.border }
                   ]}
                 >
                   <TouchableOpacity
                     style={styles.autoScheduleCardHeader}
-                    onPress={() => {
-                      if (!isExpanded) {
-                        // Solo inicializar cuando se expande
-                        initDocenteConfig(
-                          docente.id,
-                          docente.materias.map((m) => m.id)
-                        );
-                      }
-                      setExpandedDocenteId(isExpanded ? null : docente.id);
-                    }}
+                    onPress={() => setExpandedDocenteId(isExpanded ? null : docente.id)}
                   >
                     <Text
                       style={[
                         styles.autoScheduleCardTitle,
-                        { color: colors.text },
+                        { color: colors.text }
                       ]}
                     >
                       {docente.nombre}
@@ -2358,37 +2345,45 @@ const ScheduleScreen = () => {
                                   >
                                     {materia.nombre}
                                   </Text>
-                                  <View style={styles.horasInputContainer}>
-                                    <Text
-                                      style={[
-                                        styles.inputLabel,
-                                        { color: colors.text },
-                                      ]}
-                                    >
-                                      Horas:
-                                    </Text>
-                                    <TextInput
-                                      style={[
-                                        styles.horasInput,
-                                        {
-                                          backgroundColor: colors.card,
-                                          color: colors.text,
-                                          borderColor: colors.border,
-                                        },
-                                      ]}
-                                      keyboardType="numeric"
-                                      value={
-                                        materiaConfig.horas?.toString() || ""
+                                </View>
+                                <View style={[
+                                  styles.horasInputContainer,
+                                  {
+                                    backgroundColor: colors.card,
+                                    borderColor: colors.primary,
+                                    marginLeft: 34,
+                                    marginBottom: 12,
+                                    width: 120,
+                                    justifyContent: "center"
+                                  }
+                                ]}>
+                                  <Text
+                                    style={[
+                                      styles.inputLabel,
+                                      { color: colors.primary }
+                                    ]}
+                                  >
+                                    Horas:
+                                  </Text>
+                                  <TextInput
+                                    style={[
+                                      styles.horasInput,
+                                      {
+                                        backgroundColor: colors.background,
+                                        color: colors.text,
+                                        borderColor: colors.border
                                       }
-                                      onChangeText={(value) => {
-                                        handleHorasChange(
-                                          docente.id,
-                                          materia.id,
-                                          parseInt(value) || 0
-                                        );
-                                      }}
-                                    />
-                                  </View>
+                                    ]}
+                                    keyboardType="numeric"
+                                    value={materiaConfig.horas?.toString() || ""}
+                                    onChangeText={(value) => {
+                                      handleHorasChange(
+                                        docente.id,
+                                        materia.id,
+                                        parseInt(value) || 0
+                                      );
+                                    }}
+                                  />
                                 </View>
                                 <View style={styles.gruposContainer}>
                                   {grupos.map((grupo) => (
@@ -3242,18 +3237,24 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     marginLeft: 10,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+    borderWidth: 1,
   },
   inputLabel: {
-    fontSize: 14,
-    fontWeight: "bold",
+    fontSize: 12,
+    fontWeight: "600",
     marginRight: 5,
   },
   horasInput: {
-    width: 60,
-    padding: 5,
+    width: 45,
+    padding: 4,
     borderWidth: 1,
-    borderRadius: 5,
+    borderRadius: 4,
     textAlign: "center",
+    fontSize: 12,
+    fontWeight: "600",
   },
   gruposSelectorContainer: {
     marginLeft: 34,
